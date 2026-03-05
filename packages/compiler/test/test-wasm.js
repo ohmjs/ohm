@@ -113,9 +113,7 @@ test('cst: no leadingSpaces in lexical context', async t => {
   // A syntactic rule (Start) invokes a lexical rule (ident) which has
   // multiple children. Spaces between those children must NOT be skipped,
   // and leadingSpaces must not be set on nodes in lexical context.
-  const g = await toWasmGrammar(
-    ohm.grammar('G { Start = ident ";" ident = letter+ }')
-  );
+  const g = await toWasmGrammar(ohm.grammar('G { Start = ident ";" ident = letter+ }'));
 
   // Match with spaces in syntactic context (between ident and ";").
   t.is(matchWithInput(g, 'abc ;'), 1);
@@ -163,6 +161,55 @@ test('cst: no leadingSpaces in lexical context', async t => {
   // never tried here, so getSpacesLenAt should return -1.
   t.is(getSpacesLenAt(1), -1);
   t.is(getSpacesLenAt(2), -1);
+});
+
+test('cst: leadingSpaces on syntactic children', async t => {
+  const g = await toWasmGrammar(ohm.grammar('G { Start = "a" "b" }'));
+  t.is(matchWithInput(g, '  a b'), 1);
+  const root = g._getCstRoot();
+
+  // Root should have leadingSpaces (2 spaces at position 0).
+  t.truthy(root.leadingSpaces);
+  t.is(root.leadingSpaces.ctorName, 'spaces');
+  t.is(root.leadingSpaces.matchLength, 2);
+  t.is(root.leadingSpaces.sourceString, '  ');
+  t.true(root.leadingSpaces.isNonterminal());
+  t.true(root.leadingSpaces.isLexical());
+  t.false(root.leadingSpaces.isSyntactic());
+
+  // "a" has no leading spaces (immediately after the root's leading spaces).
+  const a = root.children[0];
+  t.is(a.leadingSpaces, undefined);
+
+  // "b" has 1 leading space.
+  const b = root.children[1];
+  t.truthy(b.leadingSpaces);
+  t.is(b.leadingSpaces.matchLength, 1);
+  t.is(b.leadingSpaces.sourceString, ' ');
+});
+
+test('cst: leadingSpaces children via lazy parsing', async t => {
+  const g = await toWasmGrammar(ohm.grammar('G { Start = "x" }'));
+  // Access children within the match lifecycle (evalSpacesFull needs live WASM state).
+  g.match('  x').use(r => {
+    t.true(r.succeeded());
+    const root = r.getCstRoot();
+    const spaces = root.leadingSpaces;
+    t.truthy(spaces);
+
+    // Children should be a ListNode (from space*).
+    t.is(spaces.children.length, 1);
+    const list = spaces.children[0];
+    t.true(list.isList());
+
+    // Each character is wrapped in a 'space' nonterminal.
+    t.is(list.children.length, 2);
+    for (const child of list.children) {
+      t.true(child.isNonterminal());
+      t.is(child.ctorName, 'space');
+      t.is(child.matchLength, 1);
+    }
+  });
 });
 
 test('cst: source intervals', async t => {

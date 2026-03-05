@@ -262,6 +262,35 @@ export function getSpacesLenAt(memoPos: i32): i32 {
   return -1;
 }
 
+// Evaluate $spaces at a given position and return a full CST node pointer.
+// Used for lazy evaluation of leadingSpaces.children.
+export function evalSpacesFull(targetPos: i32): i32 {
+  const savedPos = pos;
+  pos = <u32>targetPos;
+
+  // Clear the sentinel so evalRuleBody doesn't short-circuit.
+  const savedMemo = memoTableGet(<usize>targetPos, IMPLICIT_SPACES_RULE_ID);
+  memoTableSet(<usize>targetPos, IMPLICIT_SPACES_RULE_ID, EMPTY);
+
+  const origNumBindings = bindings.length;
+  const result = evalRuleBody(IMPLICIT_SPACES_RULE_ID);
+
+  let nodePtr: i32 = 0;
+  if (result & RULE_EVAL_SUCCESS_FLAG) {
+    nodePtr = newNonterminalNode(<i32>(<usize>targetPos), <i32>pos, IMPLICIT_SPACES_RULE_ID, origNumBindings, 0);
+    // newNonterminalNode pushes the node to bindings; discard it.
+    bindings.length = origNumBindings;
+  } else {
+    bindings.length = origNumBindings;
+  }
+
+  // Restore memo entry and pos.
+  memoTableSet(<usize>targetPos, IMPLICIT_SPACES_RULE_ID, savedMemo);
+  pos = savedPos;
+
+  return nodePtr;
+}
+
 // The last entry in the function table is a compiler-generated dispatch
 // function that returns 1 for syntactic rules, 0 for lexical rules.
 @inline function isRuleSyntactic(ruleId: i32): bool {

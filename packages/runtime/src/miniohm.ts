@@ -360,6 +360,8 @@ export class Grammar {
       view: new DataView(buffer),
       input,
       getSpacesLenAt: exports.getSpacesLenAt,
+      evalSpacesFull: exports.evalSpacesFull,
+      memory: exports.memory,
     };
     const result = createMatchResult(this, ruleName || this._ruleNames[0], ctx, !!succeeded);
     result._heapWatermark = heapWatermark;
@@ -412,10 +414,16 @@ export class Grammar {
       view: new DataView(exports.memory.buffer),
       input: this._input,
       getSpacesLenAt: exports.getSpacesLenAt,
+      evalSpacesFull: exports.evalSpacesFull,
+      memory: exports.memory,
     };
     const spacesLen = Math.max(0, exports.getSpacesLenAt(0));
     const rootAddr = exports.bindingsAt(0);
-    return new CstNodeImpl(ctx, rootAddr, spacesLen) as CstNode;
+    const root = new CstNodeImpl(ctx, rootAddr, spacesLen);
+    if (spacesLen > 0) {
+      root.leadingSpaces = new LazySpacesNode(ctx, 0, spacesLen);
+    }
+    return root as CstNode;
   }
 
   /** @internal */
@@ -438,6 +446,8 @@ export interface MatchContext {
   view: DataView;
   input: string;
   getSpacesLenAt?: (pos: number) => number;
+  evalSpacesFull?: (pos: number) => number;
+  memory?: WebAssembly.Memory;
 }
 
 export type CstNode = NonterminalNode | TerminalNode | ListNode | OptNode | SeqNode;
@@ -653,11 +663,15 @@ class CstNodeImpl implements CstNodeBase {
 
       if (isTaggedTerminal(ptr)) {
         // Tagged terminals always have parent-level space skipping.
+        let spacesLen = 0;
         if (getSpacesLenAt) {
-          const spacesLen = getSpacesLenAt(startIdx);
+          spacesLen = Math.max(0, getSpacesLenAt(startIdx));
           if (spacesLen > 0) startIdx += spacesLen;
         }
         const node = new TaggedTerminalNode(this._ctx, ptr, startIdx);
+        if (spacesLen > 0) {
+          node.leadingSpaces = new LazySpacesNode(this._ctx, startIdx - spacesLen, spacesLen);
+        }
         children.push(node);
         startIdx += node.matchLength;
         continue;
@@ -668,15 +682,19 @@ class CstNodeImpl implements CstNodeBase {
       // skipping internally.
       const type = (this._ctx.view.getInt32(ptr + 8, true) &
         MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+      let spacesLen = 0;
       if (
         getSpacesLenAt &&
         (type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL)
       ) {
-        const spacesLen = getSpacesLenAt(startIdx);
+        spacesLen = Math.max(0, getSpacesLenAt(startIdx));
         if (spacesLen > 0) startIdx += spacesLen;
       }
 
       const node = new CstNodeImpl(this._ctx, ptr, startIdx);
+      if (spacesLen > 0) {
+        node.leadingSpaces = new LazySpacesNode(this._ctx, startIdx - spacesLen, spacesLen);
+      }
       children.push(node);
       startIdx += node.matchLength;
     }
@@ -748,6 +766,66 @@ class TaggedTerminalNode implements CstNodeBase {
   toString(): string {
     return `CstNode {ctorName: _terminal, sourceString: ${this.sourceString}, startIdx: ${this.startIdx} }`;
   }
+}
+
+class LazySpacesNode implements NonterminalNode {
+  readonly type = CstNodeType.NONTERMINAL;
+  readonly ctorName = 'spaces';
+  readonly leadingSpaces = undefined;
+  readonly source: {startIdx: number; endIdx: number};
+
+  /** @internal */
+  _ctx: MatchContext;
+  private _startIdx: number;
+  private _matchLength: number;
+  private _children?: CstNodeChildren;
+  private _sourceString?: string;
+
+  constructor(ctx: MatchContext, startIdx: number, matchLength: number) {
+    this._ctx = ctx;
+    this._startIdx = startIdx;
+    this._matchLength = matchLength;
+    this.source = {startIdx, endIdx: startIdx + matchLength};
+  }
+
+  get matchLength(): number {
+    return this._matchLength;
+  }
+
+  get sourceString(): string {
+    if (this._sourceString === undefined) {
+      this._sourceString = this._ctx.input.slice(this._startIdx, this._startIdx + this._matchLength);
+    }
+    return this._sourceString;
+  }
+
+  get children(): CstNodeChildren {
+    if (!this._children) {
+      this._children = this._parseChildren();
+    }
+    return this._children;
+  }
+
+  private _parseChildren(): CstNodeChildren {
+    const {evalSpacesFull, memory} = this._ctx;
+    assert(evalSpacesFull !== undefined, 'evalSpacesFull not available');
+    const ptr = evalSpacesFull(this._startIdx);
+    if (ptr === 0) return EMPTY_CHILDREN;
+    // Refresh the DataView in case evalSpacesFull triggered memory.grow().
+    if (memory && this._ctx.view.buffer !== memory.buffer) {
+      this._ctx.view = new DataView(memory.buffer);
+    }
+    const fullNode = new CstNodeImpl(this._ctx, ptr, this._startIdx);
+    return fullNode.children;
+  }
+
+  isSyntactic(): boolean { return false; }
+  isLexical(): boolean { return true; }
+  isNonterminal(): this is NonterminalNode { return true; }
+  isTerminal(): this is TerminalNode { return false; }
+  isOptional(): this is OptNode { return false; }
+  isSeq(): this is SeqNode { return false; }
+  isList(): this is ListNode { return false; }
 }
 
 abstract class WrapperNode implements CstNodeBase {

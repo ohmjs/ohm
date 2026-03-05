@@ -1489,6 +1489,7 @@ export class Compiler {
     // Re-export prebuilt functions used by the Ohm runtime.
     [
       'bindingsAt',
+      'evalSpacesFull',
       'getBindingsLength',
       'getRecordedFailuresLength',
       'getSpacesLenAt',

@@ -114,7 +114,7 @@ const pattern = positionalArgs[0];
       }
       reader.forEachChild(
         handle,
-        (child, _spacesLen, offset) => {
+        (child, _leadingSpaces, offset) => {
           walk(child, startIdx + offset);
         },
         startIdx
@@ -133,7 +133,7 @@ const pattern = positionalArgs[0];
         ans += reader.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, (child, _spacesLen) => {
+      reader.forEachChild(handle, (child, _leadingSpaces) => {
         walk(child);
       });
     }

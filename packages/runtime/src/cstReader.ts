@@ -6,8 +6,30 @@ const HANDLE_BITS = 27;
 const SHIFT = 2 ** HANDLE_BITS; // 134217728
 const MASK = SHIFT - 1; // 0x7FFFFFF
 
-/** Sentinel value indicating no node (e.g. no leading spaces). */
-export const NO_NODE = -1;
+/**
+ * Null handle — indicates no node (e.g. no leading spaces).
+ * 0 is safe because heap allocations start from __heap_base (always > 0),
+ * so no CST node pointer is ever 0.
+ */
+export const NULL_HANDLE = 0;
+
+/**
+ * Spaces handle encoding: (spacesLen << 2) | 0b10.
+ * Bit 1 set, bit 0 clear — distinct from heap pointers (low 2 bits = 00)
+ * and tagged terminals (bit 0 = 1).
+ *
+ * In packed mode, startIdx is embedded in the upper bits just like other
+ * handles: startIdx * SHIFT + rawSpacesHandle.
+ *
+ * These are internal — consumers use the normal accessor methods on CstReader.
+ */
+function makeSpacesHandle(spacesLen: number): number {
+  return (spacesLen << 2) | 2;
+}
+
+function isSpacesHandle(raw: number): boolean {
+  return (raw & 3) === 2;
+}
 
 /**
  * Pack a raw CST handle and startIdx into a single Number handle.
@@ -37,8 +59,9 @@ export function unpackStartIdx(handle: number): number {
  * accept either a raw handle or a handle with startIdx.
  *
  * forEachChild(handle, fn) iterates visible children. The callback receives
- * (childHandle, spacesLen, pos, index). spacesLen is the number of implicitly-
- * skipped space characters before this child (0 if none).
+ * (childHandle, leadingSpaces, pos, index). leadingSpaces is a handle for
+ * the leading spaces node (use accessor methods to inspect), or NULL_HANDLE
+ * if none.
  */
 export class CstReader {
   /** @internal */
@@ -48,8 +71,8 @@ export class CstReader {
 
   /** Handle for the root node (with startIdx packed in if packStartIdx was set). */
   readonly root: number;
-  /** Length of leading spaces before the root, or 0 if none. */
-  readonly rootLeadingSpacesLen: number;
+  /** Handle for leading spaces before the root, or NULL_HANDLE if none. */
+  readonly rootLeadingSpaces: number;
 
   /** Raw handle for the root node (without startIdx). */
   get rootHandle(): number {
@@ -61,10 +84,10 @@ export class CstReader {
   }
 
   /** @internal */
-  constructor(ctx: MatchContext, root: number, rootLeadingSpacesLen: number, packed: boolean) {
+  constructor(ctx: MatchContext, root: number, rootLeadingSpaces: number, packed: boolean) {
     this._ctx = ctx;
     this.root = root;
-    this.rootLeadingSpacesLen = rootLeadingSpacesLen;
+    this.rootLeadingSpaces = rootLeadingSpaces;
     this._packed = packed;
   }
 
@@ -74,53 +97,56 @@ export class CstReader {
   }
 
   isTerminal(handle: number): boolean {
-    handle = handle & MASK;
-    if (isTaggedTerminal(handle)) return true;
+    const raw = handle & MASK;
+    if (isSpacesHandle(raw)) return false;
+    if (isTaggedTerminal(raw)) return true;
     return (
-      ((this._ctx.view.getInt32(handle + 8, true) &
+      ((this._ctx.view.getInt32(raw + 8, true) &
         MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.TERMINAL
     );
   }
 
   isNonterminal(handle: number): boolean {
-    handle = handle & MASK;
-    if (isTaggedTerminal(handle)) return false;
+    const raw = handle & MASK;
+    if (isSpacesHandle(raw)) return true;
+    if (isTaggedTerminal(raw)) return false;
     return (
-      ((this._ctx.view.getInt32(handle + 8, true) &
+      ((this._ctx.view.getInt32(raw + 8, true) &
         MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.NONTERMINAL
     );
   }
 
   isList(handle: number): boolean {
-    handle = handle & MASK;
-    if (isTaggedTerminal(handle)) return false;
+    const raw = handle & MASK;
+    if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return false;
     return (
-      ((this._ctx.view.getInt32(handle + 8, true) &
+      ((this._ctx.view.getInt32(raw + 8, true) &
         MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.ITER_FLAG
     );
   }
 
   isOptional(handle: number): boolean {
-    handle = handle & MASK;
-    if (isTaggedTerminal(handle)) return false;
+    const raw = handle & MASK;
+    if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return false;
     return (
-      ((this._ctx.view.getInt32(handle + 8, true) &
+      ((this._ctx.view.getInt32(raw + 8, true) &
         MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.OPTIONAL
     );
   }
 
   /** Number of raw children stored in this match record. */
   childCount(handle: number): number {
-    handle = handle & MASK;
-    if (isTaggedTerminal(handle)) return 0;
-    return this._ctx.view.getUint32(handle, true);
+    const raw = handle & MASK;
+    if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return 0;
+    return this._ctx.view.getUint32(raw, true);
   }
 
   /** Length of matched input (in UTF-16 code units). */
   matchLength(handle: number): number {
-    handle = handle & MASK;
-    if (isTaggedTerminal(handle)) return handle >>> 1;
-    return this._ctx.view.getUint32(handle + 4, true);
+    const raw = handle & MASK;
+    if (isSpacesHandle(raw)) return raw >>> 2;
+    if (isTaggedTerminal(raw)) return raw >>> 1;
+    return this._ctx.view.getUint32(raw + 4, true);
   }
 
   /**
@@ -128,12 +154,13 @@ export class CstReader {
    * For other types: '_terminal', '_list', '_opt'.
    */
   ctorName(handle: number): string {
-    handle = handle & MASK;
-    if (isTaggedTerminal(handle)) return '_terminal';
-    const type = (this._ctx.view.getInt32(handle + 8, true) &
+    const raw = handle & MASK;
+    if (isSpacesHandle(raw)) return 'spaces';
+    if (isTaggedTerminal(raw)) return '_terminal';
+    const type = (this._ctx.view.getInt32(raw + 8, true) &
       MATCH_RECORD_TYPE_MASK) as MatchRecordType;
     if (type === MatchRecordType.NONTERMINAL) {
-      const ruleId = this._ctx.view.getInt32(handle + 8, true) >>> 2;
+      const ruleId = this._ctx.view.getInt32(raw + 8, true) >>> 2;
       return this._ctx.ruleNames[ruleId].split('<')[0];
     }
     if (type === MatchRecordType.TERMINAL) return '_terminal';
@@ -146,15 +173,15 @@ export class CstReader {
    * For ITER_FLAG: the arity (children per iteration).
    */
   details(handle: number): number {
-    handle = handle & MASK;
-    if (isTaggedTerminal(handle)) return 0;
-    return this._ctx.view.getInt32(handle + 8, true) >>> 2;
+    const raw = handle & MASK;
+    if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return 0;
+    return this._ctx.view.getInt32(raw + 8, true) >>> 2;
   }
 
   /** Handle (Wasm pointer) of the i-th raw child. */
   childAt(handle: number, i: number): number {
-    handle = handle & MASK;
-    return this._ctx.view.getUint32(handle + 16 + i * 4, true);
+    const raw = handle & MASK;
+    return this._ctx.view.getUint32(raw + 16 + i * 4, true);
   }
 
   /** Source string for a node. If startIdx is omitted, it is extracted from the handle. */
@@ -173,9 +200,10 @@ export class CstReader {
   }
 
   /**
-   * Iterate over children. The callback receives (childHandle, spacesLen,
-   * pos, index). spacesLen is the number of implicitly-skipped space
-   * characters before this child (0 if none).
+   * Iterate over children. The callback receives (childHandle, leadingSpaces,
+   * pos, index). leadingSpaces is a handle for the leading spaces node
+   * (works with accessor methods like matchLength, ctorName, sourceString),
+   * or NULL_HANDLE (0) if none.
    *
    * The meaning of `pos` depends on the mode:
    *   - Raw mode: offset from the parent's start position.
@@ -186,7 +214,7 @@ export class CstReader {
    */
   forEachChild(
     handle: number,
-    fn: (child: number, spacesLen: number, pos: number, index: number) => void,
+    fn: (child: number, leadingSpaces: number, pos: number, index: number) => void,
     parentStartIdx = 0
   ): void {
     if (this._packed) {
@@ -207,7 +235,7 @@ export class CstReader {
   private _forEachChildRaw(
     handle: number,
     parentStartIdx: number,
-    fn: (child: number, spacesLen: number, offset: number, index: number) => void
+    fn: (child: number, leadingSpaces: number, offset: number, index: number) => void
   ): void {
     if (isTaggedTerminal(handle)) return;
     const count = this._ctx.view.getUint32(handle, true);
@@ -215,22 +243,23 @@ export class CstReader {
     let offset = 0;
     for (let i = 0; i < count; i++) {
       const child = this._ctx.view.getUint32(handle + 16 + i * 4, true);
-      const spacesLen =
+      const rawSpacesLen =
         getSpacesLenAt && this._hasParentSpaces(child)
           ? Math.max(0, getSpacesLenAt(parentStartIdx + offset))
           : 0;
-      offset += spacesLen;
+      const leadingSpaces = rawSpacesLen > 0 ? makeSpacesHandle(rawSpacesLen) : 0;
+      offset += rawSpacesLen;
       const len = isTaggedTerminal(child)
         ? child >>> 1
         : this._ctx.view.getUint32(child + 4, true);
-      fn(child, spacesLen, offset, i);
+      fn(child, leadingSpaces, offset, i);
       offset += len;
     }
   }
 
   private _forEachChildPacked(
     handle: number,
-    fn: (child: number, spacesLen: number, pos: number, index: number) => void
+    fn: (child: number, leadingSpaces: number, pos: number, index: number) => void
   ): void {
     const raw = handle & MASK;
     if (isTaggedTerminal(raw)) return;
@@ -239,16 +268,20 @@ export class CstReader {
     const {getSpacesLenAt} = this._ctx;
     for (let i = 0; i < count; i++) {
       const rawChild = this._ctx.view.getUint32(raw + 16 + i * 4, true);
-      const spacesLen =
+      const rawSpacesLen =
         getSpacesLenAt && this._hasParentSpaces(rawChild)
           ? Math.max(0, getSpacesLenAt(childStart))
           : 0;
-      childStart += spacesLen;
+      // Pack the spaces handle with startIdx so sourceString() works.
+      const spacesStartIdx = childStart;
+      const leadingSpaces =
+        rawSpacesLen > 0 ? spacesStartIdx * SHIFT + makeSpacesHandle(rawSpacesLen) : 0;
+      childStart += rawSpacesLen;
       const childHandle = childStart * SHIFT + rawChild;
       const len = isTaggedTerminal(rawChild)
         ? rawChild >>> 1
         : this._ctx.view.getUint32(rawChild + 4, true);
-      fn(childHandle, spacesLen, childStart, i);
+      fn(childHandle, leadingSpaces, childStart, i);
       childStart += len;
     }
   }
@@ -285,5 +318,8 @@ export function createReader(
   const spacesLen = Math.max(0, exports.getSpacesLenAt(0));
   const rootPtr = exports.bindingsAt(0);
   const p = doPack ? pack : (h: number, _s: number) => h;
-  return new CstReader(ctx, p(rootPtr, spacesLen), spacesLen, doPack);
+  // Pack the spaces handle with startIdx=0 (root leading spaces always start at 0).
+  const rootLeadingSpaces =
+    spacesLen > 0 ? (doPack ? 0 * SHIFT + makeSpacesHandle(spacesLen) : makeSpacesHandle(spacesLen)) : 0;
+  return new CstReader(ctx, p(rootPtr, spacesLen), rootLeadingSpaces, doPack);
 }
