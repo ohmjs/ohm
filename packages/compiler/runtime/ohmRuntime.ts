@@ -85,15 +85,15 @@ type MemoEntry = i32;
 // Rest: failureOffset (signed int, 31 bits).
 @inline const MEMO_FAILURE_FLAG: MemoEntry = 0x1;
 
+// Memo entries with only bit 1 set represent implicit spaces.
+// Rest: matchLength (signed int, 30 bits).
+@inline const MEMO_SPACES_FLAG: MemoEntry = 2;
+
+
 // Left recursion bombs. These use extreme negative values that can't
 // collide with valid (failureOffset << 1) | 1 entries.
 @inline const UNUSED_LR_BOMB: MemoEntry = <i32>0x80000001;
 @inline const USED_LR_BOMB: MemoEntry = <i32>0x80000003;
-
-// Sentinel for $spaces memo entries. Instead of allocating a CST node,
-// we store (matchLength << 2) | MEMO_SPACES_SENTINEL.
-// bits [1:0] = 0b10 distinguishes from: pointers (aligned, 0b00), failures (0b_1).
-@inline const MEMO_SPACES_SENTINEL: MemoEntry = 2;
 
 // The result of a raw rule evaluation function.
 // Low bit: RULE_EVAL_SUCCESS_FLAG
@@ -251,13 +251,13 @@ export function evalSpacesImplicit(): void {
   evalRuleBody(1); // evaluate $spaces body (space*)
   const matchLen = <i32>pos - <i32>origPos;
   bindings.length = origNumBindings; // discard child bindings
-  memoTableSet(origPos, 1, (matchLen << 2) | MEMO_SPACES_SENTINEL);
+  memoTableSet(origPos, 1, (matchLen << 2) | MEMO_SPACES_FLAG);
 }
 
 // Look up spaces match length at a given position (for consumer use).
 export function getSpacesLenAt(memoPos: i32): i32 {
   const entry = memoTableGet(<usize>memoPos, 1);
-  if ((entry & 3) === MEMO_SPACES_SENTINEL) return entry >>> 2;
+  if ((entry & 3) === MEMO_SPACES_FLAG) return entry >>> 2;
   return 0;
 }
 
