@@ -2,36 +2,37 @@ import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import {fileURLToPath} from 'node:url';
+import {parseArgs} from 'node:util';
 
 import {Bench} from 'tinybench';
 import {grammar} from '@ohm-js/compiler/compat';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const ohmSource = readFileSync(path.join(__dirname, 'json.ohm'), 'utf-8');
-const json = grammar(ohmSource);
+const json = grammar(readFileSync(path.join(__dirname, 'json.ohm'), 'utf-8'));
+const fastjson = grammar(readFileSync(path.join(__dirname, 'fastjson.ohm'), 'utf-8'));
 
 // The benchmark file assigns a JSON string to `self.sample`.
 // Evaluate it to extract the actual JSON.
 const jsSource = readFileSync(path.join(__dirname, 'test/data/1K_json.js'), 'utf-8');
 const self: Record<string, string> = {};
 new Function('self', jsSource)(self);
-const input = self.sample;
+let input = self.sample;
 
-// Sanity check: verify JSON.parse and our grammar both accept it.
-JSON.parse(input);
-json.match(input).use(r => {
-  if (!r.succeeded()) throw new Error('Match failed');
+const {values} = parseArgs({
+  options: {'small-size': {type: 'boolean', default: false}},
 });
-console.error(`Input: 1K_json.js (${(input.length / 1024).toFixed(0)}KB)`);
+const smallSize = values['small-size'];
 
-const smallSize = process.argv.includes('--small-size');
-const iterations = smallSize ? 1 : 10;
+// For 'small-size' just test some random JSON.
+if (smallSize) {
+  input = '{ "extends": "../tsconfig.base.json", "include": ["*.ts", "test/**/*.ts"] }';
+}
 
 const bench = new Bench({
-  iterations,
+  iterations: smallSize ? 1 : 10,
   time: 0,
-  warmup: true,
+  warmup: !smallSize,
 });
 
 const opts = {
@@ -40,21 +41,9 @@ const opts = {
   },
 };
 
-bench.add(
-  'ohm (wasm)',
-  () => {
-    json.match(input).use(r => r.succeeded());
-  },
-  opts
-);
-
-bench.add(
-  'JSON.parse',
-  () => {
-    JSON.parse(input);
-  },
-  opts
-);
+bench.add('JSON', () => json.match(input).use(r => r.succeeded()), opts);
+bench.add('FastJSON', () => fastjson.match(input).use(r => r.succeeded()), opts);
+bench.add('JSON.parse', () => JSON.parse(input), opts);
 
 (async () => {
   await bench.run();
