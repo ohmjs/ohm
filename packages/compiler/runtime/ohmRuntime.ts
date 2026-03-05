@@ -144,20 +144,56 @@ export let rightmostFailurePos: i32 = 0;
 // parse, where that was rightmostFailurePos.
 export let errorMessagePos: i32 = -1;
 
+// Feature flags — set by the compiler's start function.
+// When disabled, fall back to Array<i32> bindings or direct heap.alloc.
+export let useChunkedBindings: i32 = 1;
+export let useCstChunks: i32 = 1;
+
 // Chunked bindings: a doubly-linked list of fixed-size chunks.
 // Each chunk: [prev: i32, next: i32, data: i32[BINDINGS_CHUNK_CAPACITY]]
 @inline const BINDINGS_CHUNK_HEADER: i32 = 8;
 @inline const BINDINGS_CHUNK_CAPACITY: i32 = 128;
 @inline const BINDINGS_CHUNK_BYTES: i32 = BINDINGS_CHUNK_HEADER + BINDINGS_CHUNK_CAPACITY * 4;
 
-export let bindingsChunk: i32 = 0;  // Pointer to current chunk
-export let bindingsIdx: i32 = 0;    // Index within current chunk (0..CAPACITY-1)
+export let bindingsChunk: i32 = 0;  // Pointer to current chunk (0 in array mode)
+export let bindingsIdx: i32 = 0;    // Index within current chunk (or array length in array mode)
 let bindingsFirstChunk: i32 = 0;    // Pointer to first chunk (for bindingsAt)
+
+// Array-based bindings (used when useChunkedBindings === 0).
+let bindingsArr: Array<i32> = new Array<i32>(0);
 
 export let recordedFailures: Array<i32> = new Array<i32>();
 
 @inline function max<T>(a: T, b: T): T {
   return a > b ? a : b;
+}
+
+// CST node chunk allocator — grabs large chunks from heap.alloc,
+// then bump-allocates individual CST nodes within each chunk.
+// This amortizes heap.alloc's per-allocation overhead (4-byte header +
+// 16-byte alignment) across many small CST node allocations.
+@inline const CST_CHUNK_SIZE: i32 = 65536; // 64KB
+let cstChunkPtr: i32 = 0;
+let cstChunkEnd: i32 = 0;
+
+@inline function cstAlloc(size: i32): i32 {
+  assert(size > 0 && (size & 3) === 0); // Must be 4-byte aligned (bit0=0 avoids tagged terminal collision)
+  if (!useCstChunks) return <i32>heap.alloc(<usize>size);
+  const ptr = cstChunkPtr;
+  const end = ptr + size;
+  if (end <= cstChunkEnd) {
+    cstChunkPtr = end;
+    return ptr;
+  }
+  return cstAllocSlow(size);
+}
+
+function cstAllocSlow(size: i32): i32 {
+  const chunkSize = size > CST_CHUNK_SIZE ? size : CST_CHUNK_SIZE;
+  const ptr = <i32>heap.alloc(<usize>chunkSize);
+  cstChunkPtr = ptr + size;
+  cstChunkEnd = ptr + chunkSize;
+  return ptr;
 }
 
 // Allocate a new bindings chunk, linking it after `prev`.
@@ -183,6 +219,11 @@ export function bindingsAdvanceChunk(): void {
 
 // Push a value onto the bindings.
 @inline function bindingsPush(value: i32): void {
+  if (!useChunkedBindings) {
+    bindingsArr.push(value);
+    bindingsIdx++;
+    return;
+  }
   store<i32>(<usize>(bindingsChunk + BINDINGS_CHUNK_HEADER + (bindingsIdx << 2)), value);
   bindingsIdx++;
   if (bindingsIdx === BINDINGS_CHUNK_CAPACITY) {
@@ -192,11 +233,13 @@ export function bindingsAdvanceChunk(): void {
 
 // Read a binding by chunk pointer and index within that chunk.
 @inline function bindingsRead(chunk: i32, idx: i32): i32 {
+  if (!useChunkedBindings) return unchecked(bindingsArr[idx]);
   return load<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)));
 }
 
 // Write a binding at a specific chunk + index position.
 @inline function bindingsWrite(chunk: i32, idx: i32, value: i32): void {
+  if (!useChunkedBindings) { unchecked(bindingsArr[idx] = value); return; }
   store<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)), value);
 }
 
@@ -300,8 +343,7 @@ export function evalSpacesImplicit(): void {
   const origIdx = bindingsIdx;
   evalRuleBody(IMPLICIT_SPACES_RULE_ID);
   const matchLen = <i32>pos - <i32>origPos;
-  bindingsChunk = origChunk; // discard child bindings
-  bindingsIdx = origIdx;
+  restoreBindings(origChunk, origIdx); // discard child bindings
   memoTableSet(origPos, IMPLICIT_SPACES_RULE_ID, (matchLen << 2) | MEMO_SPACES_FLAG);
 }
 
@@ -331,11 +373,9 @@ export function evalSpacesFull(targetPos: i32): i32 {
   if (result & RULE_EVAL_SUCCESS_FLAG) {
     nodePtr = newNonterminalNode(<i32>(<usize>targetPos), <i32>pos, IMPLICIT_SPACES_RULE_ID, origChunk, origIdx, 0);
     // newNonterminalNode pushes the node to bindings; discard it.
-    bindingsChunk = origChunk;
-    bindingsIdx = origIdx;
+    restoreBindings(origChunk, origIdx);
   } else {
-    bindingsChunk = origChunk;
-    bindingsIdx = origIdx;
+    restoreBindings(origChunk, origIdx);
   }
 
   // Restore memo entry and pos.
@@ -351,16 +391,29 @@ export function evalSpacesFull(targetPos: i32): i32 {
   return call_indirect<i32>(numRules, ruleId) !== 0;
 }
 
+// Restore bindings to a saved (chunk, idx) position. In array mode,
+// also trims the array to match.
+@inline function restoreBindings(chunk: i32, idx: i32): void {
+  bindingsChunk = chunk;
+  bindingsIdx = idx;
+  if (!useChunkedBindings) bindingsArr.length = idx;
+}
+
 function resetParsingState(): void {
   pos = 0;
   rightmostFailurePos = -1;
-  // Allocate initial chunk (or reuse first chunk after heap.reset()).
-  bindingsFirstChunk = allocBindingsChunk(0);
-  bindingsChunk = bindingsFirstChunk;
+  if (useChunkedBindings) {
+    // Allocate initial chunk (or reuse first chunk after heap.reset()).
+    bindingsFirstChunk = allocBindingsChunk(0);
+    bindingsChunk = bindingsFirstChunk;
+  } else {
+    bindingsArr = new Array<i32>();
+    bindingsChunk = 0;
+    bindingsFirstChunk = 0;
+  }
   bindingsIdx = 0;
 }
 
-// TODO: Move the logic for doing this into the Wasm module.
 export function resetHeap(): void {
   heap.reset();
 }
@@ -395,6 +448,9 @@ export function matchSetup(inputLength: i32): void {
   resetParsingState();
   errorMessagePos = -1;
   endPos = inputLength;
+  // Reset CST chunk allocator — previous chunks are freed by the watermark.
+  cstChunkPtr = 0;
+  cstChunkEnd = 0;
   inputBuf = heap.alloc(<usize>endPos << 1);  // 2 bytes per UTF-16 code unit
   fillInputBuffer(<i32>inputBuf, endPos);
   initMemoTable(endPos);
@@ -432,7 +488,7 @@ export function match(inputLength: i32, startRuleId: i32): ApplyResult {
 
 // Pre-fill a memo entry: a nonterminal node wrapping a single tagged terminal.
 export function memoizeToken(memoPos: i32, matchLength: i32, ruleId: i32): void {
-  const ptr = <i32>heap.alloc(<usize>(CST_NODE_OVERHEAD + 4));
+  const ptr = cstAlloc(CST_NODE_OVERHEAD + 4);
   cstSetCount(ptr, 1);
   cstSetMatchLength(ptr, matchLength);
   cstSetTypeAndDetails(ptr, (ruleId << 2) | NODE_TYPE_NONTERMINAL);
@@ -445,8 +501,8 @@ export function recordFailures(inputLength: i32, startRuleId: i32): void {
   const savedFailurePos = rightmostFailurePos;  // Save before reset
   matchSetup(inputLength);
   errorMessagePos = savedFailurePos;  // Override: record failures at this pos
-  recordedFailures = new Array<i32>();
-  fluffySaveStack = new Array<i32>();
+  recordedFailures.length = 0;
+  fluffySaveStack.length = 0;
   matchEval(startRuleId);  // Re-match with errorMessagePos set
 }
 
@@ -493,26 +549,6 @@ export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
   return false;
 }
 
-// Variant for rules whose body is known at compile time to produce exactly
-// one child binding. On success, uses in-place replacement instead of the
-// general count/copy path. Still saves/restores bindings on failure since
-// the body may partially push bindings before failing.
-export function evalApplyNoMemo1(ruleId: i32): ApplyResult {
-  const origPos = pos;
-  const origChunk = bindingsChunk;
-  const origIdx = bindingsIdx;
-  let result = evalRuleBody(ruleId);
-  const failurePos = maybeUpdateRightmostFailurePos(result);
-  if (result & RULE_EVAL_SUCCESS_FLAG) {
-    const failureOffset = failurePos - <i32>origPos;
-    newNonterminalNodeInPlace(origPos, pos, ruleId, failureOffset);
-    return true;
-  }
-  bindingsChunk = origChunk;
-  bindingsIdx = origIdx;
-  return false;
-}
-
 // Evaluates a trivial (non-memoized) rule that matches a single code point.
 // On success, reuses a preallocated nonterminal node instead of allocating.
 // Falls back to dynamic allocation if matchLength != 1 (e.g. surrogate pair).
@@ -540,7 +576,10 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResu
           : preallocNtBase + innerPreallocIdx * NODE_WITH_1_CHILD;
         store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), childPtr);
       }
-      bindingsWrite(origChunk, origIdx, ptr);
+      // Reset bindings to orig position and push the node — the body may
+      // have advanced to the next chunk if origIdx was at the boundary.
+      restoreBindings(origChunk, origIdx);
+      bindingsPush(ptr);
       return true;
     }
     // Slow path: non-BMP character (surrogate pair, matchLength=2).
@@ -601,8 +640,7 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origChunk: i32, o
 
     // Reset and try to improve on the current best.
     pos = origPos;
-    bindingsChunk = origChunk;
-    bindingsIdx = origIdx;
+    restoreBindings(origChunk, origIdx);
     const result = evalRuleBody(ruleId);
     succeeded = (result & RULE_EVAL_SUCCESS_FLAG) != 0;
     failurePos = result >> 1;
@@ -611,8 +649,7 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origChunk: i32, o
   pos = maxPos;
 
   // Set bindings to [node] at the orig position.
-  bindingsChunk = origChunk;
-  bindingsIdx = origIdx;
+  restoreBindings(origChunk, origIdx);
   bindingsPush(<i32>node);
   return succeeded;
 }
@@ -639,7 +676,7 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
     numChildren += bindingsIdx;
   }
 
-  const ptr: i32 = <i32>heap.alloc(<usize>(CST_NODE_OVERHEAD + numChildren * 4));
+  const ptr: i32 = cstAlloc(CST_NODE_OVERHEAD + numChildren * 4);
   cstSetCount(ptr, numChildren);
   cstSetMatchLength(ptr, endIdx - startIdx);
   cstSetTypeAndDetails(ptr, typeAndDetails);
@@ -651,15 +688,14 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
   for (let i = 0; i < numChildren; i++) {
     store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindingsRead(chunk, idx));
     idx++;
-    if (idx === BINDINGS_CHUNK_CAPACITY) {
+    if (useChunkedBindings && idx === BINDINGS_CHUNK_CAPACITY) {
       chunk = load<i32>(<usize>(chunk + 4)); // next
       idx = 0;
     }
   }
 
   // Reset bindings to orig position, then push the new node.
-  bindingsChunk = origChunk;
-  bindingsIdx = origIdx;
+  restoreBindings(origChunk, origIdx);
   bindingsPush(<i32>ptr);
   return ptr;
 }
@@ -667,36 +703,6 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
 export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origChunk: i32, origIdx: i32, failureOffset: i32): i32 {
   const typeAndDetails = (ruleId << 2) | NODE_TYPE_NONTERMINAL;
   return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, failureOffset);
-}
-
-// Specialized 1-child nonterminal node creation. The body has already pushed
-// exactly one child binding. This replaces it in-place with a nonterminal node
-// wrapping that child, avoiding the general count/copy loop entirely.
-export function newNonterminalNodeInPlace(startIdx: i32, endIdx: i32, ruleId: i32, failureOffset: i32): i32 {
-  // The child is at the position just before the current write cursor.
-  // Read it, then overwrite it with the new node.
-  let childChunk: i32;
-  let childIdx: i32;
-  if (bindingsIdx > 0) {
-    childChunk = bindingsChunk;
-    childIdx = bindingsIdx - 1;
-  } else {
-    // Child was the last entry of the previous chunk.
-    childChunk = load<i32>(<usize>bindingsChunk); // prev pointer
-    childIdx = BINDINGS_CHUNK_CAPACITY - 1;
-  }
-  const child = bindingsRead(childChunk, childIdx);
-
-  const ptr: i32 = <i32>heap.alloc(<usize>(CST_NODE_OVERHEAD + 4));
-  cstSetCount(ptr, 1);
-  cstSetMatchLength(ptr, endIdx - startIdx);
-  cstSetTypeAndDetails(ptr, (ruleId << 2) | NODE_TYPE_NONTERMINAL);
-  cstSetFailureOffset(ptr, failureOffset);
-  store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), child);
-
-  // Overwrite the child binding with the node pointer.
-  bindingsWrite(childChunk, childIdx, ptr);
-  return ptr;
 }
 
 export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, origIdx: i32, arity: i32, isOpt: bool): i32 {
@@ -723,6 +729,7 @@ export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, ori
 }
 
 export function getBindingsLength(): i32 {
+  if (!useChunkedBindings) return bindingsArr.length;
   // Compute total length by walking the chunk list from first to current.
   let count: i32 = 0;
   let chunk = bindingsFirstChunk;
@@ -734,6 +741,11 @@ export function getBindingsLength(): i32 {
 }
 
 export function setBindingsLength(len: i32): void {
+  if (!useChunkedBindings) {
+    bindingsArr.length = len;
+    bindingsIdx = len;
+    return;
+  }
   // Walk from first chunk to find the right chunk+idx.
   let chunk = bindingsFirstChunk;
   while (len >= BINDINGS_CHUNK_CAPACITY) {
@@ -745,6 +757,7 @@ export function setBindingsLength(len: i32): void {
 }
 
 export function bindingsAt(i: i32): i32 {
+  if (!useChunkedBindings) return unchecked(bindingsArr[i]);
   let chunk = bindingsFirstChunk;
   while (i >= BINDINGS_CHUNK_CAPACITY) {
     chunk = load<i32>(<usize>(chunk + 4)); // next

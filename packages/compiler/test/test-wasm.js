@@ -1880,3 +1880,93 @@ test('transitive prealloc: interaction with single-use inlining', async t => {
   t.is(root.children[0].children[0].ctorName, 'inner');
   t.is(root.children[0].children[0].children[0].ctorName, 'digit');
 });
+
+test('repeated matches do not leak memory', async t => {
+  const g = ohm.grammar('G { Start = letter+ ";" }');
+  const wasmGrammar = await toWasmGrammar(g);
+
+  const {__offset} = wasmGrammar._instance.exports;
+
+  // Run one match to warm up (allocates initial structures).
+  wasmGrammar.match('abc;').use(r => t.true(r.succeeded()));
+  const baselineOffset = __offset.value;
+
+  // Run many matches — each should be fully reclaimed by dispose().
+  for (let i = 0; i < 200; i++) {
+    wasmGrammar.match('hello;').use(r => t.true(r.succeeded()));
+  }
+
+  t.is(__offset.value, baselineOffset,
+    'heap offset should return to baseline after disposing all matches');
+});
+
+test('chunkedBindings: false', async t => {
+  const g = ohm.grammar('G { Start = letter+ ";" }');
+  const wasmGrammar = await toWasmGrammar(g, {chunkedBindings: false});
+
+  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
+  t.is(matchWithInput(wasmGrammar, ''), 0);
+  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
+
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'Start');
+  t.is(root.children.length, 2);
+  t.is(root.children[0].sourceString, 'abc');
+
+  // Run multiple matches to verify no leak / crash.
+  for (let i = 0; i < 50; i++) {
+    wasmGrammar.match('hello;').use(r => t.true(r.succeeded()));
+  }
+});
+
+test('cstChunks: false', async t => {
+  const g = ohm.grammar('G { Start = letter+ ";" }');
+  const wasmGrammar = await toWasmGrammar(g, {cstChunks: false});
+
+  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
+  t.is(matchWithInput(wasmGrammar, ''), 0);
+  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
+
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'Start');
+  t.is(root.children.length, 2);
+});
+
+test('both chunked options disabled', async t => {
+  const g = ohm.grammar('G { Start = letter+ ";" }');
+  const wasmGrammar = await toWasmGrammar(g, {chunkedBindings: false, cstChunks: false});
+
+  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
+  t.is(matchWithInput(wasmGrammar, ''), 0);
+  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
+
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'Start');
+  t.is(root.children.length, 2);
+  t.is(root.children[0].sourceString, 'abc');
+});
+
+test('cstAlloc returns aligned pointers', async t => {
+  // Verify that all CST node pointers are 4-byte aligned (bit 0 = 0),
+  // which is required so they don't collide with tagged terminals (bit 0 = 1).
+  const g = ohm.grammar('G { Start = item+\nitem = letter }');
+  const wasmGrammar = await toWasmGrammar(g);
+
+  // Match a string long enough to allocate many CST nodes.
+  wasmGrammar.match('abcdefghij').use(r => {
+    t.true(r.succeeded());
+    const root = r.getCstRoot();
+    // Walk the tree and check every node pointer is aligned.
+    function checkAligned(node) {
+      // The internal _base is the raw pointer into wasm memory.
+      if (node._base !== undefined) {
+        t.is(node._base & 3, 0,
+          `CST node pointer ${node._base} is not 4-byte aligned`);
+      }
+      for (const child of node.children) {
+        checkAligned(child);
+      }
+    }
+    checkAligned(root);
+  });
+});
