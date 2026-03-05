@@ -794,7 +794,10 @@ class LazySpacesNode implements NonterminalNode {
 
   get sourceString(): string {
     if (this._sourceString === undefined) {
-      this._sourceString = this._ctx.input.slice(this._startIdx, this._startIdx + this._matchLength);
+      this._sourceString = this._ctx.input.slice(
+        this._startIdx,
+        this._startIdx + this._matchLength
+      );
     }
     return this._sourceString;
   }
@@ -819,13 +822,27 @@ class LazySpacesNode implements NonterminalNode {
     return fullNode.children;
   }
 
-  isSyntactic(): boolean { return false; }
-  isLexical(): boolean { return true; }
-  isNonterminal(): this is NonterminalNode { return true; }
-  isTerminal(): this is TerminalNode { return false; }
-  isOptional(): this is OptNode { return false; }
-  isSeq(): this is SeqNode { return false; }
-  isList(): this is ListNode { return false; }
+  isSyntactic(): boolean {
+    return false;
+  }
+  isLexical(): boolean {
+    return true;
+  }
+  isNonterminal(): this is NonterminalNode {
+    return true;
+  }
+  isTerminal(): this is TerminalNode {
+    return false;
+  }
+  isOptional(): this is OptNode {
+    return false;
+  }
+  isSeq(): this is SeqNode {
+    return false;
+  }
+  isList(): this is ListNode {
+    return false;
+  }
 }
 
 abstract class WrapperNode implements CstNodeBase {

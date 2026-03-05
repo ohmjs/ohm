@@ -320,6 +320,10 @@ export function createReader(
   const p = doPack ? pack : (h: number, _s: number) => h;
   // Pack the spaces handle with startIdx=0 (root leading spaces always start at 0).
   const rootLeadingSpaces =
-    spacesLen > 0 ? (doPack ? 0 * SHIFT + makeSpacesHandle(spacesLen) : makeSpacesHandle(spacesLen)) : 0;
+    spacesLen > 0
+      ? doPack
+        ? 0 * SHIFT + makeSpacesHandle(spacesLen)
+        : makeSpacesHandle(spacesLen)
+      : 0;
   return new CstReader(ctx, p(rootPtr, spacesLen), rootLeadingSpaces, doPack);
 }

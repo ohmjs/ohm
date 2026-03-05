@@ -212,6 +212,26 @@ test('cst: leadingSpaces children via lazy parsing', async t => {
   });
 });
 
+test('cst: lazy parsing survives memory.grow()', async t => {
+  const g = await toWasmGrammar(ohm.grammar('G { Start = "x" }'));
+  g.match('  x').use(r => {
+    t.true(r.succeeded());
+    const root = r.getCstRoot();
+    const spaces = root.leadingSpaces;
+    t.truthy(spaces);
+
+    // Grow Wasm memory to detach the existing ArrayBuffer, simulating what
+    // happens when evalSpacesFull triggers memory.grow().
+    g._instance.exports.memory.grow(1);
+
+    // Accessing children should still work — the DataView gets refreshed.
+    t.is(spaces.children.length, 1);
+    const list = spaces.children[0];
+    t.true(list.isList());
+    t.is(list.children.length, 2);
+  });
+});
+
 test('cst: source intervals', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = "ab" "cd" }'));
   t.is(matchWithInput(g, 'abcd'), 1);
