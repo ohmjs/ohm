@@ -1896,8 +1896,11 @@ test('repeated matches do not leak memory', async t => {
     wasmGrammar.match('hello;').use(r => t.true(r.succeeded()));
   }
 
-  t.is(__offset.value, baselineOffset,
-    'heap offset should return to baseline after disposing all matches');
+  t.is(
+    __offset.value,
+    baselineOffset,
+    'heap offset should return to baseline after disposing all matches'
+  );
 });
 
 test('chunkedBindings: false', async t => {
@@ -1960,8 +1963,7 @@ test('cstAlloc returns aligned pointers', async t => {
     function checkAligned(node) {
       // The internal _base is the raw pointer into wasm memory.
       if (node._base !== undefined) {
-        t.is(node._base & 3, 0,
-          `CST node pointer ${node._base} is not 4-byte aligned`);
+        t.is(node._base & 3, 0, `CST node pointer ${node._base} is not 4-byte aligned`);
       }
       for (const child of node.children) {
         checkAligned(child);
