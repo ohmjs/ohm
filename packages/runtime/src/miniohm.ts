@@ -665,7 +665,10 @@ class CstNodeImpl implements CstNodeBase {
       // skipping internally.
       const type = (this._ctx.view.getInt32(ptr + 8, true) &
         MATCH_RECORD_TYPE_MASK) as MatchRecordType;
-      if (getSpacesLenAt && (type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL)) {
+      if (
+        getSpacesLenAt &&
+        (type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL)
+      ) {
         startIdx += getSpacesLenAt(startIdx);
       }
 

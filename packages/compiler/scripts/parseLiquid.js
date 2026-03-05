@@ -112,9 +112,13 @@ const pattern = positionalArgs[0];
         ans += inp.slice(startIdx, startIdx + reader.matchLength(handle));
         return;
       }
-      reader.forEachChild(handle, (child, _spacesLen, offset) => {
-        walk(child, startIdx + offset);
-      }, startIdx);
+      reader.forEachChild(
+        handle,
+        (child, _spacesLen, offset) => {
+          walk(child, startIdx + offset);
+        },
+        startIdx
+      );
     }
     walk(reader.rootHandle, reader.rootStartIdx);
     return ans;

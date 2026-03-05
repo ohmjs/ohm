@@ -215,8 +215,10 @@ export class CstReader {
     let offset = 0;
     for (let i = 0; i < count; i++) {
       const child = this._ctx.view.getUint32(handle + 16 + i * 4, true);
-      const spacesLen = (getSpacesLenAt && this._hasParentSpaces(child))
-        ? getSpacesLenAt(parentStartIdx + offset) : 0;
+      const spacesLen =
+        getSpacesLenAt && this._hasParentSpaces(child)
+          ? getSpacesLenAt(parentStartIdx + offset)
+          : 0;
       offset += spacesLen;
       const len = isTaggedTerminal(child)
         ? child >>> 1
@@ -237,8 +239,8 @@ export class CstReader {
     const {getSpacesLenAt} = this._ctx;
     for (let i = 0; i < count; i++) {
       const rawChild = this._ctx.view.getUint32(raw + 16 + i * 4, true);
-      const spacesLen = (getSpacesLenAt && this._hasParentSpaces(rawChild))
-        ? getSpacesLenAt(childStart) : 0;
+      const spacesLen =
+        getSpacesLenAt && this._hasParentSpaces(rawChild) ? getSpacesLenAt(childStart) : 0;
       childStart += spacesLen;
       const childHandle = childStart * SHIFT + rawChild;
       const len = isTaggedTerminal(rawChild)
