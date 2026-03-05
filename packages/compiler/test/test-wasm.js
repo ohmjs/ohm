@@ -1911,7 +1911,7 @@ test('bindings chunks contain valid CST nodes and tagged terminals', async t => 
   // Match a long enough string to spill into multiple chunks (capacity=128).
   t.is(matchWithInput(wasmGrammar, 'a'.repeat(150)), 1);
 
-  const {memory, bindingsChunk, bindingsIdx} = wasmGrammar._instance.exports;
+  const {memory, bindingsChunk} = wasmGrammar._instance.exports;
   const view = new DataView(memory.buffer);
 
   const CHUNK_HEADER = 8; // prev (i32) + next (i32)
@@ -1955,10 +1955,7 @@ test('bindings chunks contain valid CST nodes and tagged terminals', async t => 
       const val = view.getInt32(chunk + CHUNK_HEADER + i * 4, true);
       if (val === 0) continue;
       totalNonZero++;
-      t.true(
-        isValidBinding(val),
-        `chunk ${numChunks} slot ${i}: expected valid CST node or tagged terminal (got 0x${(val >>> 0).toString(16)})`
-      );
+      t.true(isValidBinding(val));
     }
 
     numChunks++;
