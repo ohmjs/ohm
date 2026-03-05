@@ -98,8 +98,10 @@ The `ohm-dev:latest` images is 1.62 GB and is 97% efficient with only 64 MB pote
 Build and push a versioned image to Docker Hub using the git tag as the version:
 
 ```sh
-DOCKER_REPO=<custom docker repo>
-VERSION=$(git describe --tag --dirty)
+export DOCKER_REPO=<custom docker repo>
+export VERSION=$(git describe --tag --dirty)
+# or export VERSION=$(cat packages/runtime/package.json | jq -r '.version')
+
 docker compose build
 docker login
 docker push ${DOCKER_REPO}/ohm:${VERSION}
