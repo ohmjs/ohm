@@ -51,7 +51,28 @@ docker run --rm ohm:latest help
 
 ---
 
-## 2. Building the image locally
+## 2. Development
+
+### Minimal Docker setup for macOS
+
+```sh
+brew install colima docker docker-compose docker-credential-helper
+colima start
+```
+
+Add to `~/.docker/config.json`:
+
+```json
+{
+  "cliPluginsExtraDirs": [
+    "/opt/homebrew/lib/docker/cli-plugins"
+  ]
+}
+```
+
+> **Note:** If you see `docker-credential-desktop` errors, remove `"credsStore": "desktop"` from `~/.docker/config.json` — it references Docker Desktop, which isn't needed with Colima.
+
+### Building the image locally
 
 Clone the repository and build the production image with Docker Compose:
 
@@ -65,9 +86,7 @@ This builds the `ohm:latest` image using the `dist` stage of the multi-stage `Do
 
 The `ohm:latest` image is 664 MB and is 99% space efficient (per `wagoodman/dive`).
 
----
-
-## 3. Building a development image
+### Building a development image
 
 The development image uses the `build` stage of the `Dockerfile`, which includes the full source tree, all dev dependencies, and the complete build output. This is useful for iterating on the compiler or debugging build issues.
 
@@ -91,9 +110,7 @@ The `-v $(pwd):/local` mount makes your current directory available at `/local` 
 
 The `ohm-dev:latest` images is 1.62 GB and is 97% efficient with only 64 MB potentially wasted space.
 
----
-
-## 4. Publishing to Docker Hub
+### Publishing to Docker Hub
 
 Build and push a versioned image to Docker Hub using the git tag as the version:
 
