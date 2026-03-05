@@ -109,6 +109,62 @@ test('cst: isSyntactic and isLexical', async t => {
   t.true(inner.isLexical());
 });
 
+test('cst: no leadingSpaces in lexical context', async t => {
+  // A syntactic rule (Start) invokes a lexical rule (ident) which has
+  // multiple children. Spaces between those children must NOT be skipped,
+  // and leadingSpaces must not be set on nodes in lexical context.
+  const g = await toWasmGrammar(
+    ohm.grammar('G { Start = ident ";" ident = letter+ }')
+  );
+
+  // Match with spaces in syntactic context (between ident and ";").
+  t.is(matchWithInput(g, 'abc ;'), 1);
+  const root = g._getCstRoot();
+
+  // Start is syntactic — children may have leadingSpaces.
+  t.true(root.isSyntactic());
+
+  const ident = root.children[0];
+  t.true(ident.isNonterminal());
+  t.true(ident.isLexical());
+
+  // The ident node itself is in syntactic context (child of Start),
+  // so it *could* have leadingSpaces. But inside ident, the letter+
+  // list should NOT have leadingSpaces — we're in lexical context.
+  const letterList = ident.children[0];
+  t.true(letterList.isList());
+  t.is(letterList.leadingSpaces, undefined);
+
+  // Each letter terminal inside the list should also lack leadingSpaces.
+  for (const child of letterList.children) {
+    t.is(child.leadingSpaces, undefined);
+  }
+
+  // The ";" terminal is in syntactic context (child of Start).
+  // It has a space before it, so verify it's still reachable but
+  // the space was skipped (sourceString is just ";").
+  const semi = root.children[1];
+  t.true(semi.isTerminal());
+  t.is(semi.sourceString, ';');
+
+  // Verify getSpacesLenAt distinguishes between "tried but matched 0"
+  // (syntactic context) and "never tried" (lexical context).
+  const {getSpacesLenAt} = g._instance.exports;
+
+  // Position 0: beginning of input in syntactic context — spaces were
+  // tried and matched 0 characters.
+  t.is(getSpacesLenAt(0), 0);
+
+  // Position 3 ("abc|"): between ident and ";" in syntactic context —
+  // spaces were tried and matched 1 character (the space).
+  t.is(getSpacesLenAt(3), 1);
+
+  // Position 1 ("a|bc"): inside the lexical ident rule — spaces were
+  // never tried here, so getSpacesLenAt should return -1.
+  t.is(getSpacesLenAt(1), -1);
+  t.is(getSpacesLenAt(2), -1);
+});
+
 test('cst: source intervals', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = "ab" "cd" }'));
   t.is(matchWithInput(g, 'abcd'), 1);

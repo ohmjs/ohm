@@ -413,7 +413,7 @@ export class Grammar {
       input: this._input,
       getSpacesLenAt: exports.getSpacesLenAt,
     };
-    const spacesLen = exports.getSpacesLenAt(0);
+    const spacesLen = Math.max(0, exports.getSpacesLenAt(0));
     const rootAddr = exports.bindingsAt(0);
     return new CstNodeImpl(ctx, rootAddr, spacesLen) as CstNode;
   }
@@ -653,7 +653,10 @@ class CstNodeImpl implements CstNodeBase {
 
       if (isTaggedTerminal(ptr)) {
         // Tagged terminals always have parent-level space skipping.
-        if (getSpacesLenAt) startIdx += getSpacesLenAt(startIdx);
+        if (getSpacesLenAt) {
+          const spacesLen = getSpacesLenAt(startIdx);
+          if (spacesLen > 0) startIdx += spacesLen;
+        }
         const node = new TaggedTerminalNode(this._ctx, ptr, startIdx);
         children.push(node);
         startIdx += node.matchLength;
@@ -669,7 +672,8 @@ class CstNodeImpl implements CstNodeBase {
         getSpacesLenAt &&
         (type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL)
       ) {
-        startIdx += getSpacesLenAt(startIdx);
+        const spacesLen = getSpacesLenAt(startIdx);
+        if (spacesLen > 0) startIdx += spacesLen;
       }
 
       const node = new CstNodeImpl(this._ctx, ptr, startIdx);

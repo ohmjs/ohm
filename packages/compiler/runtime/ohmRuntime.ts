@@ -53,10 +53,11 @@ declare function matchCaseInsensitive(stringIdx: i32): bool;
 @external("ohmRuntime", "fillInputBuffer")
 declare function fillInputBuffer(dest: i32, len: i32): i32;
 
-@inline const IMPLICIT_SPACE_SKIPPING = true;
-
 // TODO: Find a way to share these constants with JS?
 @inline const WASM_PAGE_SIZE: usize = 64 * 1024;
+
+// Must match the $spaces rule ID from Compiler constructor.
+@inline const IMPLICIT_SPACES_RULE_ID: i32 = 1;
 
 // Block-sparse memo table constants.
 // The rule ID space is partitioned into fixed-size blocks.
@@ -88,7 +89,6 @@ type MemoEntry = i32;
 // Memo entries with only bit 1 set represent implicit spaces.
 // Rest: matchLength (signed int, 30 bits).
 @inline const MEMO_SPACES_FLAG: MemoEntry = 2;
-
 
 // Left recursion bombs. These use extreme negative values that can't
 // collide with valid (failureOffset << 1) | 1 entries.
@@ -232,7 +232,7 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
 }
 
 @inline function maybeSkipSpaces(ruleId: i32): void {
-  if (IMPLICIT_SPACE_SKIPPING && isRuleSyntactic(ruleId)) {
+  if (isRuleSyntactic(ruleId)) {
     evalSpacesImplicit();
   }
 }
@@ -240,7 +240,7 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
 // Evaluate $spaces without allocating a CST node or pushing a binding.
 // Stores a sentinel in the memo table encoding just the match length.
 export function evalSpacesImplicit(): void {
-  const memo = memoTableGet(pos, 1);
+  const memo = memoTableGet(pos, IMPLICIT_SPACES_RULE_ID);
   if (memo !== EMPTY) {
     // Memo hit — sentinel from previous evaluation at this position.
     pos += <u32>(memo >>> 2);
@@ -248,17 +248,18 @@ export function evalSpacesImplicit(): void {
   }
   const origPos = pos;
   const origNumBindings = bindings.length;
-  evalRuleBody(1); // evaluate $spaces body (space*)
+  evalRuleBody(IMPLICIT_SPACES_RULE_ID);
   const matchLen = <i32>pos - <i32>origPos;
   bindings.length = origNumBindings; // discard child bindings
-  memoTableSet(origPos, 1, (matchLen << 2) | MEMO_SPACES_FLAG);
+  memoTableSet(origPos, IMPLICIT_SPACES_RULE_ID, (matchLen << 2) | MEMO_SPACES_FLAG);
 }
 
 // Look up spaces match length at a given position (for consumer use).
+// Returns -1 if spaces were never tried at this position (lexical context).
 export function getSpacesLenAt(memoPos: i32): i32 {
-  const entry = memoTableGet(<usize>memoPos, 1);
+  const entry = memoTableGet(<usize>memoPos, IMPLICIT_SPACES_RULE_ID);
   if ((entry & 3) === MEMO_SPACES_FLAG) return entry >>> 2;
-  return 0;
+  return -1;
 }
 
 // The last entry in the function table is a compiler-generated dispatch
