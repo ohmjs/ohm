@@ -4,8 +4,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      tags:
+        - ohm:latest
+      target: dist
     volumes:
       - .:/local
-    entrypoint: [""]
-    command: ["sh", "-c", "sleep infinity"]
-    # command: ["-o", "ohm-grammar.wasm", "packages/ohm-js/src/ohm-grammar.ohm"]
+    command: ["help"]

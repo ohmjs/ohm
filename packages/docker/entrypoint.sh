@@ -1,30 +1,45 @@
-#!/bin/sh
+#!/bin/bash
+
+function usage() {
+  echo "Usage: docker run --rm -v \`pwd\`:/local ohm:lastest <cmd>"
+  echo ""
+  echo "  where cmd is compile, generateBundles or shell"
+  echo ""
+  echo "  compile usage: [(--debug|-d)] [(--grammarName|-g) <name>] [(--output|-o) <file>] <ohm-grammar-file>"
+  echo ""
+  echo "  generateBundles - currently not working"
+  echo ""
+  echo "  shell: drop into a bash shell in the container, useful for debug the docker build"
+  echo ""
+}
 
 if [ "$1" = "help" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-  echo "Usage: docker run --rm -v ${PWD}:/local ohm:dev cmd"
-  echo "  cmd = compile, generateBundles"
+  usage
   exit 0
 fi
-
-mkdir -p /local
-cd /local
 
 case "$1" in
   compile)
     shift
+    mkdir -p /local
+    cd /local
     node \
       --disable-warning=ExperimentalWarning \
-      /workspace/packages/compiler/src/cli.ts "$@"
+      /ohm/packages/compiler/dist/src/cli.js "$@"
     ;;
   generateBundles)
     set -x
     shift
-    node /workspace/packages/cli/src/cli.js generateBundles "$@"
+    mkdir -p /local
+    cd /local
+    node /ohm/packages/cli/src/cli.js generateBundles "$@"
+    ;;
+  shell)
+    /bin/bash
     ;;
   *)
     echo "Unknown command: $1"
-    echo "Usage: docker run --rm -v \${PWD}:/local ohm:dev cmd"
-    echo "  cmd = compile, generateBundles"
+    usage
     exit 1
     ;;
 esac
