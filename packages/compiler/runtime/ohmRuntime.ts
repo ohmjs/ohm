@@ -179,20 +179,15 @@ let cstChunkEnd: i32 = 0;
 @inline function cstAlloc(size: i32): i32 {
   assert(size > 0 && (size & 3) === 0); // Must be 4-byte aligned (bit0=0 avoids tagged terminal collision)
   if (!useCstChunks) return <i32>heap.alloc(<usize>size);
-  const ptr = cstChunkPtr;
+  let ptr = cstChunkPtr;
   const end = ptr + size;
-  if (end <= cstChunkEnd) {
-    cstChunkPtr = end;
-    return ptr;
+  if (end > cstChunkEnd) {
+    // Slow path: allocate a new chunk.
+    const chunkSize = size > CST_CHUNK_SIZE ? size : CST_CHUNK_SIZE;
+    ptr = <i32>heap.alloc(<usize>chunkSize);
+    cstChunkEnd = ptr + chunkSize;
   }
-  return cstAllocSlow(size);
-}
-
-function cstAllocSlow(size: i32): i32 {
-  const chunkSize = size > CST_CHUNK_SIZE ? size : CST_CHUNK_SIZE;
-  const ptr = <i32>heap.alloc(<usize>chunkSize);
   cstChunkPtr = ptr + size;
-  cstChunkEnd = ptr + chunkSize;
   return ptr;
 }
 
