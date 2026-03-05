@@ -34,7 +34,6 @@ const CHAR_CODE_END = 0xffffffff;
 import type {CompileOptions} from './api.ts';
 
 interface CompilerInternalOptions extends CompileOptions {
-  cstChunks?: boolean;
   chunkedBindings?: boolean;
   preallocNodes?: boolean;
   startRules?: string[]; // TODO: Should probably be public (in CompileOptions).
@@ -896,7 +895,6 @@ interface RuleInfo {
 
 // Maps flag names (case-insensitive) to their corresponding option key.
 const knownFlags: Record<string, keyof CompilerInternalOptions> = {
-  cstchunks: 'cstChunks',
   chunkedbindings: 'chunkedBindings',
 };
 
@@ -1564,6 +1562,8 @@ export class Compiler {
     for (const name of [
       '__heap_base',
       '__offset',
+      'bindingsChunk',
+      'bindingsIdx',
       'memoIndexBase',
       'numMemoBlocks',
       'pos',
@@ -1688,10 +1688,6 @@ export class Compiler {
       // setNumMemoizedRules also computes numMemoBlocks.
       asm.i32Const(this._maxMemoizedRuleId);
       asm.callPrebuiltFunc('setNumMemoizedRules');
-      if (this._options.cstChunks === false) {
-        asm.i32Const(0);
-        asm.globalSet('useCstChunks');
-      }
       if (this._options.chunkedBindings === false) {
         asm.i32Const(0);
         asm.globalSet('useChunkedBindings');

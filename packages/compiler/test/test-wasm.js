@@ -1903,6 +1903,71 @@ test('repeated matches do not leak memory', async t => {
   );
 });
 
+test('bindings chunks contain valid CST nodes and tagged terminals', async t => {
+  // Use a grammar with iteration to generate many bindings during parsing.
+  const g = ohm.grammar('G { Start = item+\nitem = letter }');
+  const wasmGrammar = await toWasmGrammar(g);
+
+  // Match a long enough string to spill into multiple chunks (capacity=128).
+  t.is(matchWithInput(wasmGrammar, 'a'.repeat(150)), 1);
+
+  const {memory, bindingsChunk, bindingsIdx} = wasmGrammar._instance.exports;
+  const view = new DataView(memory.buffer);
+
+  const CHUNK_HEADER = 8; // prev (i32) + next (i32)
+  const CHUNK_CAPACITY = 128;
+
+  // Walk backwards from bindingsChunk to find the first chunk.
+  let firstChunk = bindingsChunk.value;
+  while (view.getInt32(firstChunk, true) !== 0) {
+    firstChunk = view.getInt32(firstChunk, true);
+  }
+
+  // Checks that a value is a valid CST node pointer or tagged terminal.
+  function isValidBinding(val) {
+    // Tagged terminal: bit 0 = 1.
+    if (val & 1) return true;
+    // CST node pointer: must be 4-byte aligned.
+    if ((val & 3) !== 0) return false;
+    // Read the CST node header and sanity-check.
+    const count = view.getInt32(val, true);
+    const matchLength = view.getInt32(val + 4, true);
+    return count >= 0 && matchLength >= 0;
+  }
+
+  // Walk forward through all chunks. Every non-zero slot should be a valid
+  // CST node or tagged terminal, since memory is never freed.
+  let chunk = firstChunk;
+  let numChunks = 0;
+  let totalNonZero = 0;
+  while (chunk !== 0) {
+    // Verify prev/next consistency.
+    const prev = view.getInt32(chunk, true);
+    const next = view.getInt32(chunk + 4, true);
+    if (numChunks === 0) {
+      t.is(prev, 0, 'first chunk prev should be 0');
+    }
+    if (next !== 0) {
+      t.is(view.getInt32(next, true), chunk, 'next chunk prev should point back');
+    }
+
+    for (let i = 0; i < CHUNK_CAPACITY; i++) {
+      const val = view.getInt32(chunk + CHUNK_HEADER + i * 4, true);
+      if (val === 0) continue;
+      totalNonZero++;
+      t.true(
+        isValidBinding(val),
+        `chunk ${numChunks} slot ${i}: expected valid CST node or tagged terminal (got 0x${(val >>> 0).toString(16)})`
+      );
+    }
+
+    numChunks++;
+    chunk = next;
+  }
+  t.true(numChunks >= 2, `should have at least two chunks (got ${numChunks})`);
+  t.true(totalNonZero >= 1, 'should have found at least one non-zero binding');
+});
+
 test('chunkedBindings: false', async t => {
   const g = ohm.grammar('G { Start = letter+ ";" }');
   const wasmGrammar = await toWasmGrammar(g, {chunkedBindings: false});
@@ -1922,53 +1987,3 @@ test('chunkedBindings: false', async t => {
   }
 });
 
-test('cstChunks: false', async t => {
-  const g = ohm.grammar('G { Start = letter+ ";" }');
-  const wasmGrammar = await toWasmGrammar(g, {cstChunks: false});
-
-  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
-  t.is(matchWithInput(wasmGrammar, ''), 0);
-  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
-
-  const root = wasmGrammar._getCstRoot();
-  t.is(root.ctorName, 'Start');
-  t.is(root.children.length, 2);
-});
-
-test('both chunked options disabled', async t => {
-  const g = ohm.grammar('G { Start = letter+ ";" }');
-  const wasmGrammar = await toWasmGrammar(g, {chunkedBindings: false, cstChunks: false});
-
-  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
-  t.is(matchWithInput(wasmGrammar, ''), 0);
-  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
-
-  const root = wasmGrammar._getCstRoot();
-  t.is(root.ctorName, 'Start');
-  t.is(root.children.length, 2);
-  t.is(root.children[0].sourceString, 'abc');
-});
-
-test('cstAlloc returns aligned pointers', async t => {
-  // Verify that all CST node pointers are 4-byte aligned (bit 0 = 0),
-  // which is required so they don't collide with tagged terminals (bit 0 = 1).
-  const g = ohm.grammar('G { Start = item+\nitem = letter }');
-  const wasmGrammar = await toWasmGrammar(g);
-
-  // Match a string long enough to allocate many CST nodes.
-  wasmGrammar.match('abcdefghij').use(r => {
-    t.true(r.succeeded());
-    const root = r.getCstRoot();
-    // Walk the tree and check every node pointer is aligned.
-    function checkAligned(node) {
-      // The internal _base is the raw pointer into wasm memory.
-      if (node._base !== undefined) {
-        t.is(node._base & 3, 0, `CST node pointer ${node._base} is not 4-byte aligned`);
-      }
-      for (const child of node.children) {
-        checkAligned(child);
-      }
-    }
-    checkAligned(root);
-  });
-});

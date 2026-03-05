@@ -147,8 +147,6 @@ export let errorMessagePos: i32 = -1;
 // Feature flags — set by the compiler's start function.
 // When disabled, fall back to Array<i32> bindings or direct heap.alloc.
 export let useChunkedBindings: i32 = 1;
-export let useCstChunks: i32 = 1;
-
 // Chunked bindings: a doubly-linked list of fixed-size chunks.
 // Each chunk: [prev: i32, next: i32, data: i32[BINDINGS_CHUNK_CAPACITY]]
 @inline const BINDINGS_CHUNK_HEADER: i32 = 8;
@@ -166,29 +164,6 @@ export let recordedFailures: Array<i32> = new Array<i32>();
 
 @inline function max<T>(a: T, b: T): T {
   return a > b ? a : b;
-}
-
-// CST node chunk allocator — grabs large chunks from heap.alloc,
-// then bump-allocates individual CST nodes within each chunk.
-// This amortizes heap.alloc's per-allocation overhead (4-byte header +
-// 16-byte alignment) across many small CST node allocations.
-@inline const CST_CHUNK_SIZE: i32 = 65536; // 64KB
-let cstChunkPtr: i32 = 0;
-let cstChunkEnd: i32 = 0;
-
-@inline function cstAlloc(size: i32): i32 {
-  assert(size > 0 && (size & 3) === 0); // Must be 4-byte aligned (bit0=0 avoids tagged terminal collision)
-  if (!useCstChunks) return <i32>heap.alloc(<usize>size);
-  let ptr = cstChunkPtr;
-  const end = ptr + size;
-  if (end > cstChunkEnd) {
-    // Slow path: allocate a new chunk.
-    const chunkSize = size > CST_CHUNK_SIZE ? size : CST_CHUNK_SIZE;
-    ptr = <i32>heap.alloc(<usize>chunkSize);
-    cstChunkEnd = ptr + chunkSize;
-  }
-  cstChunkPtr = ptr + size;
-  return ptr;
 }
 
 // Allocate a new bindings chunk, linking it after `prev`.
@@ -443,9 +418,6 @@ export function matchSetup(inputLength: i32): void {
   resetParsingState();
   errorMessagePos = -1;
   endPos = inputLength;
-  // Reset CST chunk allocator — previous chunks are freed by the watermark.
-  cstChunkPtr = 0;
-  cstChunkEnd = 0;
   inputBuf = heap.alloc(<usize>endPos << 1);  // 2 bytes per UTF-16 code unit
   fillInputBuffer(<i32>inputBuf, endPos);
   initMemoTable(endPos);
@@ -483,7 +455,7 @@ export function match(inputLength: i32, startRuleId: i32): ApplyResult {
 
 // Pre-fill a memo entry: a nonterminal node wrapping a single tagged terminal.
 export function memoizeToken(memoPos: i32, matchLength: i32, ruleId: i32): void {
-  const ptr = cstAlloc(CST_NODE_OVERHEAD + 4);
+  const ptr = <i32>heap.alloc(<usize>(CST_NODE_OVERHEAD + 4));
   cstSetCount(ptr, 1);
   cstSetMatchLength(ptr, matchLength);
   cstSetTypeAndDetails(ptr, (ruleId << 2) | NODE_TYPE_NONTERMINAL);
@@ -671,7 +643,7 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
     numChildren += bindingsIdx;
   }
 
-  const ptr: i32 = cstAlloc(CST_NODE_OVERHEAD + numChildren * 4);
+  const ptr: i32 = <i32>heap.alloc(<usize>(CST_NODE_OVERHEAD + numChildren * 4));
   cstSetCount(ptr, numChildren);
   cstSetMatchLength(ptr, endIdx - startIdx);
   cstSetTypeAndDetails(ptr, typeAndDetails);
