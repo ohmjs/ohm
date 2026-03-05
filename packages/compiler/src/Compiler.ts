@@ -34,9 +34,16 @@ const CHAR_CODE_END = 0xffffffff;
 import type {CompileOptions} from './api.ts';
 
 interface CompilerInternalOptions extends CompileOptions {
+  cstChunks?: boolean;
+  chunkedBindings?: boolean;
   preallocNodes?: boolean;
   startRules?: string[]; // TODO: Should probably be public (in CompileOptions).
 }
+
+const defaultOptions: CompilerInternalOptions = {
+  chunkedBindings: true,
+  preallocNodes: true,
+};
 
 const {instr} = w;
 
@@ -887,6 +894,34 @@ interface RuleInfo {
   _isInlineRule?: boolean;
 }
 
+// Maps flag names (case-insensitive) to their corresponding option key.
+const knownFlags: Record<string, keyof CompilerInternalOptions> = {
+  cstchunks: 'cstChunks',
+  chunkedbindings: 'chunkedBindings',
+};
+
+function parseOptions(options?: CompilerInternalOptions): CompilerInternalOptions {
+  // OHM_FLAGS env var provides defaults (v8-style flags, like NODE_OPTIONS).
+  // Explicit options passed in take precedence.
+  const envFlags = new Set(
+    (typeof process !== 'undefined' ? (process.env.OHM_FLAGS ?? '') : '')
+      .split(/\s+/)
+      .filter(Boolean)
+  );
+  const envDefaults: CompilerInternalOptions = {};
+  for (const flag of envFlags) {
+    const negated = flag.startsWith('--no');
+    const name = negated ? flag.slice('--no'.length) : flag.slice('--'.length);
+    const key = knownFlags[name.toLowerCase()];
+    if (key) {
+      envDefaults[key] = !negated as any;
+    } else {
+      console.error(`Unknown OHM_FLAGS option: ${flag}`);
+    }
+  }
+  return {...defaultOptions, ...envDefaults, ...options};
+}
+
 export class Compiler {
   grammar: ParsedGrammar;
   importDecls: FuncDecl[];
@@ -922,7 +957,7 @@ export class Compiler {
       grammar = parseGrammar(grammar.source.contents);
     }
 
-    this._options = {preallocNodes: true, ...options};
+    this._options = parseOptions(options);
     this.grammar = grammar;
 
     this.importDecls = [];

@@ -3,8 +3,6 @@ import {grammars as parseGrammars} from './parseGrammars.ts';
 
 export interface CompileOptions {
   debug?: boolean;
-  cstChunks?: boolean;
-  chunkedBindings?: boolean;
 }
 
 export function compile(source: string, options?: CompileOptions): Uint8Array {
