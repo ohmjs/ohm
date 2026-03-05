@@ -90,3 +90,21 @@ docker run -v ${PWD}:/local -it --rm ohm-dev:latest shell
 The `-v $(pwd):/local` mount makes your current directory available at `/local` inside the container. The `shell` command drops you into a bash session where you can inspect the built artifacts under `/ohm/` or run CLI commands directly.
 
 The `ohm-dev:latest` images is 1.62 GB and is 97% efficient with only 64 MB potentially wasted space.
+
+---
+
+## 4. Publishing to Docker Hub
+
+Build and push a versioned image to Docker Hub using the git tag as the version:
+
+```sh
+DOCKER_REPO=<custom docker repo>
+VERSION=$(git describe --tag --dirty)
+docker compose build
+docker login
+docker push ${DOCKER_REPO}/ohm:${VERSION}
+```
+
+`git describe --tag --dirty` produces a version string based on the nearest git tag, appending commit info and a `-dirty` suffix if there are uncommitted changes.
+
+The defaults in `docker-compose.yml` are `DOCKER_REPO=ohmjs` and `VERSION=development`. See [docker-compose.yml](../docker-compose.yml) for details.

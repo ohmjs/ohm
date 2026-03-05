@@ -6,6 +6,7 @@ services:
       dockerfile: Dockerfile
       tags:
         - ohm:latest
+        - ${DOCKER_REPO:-ohmjs}/ohm:${VERSION:-development}
       target: dist
     volumes:
       - .:/local
