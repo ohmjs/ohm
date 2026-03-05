@@ -99,12 +99,13 @@ Build and push a versioned image to Docker Hub using the git tag as the version:
 
 ```sh
 export DOCKER_REPO=<custom docker repo>
-export VERSION=$(git describe --tag --dirty)
-# or export VERSION=$(cat packages/runtime/package.json | jq -r '.version')
+export VERSION=$(cat packages/runtime/package.json | jq -r '.version')
+# or export VERSION=$(git describe --tag --dirty)
 
-docker compose build
+# docker buildx create --use --name mybuilder
+# docker buildx inspect --bootstrap
 docker login
-docker push ${DOCKER_REPO}/ohm:${VERSION}
+docker buildx bake --push
 ```
 
 `git describe --tag --dirty` produces a version string based on the nearest git tag, appending commit info and a `-dirty` suffix if there are uncommitted changes.
