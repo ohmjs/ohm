@@ -7,6 +7,10 @@ services:
       tags:
         - ohm:latest
         - ${DOCKER_REPO:-ohmjs}/ohm:${VERSION:-development}
+      labels:
+        - org.opencontainers.image.source=https://github.com/${OWNER:-ohmjs}/${REPO:-ohm}
+        - org.opencontainers.image.licenses=MIT
+        - org.opencontainers.image.description=Ohm tooling - A library and language for building parsers, interpreters, compilers, etc.
       target: dist
     volumes:
       - .:/local
