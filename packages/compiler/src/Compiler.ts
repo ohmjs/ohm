@@ -11,8 +11,6 @@ import {grammar as parseGrammar} from './parseGrammars.ts';
 
 // eslint-disable-next-line no-undef
 const DEBUG = typeof process !== 'undefined' && process.env.OHM_DEBUG === '1';
-const FAST_SAVE_BINDINGS = true;
-const FAST_RESTORE_BINDINGS = true;
 
 const IMPLICIT_SPACE_SKIPPING = true;
 
@@ -36,9 +34,15 @@ const CHAR_CODE_END = 0xffffffff;
 import type {CompileOptions} from './api.ts';
 
 interface CompilerInternalOptions extends CompileOptions {
+  chunkedBindings?: boolean;
   preallocNodes?: boolean;
   startRules?: string[]; // TODO: Should probably be public (in CompileOptions).
 }
+
+const defaultOptions: CompilerInternalOptions = {
+  chunkedBindings: true,
+  preallocNodes: true,
+};
 
 const {instr} = w;
 
@@ -101,15 +105,21 @@ class SavedValue<K extends string> {
   }
 }
 
+interface SavedBindingsState {
+  getChunk(): void;
+  getIdx(): void;
+  restore(): void;
+}
+
 interface SavedBacktrackPoint {
   readonly pos: SavedValue<'pos'>;
-  readonly bindings: SavedValue<'bindings'>;
+  readonly bindings: SavedBindingsState;
 }
 
 /** A no-op backtrack point whose save/restore emit no code. */
 const noopBacktrackPoint: SavedBacktrackPoint = {
   pos: {get() {}, restore() {}} as unknown as SavedValue<'pos'>,
-  bindings: {get() {}, restore() {}} as unknown as SavedValue<'bindings'>,
+  bindings: {getChunk() {}, getIdx() {}, restore() {}},
 };
 
 class StringTable {
@@ -246,13 +256,14 @@ class Assembler {
   _typeMap: TypeMap;
   _frameDepth: number;
   _savedAtDepthStack: Set<string>[];
+  useChunkedBindings: boolean;
 
   static ALIGN_1_BYTE = 0;
   static ALIGN_2_BYTES = 1;
   static ALIGN_4_BYTES = 2;
   static CST_NODE_HEADER_SIZE_BYTES = 8;
 
-  constructor(typeMap: TypeMap) {
+  constructor(typeMap: TypeMap, useChunkedBindings = true) {
     this._functionDecls = [];
 
     // Keep track of loops/blocks to make it easier (and safer) to generate
@@ -264,6 +275,7 @@ class Assembler {
     this._locals = undefined;
     this._frameDepth = 0;
     this._savedAtDepthStack = [];
+    this.useChunkedBindings = useChunkedBindings;
 
     this._typeMap = typeMap;
   }
@@ -607,26 +619,39 @@ class Assembler {
     });
   }
 
-  saveNumBindings(): SavedValue<'bindings'> {
-    if (FAST_SAVE_BINDINGS) {
-      this.globalGet('bindings');
-      this.i32Load(12); // Array<i32>.length_
-    } else {
+  saveNumBindings(): SavedBindingsState {
+    if (!this.useChunkedBindings) {
+      // Array mode: save a single length value.
       this.callPrebuiltFunc('getBindingsLength');
+      const lenLocal = this.ensureDepthLocal('origBindingsLen');
+      this.localSet(lenLocal);
+      return {
+        getChunk: () => this.i32Const(0),
+        getIdx: () => this.localGet(lenLocal),
+        restore: () => {
+          this.localGet(lenLocal);
+          this.callPrebuiltFunc('setBindingsLength');
+        },
+      };
     }
-    const name = this.ensureDepthLocal('origBindingsLen');
-    this.localSet(name);
-    return new SavedValue('bindings', this, name, () => {
-      if (FAST_RESTORE_BINDINGS) {
-        // It's safe to directly set the length as long as it's shrinking.
-        this.globalGet('bindings');
-        this.localGet(name);
-        this.i32Store(12); // Array<i32>.length_
-      } else {
-        this.localGet(name);
-        this.callPrebuiltFunc('setBindingsLength');
-      }
-    });
+    this.globalGet('bindingsChunk');
+    const chunkLocal = this.ensureDepthLocal('origBindingsChunk');
+    this.localSet(chunkLocal);
+
+    this.globalGet('bindingsIdx');
+    const idxLocal = this.ensureDepthLocal('origBindingsIdx');
+    this.localSet(idxLocal);
+
+    return {
+      getChunk: () => this.localGet(chunkLocal),
+      getIdx: () => this.localGet(idxLocal),
+      restore: () => {
+        this.localGet(chunkLocal);
+        this.globalSet('bindingsChunk');
+        this.localGet(idxLocal);
+        this.globalSet('bindingsIdx');
+      },
+    };
   }
 
   saveFailurePos(): SavedValue<'failurePos'> {
@@ -775,7 +800,8 @@ class Assembler {
   newIterNode(saved: SavedBacktrackPoint, arity: number, isOpt = false): void {
     saved.pos.get();
     this.globalGet('pos');
-    saved.bindings.get();
+    saved.bindings.getChunk();
+    saved.bindings.getIdx();
     this.i32Const(arity);
     this.i32Const(isOpt ? 1 : 0);
     this.callPrebuiltFunc('newIterationNode');
@@ -787,7 +813,8 @@ class Assembler {
     saved.pos.get();
     this.globalGet('pos');
     this.i32Const(ruleId);
-    saved.bindings.get();
+    saved.bindings.getChunk();
+    saved.bindings.getIdx();
     this.i32Const(-1);
     this.callPrebuiltFunc('newNonterminalNode');
   }
@@ -866,6 +893,33 @@ interface RuleInfo {
   _isInlineRule?: boolean;
 }
 
+// Maps flag names (case-insensitive) to their corresponding option key.
+const knownFlags: Record<string, keyof CompilerInternalOptions> = {
+  chunkedbindings: 'chunkedBindings',
+};
+
+function parseOptions(options?: CompilerInternalOptions): CompilerInternalOptions {
+  // OHM_FLAGS env var provides defaults (v8-style flags, like NODE_OPTIONS).
+  // Explicit options passed in take precedence.
+  const envFlags = new Set(
+    (typeof process !== 'undefined' ? (process.env.OHM_FLAGS ?? '') : '')
+      .split(/\s+/)
+      .filter(Boolean)
+  );
+  const envDefaults: CompilerInternalOptions = {};
+  for (const flag of envFlags) {
+    const negated = flag.startsWith('--no');
+    const name = negated ? flag.slice('--no'.length) : flag.slice('--'.length);
+    const key = knownFlags[name.toLowerCase()];
+    if (key) {
+      envDefaults[key] = !negated as any;
+    } else {
+      console.error(`Unknown OHM_FLAGS option: ${flag}`);
+    }
+  }
+  return {...defaultOptions, ...envDefaults, ...options};
+}
+
 export class Compiler {
   grammar: ParsedGrammar;
   importDecls: FuncDecl[];
@@ -901,7 +955,7 @@ export class Compiler {
       grammar = parseGrammar(grammar.source.contents);
     }
 
-    this._options = {preallocNodes: true, ...options};
+    this._options = parseOptions(options);
     this.grammar = grammar;
 
     this.importDecls = [];
@@ -1057,7 +1111,7 @@ export class Compiler {
     this.transform();
 
     const typeMap = (this.typeMap = new TypeMap(prebuilt.typesec.entryCount));
-    const asm = (this.asm = new Assembler(typeMap));
+    const asm = (this.asm = new Assembler(typeMap, this._options.chunkedBindings !== false));
     asm.addBlocktype([w.valtype.i32], []);
     asm.addBlocktype([w.valtype.i32], [w.valtype.i32]);
     asm.addBlocktype([], [w.valtype.i32]); // Rule eval
@@ -1508,6 +1562,8 @@ export class Compiler {
     for (const name of [
       '__heap_base',
       '__offset',
+      'bindingsChunk',
+      'bindingsIdx',
       'memoIndexBase',
       'numMemoBlocks',
       'pos',
@@ -1632,6 +1688,10 @@ export class Compiler {
       // setNumMemoizedRules also computes numMemoBlocks.
       asm.i32Const(this._maxMemoizedRuleId);
       asm.callPrebuiltFunc('setNumMemoizedRules');
+      if (this._options.chunkedBindings === false) {
+        asm.i32Const(0);
+        asm.globalSet('useChunkedBindings');
+      }
       asm.emit(instr.call, w.funcidx(prebuilt.startFuncidx));
     });
     ruleDecls.push(checkNotNull(asm._functionDecls.at(-1)));

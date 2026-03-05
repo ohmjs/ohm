@@ -1880,3 +1880,106 @@ test('transitive prealloc: interaction with single-use inlining', async t => {
   t.is(root.children[0].children[0].ctorName, 'inner');
   t.is(root.children[0].children[0].children[0].ctorName, 'digit');
 });
+
+test('repeated matches do not leak memory', async t => {
+  const g = ohm.grammar('G { Start = letter+ ";" }');
+  const wasmGrammar = await toWasmGrammar(g);
+
+  const {__offset} = wasmGrammar._instance.exports;
+
+  // Run one match to warm up (allocates initial structures).
+  wasmGrammar.match('abc;').use(r => t.true(r.succeeded()));
+  const baselineOffset = __offset.value;
+
+  // Run many matches — each should be fully reclaimed by dispose().
+  for (let i = 0; i < 200; i++) {
+    wasmGrammar.match('hello;').use(r => t.true(r.succeeded()));
+  }
+
+  t.is(
+    __offset.value,
+    baselineOffset,
+    'heap offset should return to baseline after disposing all matches'
+  );
+});
+
+test('bindings chunks contain valid CST nodes and tagged terminals', async t => {
+  // Use a grammar with iteration to generate many bindings during parsing.
+  const g = ohm.grammar('G { Start = item+\nitem = letter }');
+  const wasmGrammar = await toWasmGrammar(g);
+
+  // Match a long enough string to spill into multiple chunks (capacity=128).
+  t.is(matchWithInput(wasmGrammar, 'a'.repeat(150)), 1);
+
+  const {memory, bindingsChunk} = wasmGrammar._instance.exports;
+  const view = new DataView(memory.buffer);
+
+  const CHUNK_HEADER = 8; // prev (i32) + next (i32)
+  const CHUNK_CAPACITY = 128;
+
+  // Walk backwards from bindingsChunk to find the first chunk.
+  let firstChunk = bindingsChunk.value;
+  while (view.getInt32(firstChunk, true) !== 0) {
+    firstChunk = view.getInt32(firstChunk, true);
+  }
+
+  // Checks that a value is a valid CST node pointer or tagged terminal.
+  function isValidBinding(val) {
+    // Tagged terminal: bit 0 = 1.
+    if (val & 1) return true;
+    // CST node pointer: must be 4-byte aligned.
+    if ((val & 3) !== 0) return false;
+    // Read the CST node header and sanity-check.
+    const count = view.getInt32(val, true);
+    const matchLength = view.getInt32(val + 4, true);
+    return count >= 0 && matchLength >= 0;
+  }
+
+  // Walk forward through all chunks. Every non-zero slot should be a valid
+  // CST node or tagged terminal, since memory is never freed.
+  let chunk = firstChunk;
+  let numChunks = 0;
+  let totalNonZero = 0;
+  while (chunk !== 0) {
+    // Verify prev/next consistency.
+    const prev = view.getInt32(chunk, true);
+    const next = view.getInt32(chunk + 4, true);
+    if (numChunks === 0) {
+      t.is(prev, 0, 'first chunk prev should be 0');
+    }
+    if (next !== 0) {
+      t.is(view.getInt32(next, true), chunk, 'next chunk prev should point back');
+    }
+
+    for (let i = 0; i < CHUNK_CAPACITY; i++) {
+      const val = view.getInt32(chunk + CHUNK_HEADER + i * 4, true);
+      if (val === 0) continue;
+      totalNonZero++;
+      t.true(isValidBinding(val));
+    }
+
+    numChunks++;
+    chunk = next;
+  }
+  t.true(numChunks >= 2, `should have at least two chunks (got ${numChunks})`);
+  t.true(totalNonZero >= 1, 'should have found at least one non-zero binding');
+});
+
+test('chunkedBindings: false', async t => {
+  const g = ohm.grammar('G { Start = letter+ ";" }');
+  const wasmGrammar = await toWasmGrammar(g, {chunkedBindings: false});
+
+  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
+  t.is(matchWithInput(wasmGrammar, ''), 0);
+  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
+
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'Start');
+  t.is(root.children.length, 2);
+  t.is(root.children[0].sourceString, 'abc');
+
+  // Run multiple matches to verify no leak / crash.
+  for (let i = 0; i < 50; i++) {
+    wasmGrammar.match('hello;').use(r => t.true(r.succeeded()));
+  }
+});
