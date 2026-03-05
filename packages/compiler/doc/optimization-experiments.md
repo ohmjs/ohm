@@ -52,6 +52,22 @@ non-space positions, so the reject check alone doesn't help. A generalized
 be needed, but was not attempted. Kept the `Range` case in
 `computeFirstChars()`.
 
+## Single-child optimization
+
+For rules whose body produces exactly one binding (`outArity === 1`), replace
+the child in-place (`newNonterminalNodeInPlace`) instead of the general count/copy
+path, and skip saving/restoring bindings state on the success path. No measurable
+improvement on its own — most single-child lexical rules already hit the prealloc
+fast path, so few rules benefit.
+
+## CST chunk allocator
+
+Tried a bump allocator for CST nodes: grab 64KB chunks from `heap.alloc` and
+bump-allocate individual nodes within each chunk, amortizing the per-allocation
+overhead (4-byte header + 16-byte alignment). Slightly lower memory usage due
+to eliminating alignment padding, but no measurable performance improvement.
+Removed in favour of direct `heap.alloc` calls.
+
 ## Others
 
 - Eliminating call_indirect
