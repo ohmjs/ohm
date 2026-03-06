@@ -1,27 +1,23 @@
-# To build the 'build' image us 'docker compose -f docker-compose.dev.yml build'
-# run using 'docker run -v $(pwd):/local -it --rm ohm-dev:latest shell'
-# The build image is around 1.6 GB, incomparison to the dist image which is 664 MB
-# The build image is useful for debugging docker build issues.
 FROM node:24 AS build
 
 RUN npm install -g pnpm@latest-10
 
 WORKDIR /ohm
 COPY package.json pnpm-lock.yaml ./
-RUN --mount=type=cache,target=/pnpm/store \
-  pnpm fetch \
-    --frozen-lockfile
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+  CI=true pnpm fetch --frozen-lockfile
 
 COPY . /ohm
 
-RUN pwd
-# filtering out lang-python as it is not building
-RUN \
-  pnpm install \
-    --frozen-lockfile \
-    --offline \
-  && \
-  pnpm --filter='!lang-python' build
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+  CI=true pnpm install --frozen-lockfile --offline
+
+# # not sure why this didn't work --> CI=true pnpm --filter='!lang-python' build
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+  (cd packages/ohm-js         && CI=true pnpm build) && \
+  (cd packages/runtime        && CI=true pnpm build) && \
+  (cd packages/to-ast-compat  && CI=true pnpm build) && \
+  (cd packages/compiler       && CI=true pnpm build)
 
 ENTRYPOINT [ "/ohm/packages/docker/entrypoint.sh" ]
 
@@ -35,44 +31,14 @@ WORKDIR /ohm
 
 COPY package.json pnpm-lock.yaml ./
 COPY pnpm-workspace.build.yaml ./pnpm-workspace.yaml
-RUN --mount=type=cache,target=/pnpm/store \
-  pnpm fetch \
-    --frozen-lockfile
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+  CI=true pnpm fetch --prod --frozen-lockfile
 
-COPY --from=build /ohm/packages/compiler/ /ohm/packages/compiler
-COPY --from=build /ohm/packages/runtime/ /ohm/packages/runtime
-COPY --from=build /ohm/packages/to-ast-compat/ /ohm/packages/to-ast-compat
-COPY --from=build /ohm/packages/cli /ohm/packages/cli
-COPY --from=build /ohm/packages/ohm-js /ohm/packages/ohm-js
-
-RUN find /ohm -name node_modules | xargs rm -rf
-
-RUN pwd
-
-RUN pnpm install \
-  --prod \
-  --frozen-lockfile \
-  --offline
-
-RUN cd /ohm/packages/cli && pnpm install \
-  -prod \
-  --force \
-  --frozen-lockfile \
-  --offline
-
-# to track down file which can be deleted
-#
-# apt-get update
-# apt-get install -y ncdu
-# ncdu /
-#
-# or
-#
-# alias dive="docker run -ti --rm  -v /var/run/docker.sock:/var/run/docker.sock docker.io/wagoodman/dive"
-# dive ohm:latest
-
-# # turns out to no save space, hard link ???
-# RUN rm -rf /root/.local/share/pnpm/store
+COPY --from=build /ohm/packages/ohm-js          /ohm/packages/ohm-js
+COPY --from=build /ohm/packages/runtime/        /ohm/packages/runtime
+COPY --from=build /ohm/packages/to-ast-compat/  /ohm/packages/to-ast-compat
+COPY --from=build /ohm/packages/compiler/       /ohm/packages/compiler
+COPY --from=build /ohm/packages/cli             /ohm/packages/cli
 
 COPY ./packages/docker/entrypoint.sh entrypoint.sh
 ENTRYPOINT [ "/ohm/entrypoint.sh" ]

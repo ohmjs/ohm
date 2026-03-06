@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       tags:
-        # - ohm:latest
+        - ${DOCKER_REPO:-ohmjs}/ohm:latest
         - ${DOCKER_REPO:-ohmjs}/ohm:${VERSION:-development}
       labels:
         - org.opencontainers.image.source=https://github.com/${OWNER:-ohmjs}/${REPO:-ohm}
@@ -18,7 +18,7 @@ services:
           - linux/arm64/v8
           # - linux/ppc64le
           # - linux/s390x
-      target: dist
+      target: ${TARGET:-dist}
     volumes:
       - .:/local
     command: ["help"]

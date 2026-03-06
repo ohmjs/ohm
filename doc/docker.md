@@ -20,13 +20,13 @@ Your current directory is mounted at `/local` inside the container, so relative 
 Pull and run the image directly from Docker Hub:
 
 ```sh
-docker run --rm -v $(pwd):/local ohm:latest compile my-grammar.ohm
+docker run --rm -v $(pwd):/local ohmjs/ohm:latest compile my-grammar.ohm
 ```
 
 ### `compile` usage
 
 ```sh
-docker run --rm -v $(pwd):/local ohm:latest compile [options] <grammar-file>
+docker run --rm -v $(pwd):/local ohmjs/ohm:latest compile [options] <grammar-file>
 ```
 
 Options:
@@ -40,13 +40,13 @@ Options:
 **Example** — compile `arithmetic.ohm` and write the result to `arithmetic.wasm`:
 
 ```sh
-docker run --rm -v $(pwd):/local ohm:latest compile -o arithmetic.wasm arithmetic.ohm
+docker run --rm -v $(pwd):/local ohmjs/ohm:latest compile -o arithmetic.wasm arithmetic.ohm
 ```
 
 ### Getting help
 
 ```sh
-docker run --rm ohm:latest help
+docker run --rm ohmjs/ohm:latest help
 ```
 
 ---
@@ -93,17 +93,17 @@ The development image uses the `build` stage of the `Dockerfile`, which includes
 **Build:**
 
 ```sh
-docker compose -f docker-compose.dev.yml build
+TARGET=build docker compose build
 ```
 
-This produces the `ohm-dev:latest` image.
+This produces the `ohmjs/ohm:development` image.
 
 **Run:**
 
 ```sh
-docker run -v $(pwd):/local -it --rm ohm-dev:latest shell
+docker run -v $(pwd):/local -it --rm ohmjs/ohm:development shell
 # or
-docker run -v ${PWD}:/local -it --rm ohm-dev:latest shell
+docker run -v ${PWD}:/local -it --rm ohmjs/ohm:development shell
 ```
 
 The `-v $(pwd):/local` mount makes your current directory available at `/local` inside the container. The `shell` command drops you into a bash session where you can inspect the built artifacts under `/ohm/` or run CLI commands directly.
@@ -115,16 +115,45 @@ The `ohm-dev:latest` images is 1.62 GB and is 97% efficient with only 64 MB pote
 Build and push a versioned image to Docker Hub using the git tag as the version:
 
 ```sh
+# if not set default to ohmjs (ie docker hub using the ohmjs org)
 export DOCKER_REPO=<custom docker repo>
+# if not set defaults to 'development'
 export VERSION=$(cat packages/runtime/package.json | jq -r '.version')
 # or export VERSION=$(git describe --tag --dirty)
 
-# docker buildx create --use --name mybuilder
+# # it might be necessary (particularly on osx) to create a new builder
+# # the default builder might not support multi-platform builds
+# docker buildx create --use --name ohmjs-builder
+# # might be needed
 # docker buildx inspect --bootstrap
-docker login
+# # or if already created
+# docker buildx use ohmjs-builder
+
+# generate a person access token at https://app.docker.com/accounts/millergarym/settings/personal-access-tokens
+# assuming DHPAT contains your PAT
+echo $DHPAT | docker login -u <personal username> --password-stdin
 docker buildx bake --push
 ```
 
 `git describe --tag --dirty` produces a version string based on the nearest git tag, appending commit info and a `-dirty` suffix if there are uncommitted changes.
 
 The defaults in `docker-compose.yml` are `DOCKER_REPO=ohmjs` and `VERSION=development`. See [docker-compose.yml](../docker-compose.yml) for details.
+
+## Tips and Tricks
+
+### Image size
+
+To track down file which can be deleted.
+
+**From inside the container**
+```sh
+apt-get update
+apt-get install -y ncdu
+ncdu /
+```
+
+**Analysing the images**
+```sh
+alias dive="docker run -ti --rm  -v /var/run/docker.sock:/var/run/docker.sock docker.io/wagoodman/dive"
+dive ohmjs/ohm:latest
+```

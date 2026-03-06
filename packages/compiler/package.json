@@ -1,6 +1,6 @@
 {
   "name": "@ohm-js/compiler",
-  "version": "18.0.0-beta.9",
+  "version": "18.0.0-beta.11",
   "description": "Compile Ohm.js grammars to WebAssembly",
   "main": "dist/index.js",
   "exports": {
@@ -31,7 +31,6 @@
   "keywords": [],
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT",
-  "packageManager": "pnpm@10.10.0",
   "devDependencies": {
     "@ohm-js/to-ast-compat": "workspace:^",
     "@shopify/liquid-html-parser": "github:pdubroy/theme-tools#path:/packages/liquid-html-parser",
