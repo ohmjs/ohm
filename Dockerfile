@@ -32,7 +32,7 @@ RUN npm install -g pnpm@latest-10
 WORKDIR /ohm
 
 COPY package.json pnpm-lock.yaml ./
-COPY pnpm-workspace.build.yaml ./pnpm-workspace.yaml
+COPY pnpm-workspace.docker.yaml ./pnpm-workspace.yaml
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
   CI=true pnpm fetch --prod --frozen-lockfile
 
