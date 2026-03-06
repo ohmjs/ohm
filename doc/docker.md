@@ -79,7 +79,7 @@ Clone the repository and build the production image with Docker Compose:
 ```sh
 git clone https://github.com/ohmjs/ohm.git
 cd ohm
-docker compose build
+docker compose -f packages/docker/docker-compose.yml build
 ```
 
 This builds the `ohm:latest` image using the `dist` stage of the multi-stage `Dockerfile`, which produces a slim image containing only the compiled packages and their production dependencies.
@@ -93,7 +93,7 @@ The development image uses the `build` stage of the `Dockerfile`, which includes
 **Build:**
 
 ```sh
-TARGET=build docker compose build
+TARGET=build docker compose -f packages/docker/docker-compose.yml build
 ```
 
 This produces the `ohmjs/ohm:development` image.

@@ -2,8 +2,8 @@ services:
 
   ohm:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: packages/docker/Dockerfile
       tags:
         - ${DOCKER_REPO:-ohmjs}/ohm:latest
         - ${DOCKER_REPO:-ohmjs}/ohm:${VERSION:-development}
