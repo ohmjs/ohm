@@ -39,7 +39,7 @@ The easiest way to get started with Ohm is to use the [interactive editor](https
 
 ### Docker
 
-You can use Ohm's compiler CLI without a local Node.js installation via the Docker image:
+You can use the Ohm CLI without a local Node.js installation via the Docker image:
 
 ```sh
 docker run --rm -v $(pwd):/local ohmjs/ohm:latest compile my-grammar.ohm
