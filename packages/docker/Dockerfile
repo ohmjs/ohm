@@ -10,10 +10,8 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 COPY . /ohm
 
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-  CI=true pnpm install --frozen-lockfile --offline
-
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-  (CI=true pnpm build)
+  CI=true pnpm install --frozen-lockfile --offline && \
+  CI=true pnpm build
 
 ENTRYPOINT [ "/ohm/packages/docker/entrypoint.sh" ]
 
