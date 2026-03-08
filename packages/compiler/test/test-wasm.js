@@ -109,6 +109,129 @@ test('cst: isSyntactic and isLexical', async t => {
   t.true(inner.isLexical());
 });
 
+test('cst: no leadingSpaces in lexical context', async t => {
+  // A syntactic rule (Start) invokes a lexical rule (ident) which has
+  // multiple children. Spaces between those children must NOT be skipped,
+  // and leadingSpaces must not be set on nodes in lexical context.
+  const g = await toWasmGrammar(ohm.grammar('G { Start = ident ";" ident = letter+ }'));
+
+  // Match with spaces in syntactic context (between ident and ";").
+  t.is(matchWithInput(g, 'abc ;'), 1);
+  const root = g._getCstRoot();
+
+  // Start is syntactic — children may have leadingSpaces.
+  t.true(root.isSyntactic());
+
+  const ident = root.children[0];
+  t.true(ident.isNonterminal());
+  t.true(ident.isLexical());
+
+  // The ident node itself is in syntactic context (child of Start),
+  // so it *could* have leadingSpaces. But inside ident, the letter+
+  // list should NOT have leadingSpaces — we're in lexical context.
+  const letterList = ident.children[0];
+  t.true(letterList.isList());
+  t.is(letterList.leadingSpaces, undefined);
+
+  // Each letter terminal inside the list should also lack leadingSpaces.
+  for (const child of letterList.children) {
+    t.is(child.leadingSpaces, undefined);
+  }
+
+  // The ";" terminal is in syntactic context (child of Start).
+  // It has a space before it, so verify it's still reachable but
+  // the space was skipped (sourceString is just ";").
+  const semi = root.children[1];
+  t.true(semi.isTerminal());
+  t.is(semi.sourceString, ';');
+
+  // Verify getSpacesLenAt distinguishes between "tried but matched 0"
+  // (syntactic context) and "never tried" (lexical context).
+  const {getSpacesLenAt} = g._instance.exports;
+
+  // Position 0: beginning of input in syntactic context — spaces were
+  // tried and matched 0 characters.
+  t.is(getSpacesLenAt(0), 0);
+
+  // Position 3 ("abc|"): between ident and ";" in syntactic context —
+  // spaces were tried and matched 1 character (the space).
+  t.is(getSpacesLenAt(3), 1);
+
+  // Position 1 ("a|bc"): inside the lexical ident rule — spaces were
+  // never tried here, so getSpacesLenAt should return -1.
+  t.is(getSpacesLenAt(1), -1);
+  t.is(getSpacesLenAt(2), -1);
+});
+
+test('cst: leadingSpaces on syntactic children', async t => {
+  const g = await toWasmGrammar(ohm.grammar('G { Start = "a" "b" }'));
+  t.is(matchWithInput(g, '  a b'), 1);
+  const root = g._getCstRoot();
+
+  // Root should have leadingSpaces (2 spaces at position 0).
+  t.truthy(root.leadingSpaces);
+  t.is(root.leadingSpaces.ctorName, 'spaces');
+  t.is(root.leadingSpaces.matchLength, 2);
+  t.is(root.leadingSpaces.sourceString, '  ');
+  t.true(root.leadingSpaces.isNonterminal());
+  t.true(root.leadingSpaces.isLexical());
+  t.false(root.leadingSpaces.isSyntactic());
+
+  // "a" has no leading spaces (immediately after the root's leading spaces).
+  const a = root.children[0];
+  t.is(a.leadingSpaces, undefined);
+
+  // "b" has 1 leading space.
+  const b = root.children[1];
+  t.truthy(b.leadingSpaces);
+  t.is(b.leadingSpaces.matchLength, 1);
+  t.is(b.leadingSpaces.sourceString, ' ');
+});
+
+test('cst: leadingSpaces children via lazy parsing', async t => {
+  const g = await toWasmGrammar(ohm.grammar('G { Start = "x" }'));
+  // Access children within the match lifecycle (evalSpacesFull needs live WASM state).
+  g.match('  x').use(r => {
+    t.true(r.succeeded());
+    const root = r.getCstRoot();
+    const spaces = root.leadingSpaces;
+    t.truthy(spaces);
+
+    // Children should be a ListNode (from space*).
+    t.is(spaces.children.length, 1);
+    const list = spaces.children[0];
+    t.true(list.isList());
+
+    // Each character is wrapped in a 'space' nonterminal.
+    t.is(list.children.length, 2);
+    for (const child of list.children) {
+      t.true(child.isNonterminal());
+      t.is(child.ctorName, 'space');
+      t.is(child.matchLength, 1);
+    }
+  });
+});
+
+test('cst: lazy parsing survives memory.grow()', async t => {
+  const g = await toWasmGrammar(ohm.grammar('G { Start = "x" }'));
+  g.match('  x').use(r => {
+    t.true(r.succeeded());
+    const root = r.getCstRoot();
+    const spaces = root.leadingSpaces;
+    t.truthy(spaces);
+
+    // Grow Wasm memory to detach the existing ArrayBuffer, simulating what
+    // happens when evalSpacesFull triggers memory.grow().
+    g._instance.exports.memory.grow(1);
+
+    // Accessing children should still work — the DataView gets refreshed.
+    t.is(spaces.children.length, 1);
+    const list = spaces.children[0];
+    t.true(list.isList());
+    t.is(list.children.length, 2);
+  });
+});
+
 test('cst: source intervals', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = "ab" "cd" }'));
   t.is(matchWithInput(g, 'abcd'), 1);
@@ -1756,4 +1879,133 @@ test('transitive prealloc: interaction with single-use inlining', async t => {
   t.is(root.children[0].ctorName, 'wrapper');
   t.is(root.children[0].children[0].ctorName, 'inner');
   t.is(root.children[0].children[0].children[0].ctorName, 'digit');
+});
+
+test('repeated matches do not leak memory', async t => {
+  const g = ohm.grammar('G { Start = letter+ ";" }');
+  const wasmGrammar = await toWasmGrammar(g);
+
+  const {__offset} = wasmGrammar._instance.exports;
+
+  // Run one match to warm up (allocates initial structures).
+  wasmGrammar.match('abc;').use(r => t.true(r.succeeded()));
+  const baselineOffset = __offset.value;
+
+  // Run many matches — each should be fully reclaimed by dispose().
+  for (let i = 0; i < 200; i++) {
+    wasmGrammar.match('hello;').use(r => t.true(r.succeeded()));
+  }
+
+  t.is(
+    __offset.value,
+    baselineOffset,
+    'heap offset should return to baseline after disposing all matches'
+  );
+});
+
+test('bindings chunks contain valid CST nodes and tagged terminals', async t => {
+  // Use a grammar with iteration to generate many bindings during parsing.
+  const g = ohm.grammar('G { Start = item+\nitem = letter }');
+  const wasmGrammar = await toWasmGrammar(g);
+
+  // Match a long enough string to spill into multiple chunks (capacity=128).
+  t.is(matchWithInput(wasmGrammar, 'a'.repeat(150)), 1);
+
+  const {memory, bindingsChunk} = wasmGrammar._instance.exports;
+  const view = new DataView(memory.buffer);
+
+  const CHUNK_HEADER = 8; // prev (i32) + next (i32)
+  const CHUNK_CAPACITY = 128;
+
+  // Walk backwards from bindingsChunk to find the first chunk.
+  let firstChunk = bindingsChunk.value;
+  while (view.getInt32(firstChunk, true) !== 0) {
+    firstChunk = view.getInt32(firstChunk, true);
+  }
+
+  // Checks that a value is a valid CST node pointer or tagged terminal.
+  function isValidBinding(val) {
+    // Tagged terminal: bit 0 = 1.
+    if (val & 1) return true;
+    // CST node pointer: must be 4-byte aligned.
+    if ((val & 3) !== 0) return false;
+    // Read the CST node header and sanity-check.
+    const count = view.getInt32(val, true);
+    const matchLength = view.getInt32(val + 4, true);
+    return count >= 0 && matchLength >= 0;
+  }
+
+  // Walk forward through all chunks. Every non-zero slot should be a valid
+  // CST node or tagged terminal, since memory is never freed.
+  let chunk = firstChunk;
+  let numChunks = 0;
+  let totalNonZero = 0;
+  while (chunk !== 0) {
+    // Verify prev/next consistency.
+    const prev = view.getInt32(chunk, true);
+    const next = view.getInt32(chunk + 4, true);
+    if (numChunks === 0) {
+      t.is(prev, 0, 'first chunk prev should be 0');
+    }
+    if (next !== 0) {
+      t.is(view.getInt32(next, true), chunk, 'next chunk prev should point back');
+    }
+
+    for (let i = 0; i < CHUNK_CAPACITY; i++) {
+      const val = view.getInt32(chunk + CHUNK_HEADER + i * 4, true);
+      if (val === 0) continue;
+      totalNonZero++;
+      t.true(isValidBinding(val));
+    }
+
+    numChunks++;
+    chunk = next;
+  }
+  t.true(numChunks >= 2, `should have at least two chunks (got ${numChunks})`);
+  t.true(totalNonZero >= 1, 'should have found at least one non-zero binding');
+});
+
+function hexDump(bytes) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const parts = [];
+  for (let i = 0; i + 4 <= bytes.length; i += 4) {
+    parts.push(view.getUint32(i, true).toString(16).padStart(8, '0'));
+  }
+  return parts.join(' ');
+}
+
+test('snapshot: raw heap after match', async t => {
+  const g = ohm.grammar('G { start = "a" b\nb = "b" }');
+  const wasmGrammar = await toWasmGrammar(g);
+
+  const {memory, __offset} = wasmGrammar._instance.exports;
+
+  wasmGrammar.match('ab').use(r => {
+    t.true(r.succeeded());
+
+    // Capture the heap region allocated during this match.
+    const heapStart = r._heapWatermark;
+    const heapEnd = __offset.value;
+    const bytes = new Uint8Array(memory.buffer, heapStart, heapEnd - heapStart);
+    t.snapshot(hexDump(bytes));
+  });
+});
+
+test('chunkedBindings: false', async t => {
+  const g = ohm.grammar('G { Start = letter+ ";" }');
+  const wasmGrammar = await toWasmGrammar(g, {chunkedBindings: false});
+
+  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
+  t.is(matchWithInput(wasmGrammar, ''), 0);
+  t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
+
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'Start');
+  t.is(root.children.length, 2);
+  t.is(root.children[0].sourceString, 'abc');
+
+  // Run multiple matches to verify no leak / crash.
+  for (let i = 0; i < 50; i++) {
+    wasmGrammar.match('hello;').use(r => t.true(r.succeeded()));
+  }
 });

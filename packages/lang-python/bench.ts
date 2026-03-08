@@ -61,7 +61,7 @@ bench.add(
     const cst = r.getCstRoot();
     const {input: tokenizedInput} = tokenize(input);
     const root = cst as NonterminalNode;
-    const fullSource = (root.leadingSpaces?.sourceString ?? '') + root.sourceString;
+    const fullSource = tokenizedInput.slice(0, root.startIdx) + root.sourceString;
     if (fullSource !== tokenizedInput) {
       console.error('UNPARSE MISMATCH!');
       process.exit(1);
