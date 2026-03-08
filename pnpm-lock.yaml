@@ -142,6 +142,9 @@ importers:
       ohm-js:
         specifier: ^17.0.0
         version: 17.2.1
+      ohm-js-legacy:
+        specifier: workspace:^
+        version: link:../ohm-js
     devDependencies:
       '@types/require-from-string':
         specifier: ^1.2.1
@@ -149,9 +152,6 @@ importers:
       ava:
         specifier: ^6.0.0
         version: 6.2.0(rollup@4.43.0)
-      ohm-js-legacy:
-        specifier: workspace:^
-        version: link:../ohm-js
       require-from-string:
         specifier: ^2.0.2
         version: 2.0.2

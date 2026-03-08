@@ -1,0 +1,24 @@
+services:
+
+  ohm:
+    build:
+      context: ../..
+      dockerfile: packages/docker/Dockerfile
+      tags:
+        - ${DOCKER_REPO:-ohmjs}/ohm:latest
+        - ${DOCKER_REPO:-ohmjs}/ohm:${VERSION:-development}
+      labels:
+        - org.opencontainers.image.source=https://github.com/${OWNER:-ohmjs}/${REPO:-ohm}
+        - org.opencontainers.image.licenses=MIT
+        - org.opencontainers.image.description=Ohm tooling - A library and language for building parsers, interpreters, compilers, etc.
+      x-bake:
+        platforms:
+          - linux/amd64
+          # - linux/arm/v7
+          - linux/arm64/v8
+          # - linux/ppc64le
+          # - linux/s390x
+      target: ${TARGET:-dist}
+    volumes:
+      - .:/local
+    command: ["help"]

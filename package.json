@@ -1,6 +1,6 @@
 {
   "private": true,
-  "packageManager": "pnpm@10.10.0",
+  "packageManager": "pnpm@10.30.3",
   "scripts": {
     "api-report": "pnpm --filter ohm-js --filter @ohm-js/compiler api-report",
     "build": "pnpm -r build",
