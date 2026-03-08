@@ -24,5 +24,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - uses: pnpm/action-setup@v2
+        with:
+          version: 10
       - run: pnpm install
       - run: pnpm ci-test
