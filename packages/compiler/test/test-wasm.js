@@ -1965,6 +1965,46 @@ test('bindings chunks contain valid CST nodes and tagged terminals', async t => 
   t.true(totalNonZero >= 1, 'should have found at least one non-zero binding');
 });
 
+// RLE-compress a Uint8Array: non-zero i32 words shown as hex, runs of
+// zero words collapsed to "00*N".
+function rleHexDump(bytes) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const parts = [];
+  let i = 0;
+  while (i < bytes.length) {
+    if (i + 4 <= bytes.length && view.getUint32(i, true) === 0) {
+      let zeroWords = 0;
+      while (i + 4 <= bytes.length && view.getUint32(i, true) === 0) {
+        zeroWords++;
+        i += 4;
+      }
+      parts.push(`00*${zeroWords}`);
+    } else {
+      const word = view.getUint32(i, true);
+      parts.push(word.toString(16).padStart(8, '0'));
+      i += 4;
+    }
+  }
+  return parts.join(' ');
+}
+
+test('snapshot: raw heap after match', async t => {
+  const g = ohm.grammar('G { start = "a" b\nb = "b" }');
+  const wasmGrammar = await toWasmGrammar(g);
+
+  const {memory, __offset} = wasmGrammar._instance.exports;
+
+  wasmGrammar.match('ab').use(r => {
+    t.true(r.succeeded());
+
+    // Capture the heap region allocated during this match.
+    const heapStart = r._heapWatermark;
+    const heapEnd = __offset.value;
+    const bytes = new Uint8Array(memory.buffer, heapStart, heapEnd - heapStart);
+    t.snapshot(rleHexDump(bytes));
+  });
+});
+
 test('chunkedBindings: false', async t => {
   const g = ohm.grammar('G { Start = letter+ ";" }');
   const wasmGrammar = await toWasmGrammar(g, {chunkedBindings: false});
