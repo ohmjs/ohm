@@ -843,7 +843,9 @@ test('basic memoization', async t => {
 });
 
 test('more memoization', async t => {
-  const wasmGrammar = await compileAndLoad('G { start = b "a" | b b\nb = "b" }', {preallocNodes: false});
+  const wasmGrammar = await compileAndLoad('G { start = b "a" | b b\nb = "b" }', {
+    preallocNodes: false,
+  });
   t.is(matchWithInput(wasmGrammar, 'bb'), 1);
 
   const getMemo = (pos, ctorName) => {
@@ -1799,7 +1801,9 @@ test('transitive prealloc: surrogate pair fallback', async t => {
 test('transitive prealloc: interaction with single-use inlining', async t => {
   // When the inner rule is inlined (single-use), transitive prealloc should
   // NOT apply. The rule should still work correctly via dynamic allocation.
-  const wasmGrammar = await compileAndLoad('G { start = wrapper\nwrapper = inner\ninner = digit }');
+  const wasmGrammar = await compileAndLoad(
+    'G { start = wrapper\nwrapper = inner\ninner = digit }'
+  );
   t.is(matchWithInput(wasmGrammar, '5'), 1);
 
   const root = wasmGrammar._getCstRoot();
@@ -1917,7 +1921,9 @@ test('snapshot: raw heap after match', async t => {
 });
 
 test('chunkedBindings: false', async t => {
-  const wasmGrammar = await compileAndLoad('G { Start = letter+ ";" }', {chunkedBindings: false});
+  const wasmGrammar = await compileAndLoad('G { Start = letter+ ";" }', {
+    chunkedBindings: false,
+  });
 
   t.is(matchWithInput(wasmGrammar, 'abc;'), 1);
   t.is(matchWithInput(wasmGrammar, ''), 0);

@@ -184,13 +184,16 @@ test('toAST basic', async t => {
 test('listOf and friends - #394', async t => {
   // By default, toAST assumes that lexical rules represent indivisible tokens,
   // but that doesn't make sense for listOf, nonemptyListOf, and emptyListOf.
-  const wasmGrammar = await compileAndLoad(`
+  const wasmGrammar = await compileAndLoad(
+    `
     G {
       Exp = listOf<digit, "+">
           | ~end end Exp2 -- dummy // Defeat dead rule elimination
       Exp2 = ListOf<digit, "+">
     }
-  `, {startRules: ['Exp2']});
+  `,
+    {startRules: ['Exp2']}
+  );
 
   const ast = (input, mapping, ruleName = 'Exp') => {
     const toAst = createToAst(mapping);
