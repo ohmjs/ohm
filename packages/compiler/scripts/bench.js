@@ -5,7 +5,7 @@ import {run, bench, group, summary} from 'mitata';
 import * as ohm from 'ohm-js';
 
 import * as es5js from '../../../examples/ecmascript/index.js';
-import {toWasmGrammar} from '../test/_helpers.js';
+import {legacyGrammarToWasm} from '../test/_helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -96,15 +96,15 @@ group('JSON', () => {
   // Note: we are deliberately creating one instance of the matcher that's
   // reused. This takes advantage of JIT tier-up, and approximates usage
   // in a long-running process, e.g. LSP server.
-  liquidHtmlWasm = await toWasmGrammar(
+  liquidHtmlWasm = await legacyGrammarToWasm(
     liquid.LiquidHTML,
     readFileSync(join(__dirname, '../build/liquid-html.wasm'))
   );
-  es5Wasm = await toWasmGrammar(
+  es5Wasm = await legacyGrammarToWasm(
     es5js.grammar,
     readFileSync(join(__dirname, '../build/es5.wasm'))
   );
-  jsonWasm = await toWasmGrammar(json, readFileSync(join(__dirname, '../build/json.wasm')));
+  jsonWasm = await legacyGrammarToWasm(json, readFileSync(join(__dirname, '../build/json.wasm')));
 
   await run();
 })();

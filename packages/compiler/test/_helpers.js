@@ -51,7 +51,7 @@ async function _compileAndInstantiate(parsedGrammar, compilerOpts) {
 
 // Takes a *legacy* ohm-js Grammar object and compiles it to Wasm.
 // Use this only in tests that deliberately compare Wasm vs legacy behavior.
-export async function toWasmGrammar(grammar, {modBytes, ...compilerOpts} = {}) {
+export async function legacyGrammarToWasm(grammar, {modBytes, ...compilerOpts} = {}) {
   const compiler = new Compiler(grammar, compilerOpts);
   const bytes = modBytes ?? compiler.compile();
 

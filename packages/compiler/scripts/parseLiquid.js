@@ -17,7 +17,7 @@ import * as ohm from 'ohm-js-legacy';
 import {Bench} from 'tinybench';
 
 import {Compiler} from '../src/Compiler.ts';
-import {unparse, toWasmGrammar} from '../test/_helpers.js';
+import {unparse, legacyGrammarToWasm} from '../test/_helpers.js';
 import {createReader} from '../../runtime/src/cstReader.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -81,7 +81,7 @@ const pattern = positionalArgs[0];
   const compileStart = bench.now();
   const modBytes = new Compiler(liquid.LiquidHTML).compile();
   const compileTime = bench.now() - compileStart;
-  const g = await toWasmGrammar(liquid.LiquidHTML, {modBytes});
+  const g = await legacyGrammarToWasm(liquid.LiquidHTML, {modBytes});
   const {exports} = g._instance;
   let peakWasmHeapBytes = 0;
   let peakWasmMemoryBytes = 0;

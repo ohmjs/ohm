@@ -6,7 +6,7 @@ import * as ohm from 'ohm-js-legacy';
 import {toAST} from 'ohm-js-legacy/extras';
 import {grammar as v18Grammar} from 'ohm-js-legacy/v18';
 
-import {compileAndLoad, scriptRel, toWasmGrammar} from './_helpers.js';
+import {compileAndLoad, scriptRel, legacyGrammarToWasm} from './_helpers.js';
 import {createToAst} from '@ohm-js/to-ast-compat';
 
 const arithmeticSrc = readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'));
@@ -278,7 +278,7 @@ function arbitraryMapping() {
 }
 
 test('arbitrary mappings (fast-check)', async t => {
-  const g = await toWasmGrammar(arithmetic2);
+  const g = await legacyGrammarToWasm(arithmetic2);
   const input = '(10+ 999)- 1 +222; 2';
   const wasmResult = g.match(input);
   const jsResult = arithmetic2.match(input);
@@ -300,7 +300,7 @@ test('arbitrary mappings (fast-check)', async t => {
 
 // Failures that fast-check has found, which we don't want to regress on.
 test('fast-check zoo', async t => {
-  const wasmGrammar = await toWasmGrammar(arithmetic2);
+  const wasmGrammar = await legacyGrammarToWasm(arithmetic2);
   const createAsts = (input, mapping) => {
     const toAst = createToAst(mapping);
     const wasmAst = wasmGrammar.match(input).use(r => toAst(r));

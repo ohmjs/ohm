@@ -5,7 +5,7 @@ import * as ohm from 'ohm-js-legacy';
 import {performance} from 'perf_hooks';
 
 import {Compiler} from '../src/Compiler.ts';
-import {compileAndLoad, matchWithInput, unparse, toWasmGrammar} from './_helpers.js';
+import {compileAndLoad, matchWithInput, unparse, legacyGrammarToWasm} from './_helpers.js';
 
 const SIZEOF_UINT32 = 4;
 
@@ -798,7 +798,7 @@ test('real-world grammar', async t => {
   g.match(longInput);
   t.log(`Ohm match time: ${(performance.now() - start).toFixed(2)}ms`);
 
-  const wasmGrammar = await toWasmGrammar(g);
+  const wasmGrammar = await legacyGrammarToWasm(g);
   t.is(matchWithInput(wasmGrammar, '/quickjs eval source: "1 + 1"'), 1);
   start = performance.now();
   t.is(matchWithInput(wasmGrammar, longInput), 1);
@@ -1515,7 +1515,7 @@ test('fast-check: error messages match JS impl', async t => {
 
   for (const source of errorMessageGrammars) {
     const ohmG = ohm.grammar(source);
-    const wasmG = await toWasmGrammar(ohmG);
+    const wasmG = await legacyGrammarToWasm(ohmG);
 
     const result = fc.check(
       fc.property(inputArb, input => {
@@ -1573,7 +1573,7 @@ test('failure descriptions match JS impl', async t => {
 
   for (const [source, input, desc] of testCases) {
     const ohmG = ohm.grammar(source);
-    const wasmG = await toWasmGrammar(ohmG);
+    const wasmG = await legacyGrammarToWasm(ohmG);
 
     const ohmResult = ohmG.match(input);
     const ohmExpected = getExpectedSet(ohmResult);
@@ -1598,7 +1598,7 @@ test('fast-check: FailedMatchResult methods match JS impl', async t => {
 
   for (const source of errorMessageGrammars) {
     const ohmG = ohm.grammar(source);
-    const wasmG = await toWasmGrammar(ohmG);
+    const wasmG = await legacyGrammarToWasm(ohmG);
 
     const result = fc.check(
       fc.property(inputArb, input => {
@@ -1685,7 +1685,7 @@ test('accessing CST node after dispose throws', async t => {
 
 test('accessing .message inside use() works correctly', async t => {
   const ohmGrammar = ohm.grammar('G { start = "a" "b" "c" }');
-  const wasmGrammar = await toWasmGrammar(ohmGrammar);
+  const wasmGrammar = await legacyGrammarToWasm(ohmGrammar);
 
   const input = 'ab'; // Missing "c"
 
@@ -1703,7 +1703,7 @@ test('accessing .message inside use() works correctly', async t => {
 // --- Ohm meta-grammar ---
 
 test('compile and use the Ohm meta-grammar', async t => {
-  const wasmGrammar = await toWasmGrammar(ohm.ohmGrammar);
+  const wasmGrammar = await legacyGrammarToWasm(ohm.ohmGrammar);
 
   // Should parse valid grammars
   const inputs = [

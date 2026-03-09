@@ -10,7 +10,7 @@ import {readFileSync} from 'node:fs';
 import * as ohm from 'ohm-js-legacy';
 import {grammar as v18Grammar, grammars as v18Grammars} from 'ohm-js-legacy/v18';
 
-import {matchWithInput, scriptRel, toWasmGrammar} from './_helpers.js';
+import {matchWithInput, scriptRel, legacyGrammarToWasm} from './_helpers.js';
 
 // --- Serializer: reduces a CST node to a plain JSON "shape" ---
 
@@ -51,7 +51,7 @@ function serializeCst(node) {
 const arithmeticSrc = readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'), 'utf8');
 
 test.failing('compat: arithmetic', async t => {
-  const wasmG = await toWasmGrammar(ohm.grammar(arithmeticSrc));
+  const wasmG = await legacyGrammarToWasm(ohm.grammar(arithmeticSrc));
   const v18G = v18Grammar(arithmeticSrc);
 
   for (const input of ['1', '10 + 20', '1+276*(3+4)', '(10+ 999)- 1 +222']) {
@@ -65,7 +65,7 @@ test.failing('compat: arithmetic', async t => {
 const liquidHtmlSrc = readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
 
 test.failing('compat: liquid-html', async t => {
-  const wasmG = await toWasmGrammar(ohm.grammars(liquidHtmlSrc).LiquidHTML);
+  const wasmG = await legacyGrammarToWasm(ohm.grammars(liquidHtmlSrc).LiquidHTML);
   const v18G = v18Grammars(liquidHtmlSrc).LiquidHTML;
 
   const inputs = [

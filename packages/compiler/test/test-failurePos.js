@@ -4,7 +4,7 @@ import fc from 'fast-check';
 import {readFileSync} from 'node:fs';
 import {grammars, grammar} from 'ohm-js-legacy/v18';
 
-import {scriptRel, toWasmGrammar} from './_helpers.js';
+import {scriptRel, legacyGrammarToWasm} from './_helpers.js';
 
 const grammarSource = readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
 const ns = grammars(grammarSource);
@@ -79,7 +79,7 @@ function sameFailurePos(wasmGrammar) {
 }
 
 test('failure pos (fast-check)', async t => {
-  const g = await toWasmGrammar(ns.LiquidHTML);
+  const g = await legacyGrammarToWasm(ns.LiquidHTML);
   const details = fc.check(sameFailurePos(g), {
     includeErrorInReport: true,
     interruptAfterTimeLimit: 1000,
@@ -94,7 +94,7 @@ test('failure pos: basic 1', async t => {
       Start = number+
       number = digit+
     }`);
-  const wasmGrammar = await toWasmGrammar(g);
+  const wasmGrammar = await legacyGrammarToWasm(g);
 
   t.is(failurePos(g, 'a'), 0);
   t.is(failurePos(wasmGrammar, 'a'), 0);
@@ -113,7 +113,7 @@ test('failure pos: basic 2', async t => {
             | number
         number = digit+
       }`);
-  const wasmGrammar = await toWasmGrammar(g);
+  const wasmGrammar = await legacyGrammarToWasm(g);
 
   t.is(failurePos(g, '99 + 66'), 7);
   t.is(failurePos(wasmGrammar, '99 + 66'), 7);
@@ -125,7 +125,7 @@ test('failure pos: basic 3', async t => {
       Start = letter letter
       space := "/*" (~"*/" any)* "*/"
     }`);
-  const wasmGrammar = await toWasmGrammar(g);
+  const wasmGrammar = await legacyGrammarToWasm(g);
 
   t.is(failurePos(wasmGrammar, '99'), 0);
 });
@@ -137,7 +137,7 @@ test('failure pos: lookahead', async t => {
         start = ~(anyTwo "!") "a" "b"
         anyTwo = any any
       }`);
-    const wasmGrammar = await toWasmGrammar(g);
+    const wasmGrammar = await legacyGrammarToWasm(g);
 
     // Original Ohm behaviour is to ignore failures inside the lookahead, so
     // it produces 'Expected "a"' at pos 0.
@@ -153,7 +153,7 @@ test('failure pos: memoization', async t => {
         start = ~anyTwo anyTwo
         anyTwo = any any
       }`);
-    const wasmGrammar = await toWasmGrammar(g);
+    const wasmGrammar = await legacyGrammarToWasm(g);
 
     // Original Ohm behaviour is to ignore failures inside the lookahead, so
     // it produces 'Expected "a"' at pos 0.
@@ -168,7 +168,7 @@ test('failure pos: space skipping', async t => {
       Start = digit digit
       space += "/*" (~"*/" any)* "*/" -- comment
     }`);
-  const wasmGrammar = await toWasmGrammar(g);
+  const wasmGrammar = await legacyGrammarToWasm(g);
 
   // Failure inside space skipping should be ignored.
   t.is(failurePos(g, '9 /* bad'), 2);
@@ -183,7 +183,7 @@ test('failure pos is always after space skipping', async t => {
             | "3." twice<"b">
       twice<x> = x x
     }`);
-  const wasmGrammar = await toWasmGrammar(g);
+  const wasmGrammar = await legacyGrammarToWasm(g);
 
   // Regular terminal
   t.is(failurePos(g, '1. c'), 3);
@@ -204,7 +204,7 @@ test('failure pos is always after space skipping', async t => {
 });
 
 test('fast-check zoo', async t => {
-  const wasmGrammar = await toWasmGrammar(ns.LiquidHTML);
+  const wasmGrammar = await legacyGrammarToWasm(ns.LiquidHTML);
 
   const input = '< {% if swatch_value %}';
   t.is(failurePos(wasmGrammar, input), failurePos(ns.LiquidHTML, input));

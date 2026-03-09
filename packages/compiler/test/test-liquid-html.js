@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import * as ohm from 'ohm-js-legacy';
 import {performance} from 'perf_hooks';
 
-import {compileAndLoadAll, matchWithInput, unparse, toWasmGrammar} from './_helpers.js';
+import {compileAndLoadAll, matchWithInput, unparse, legacyGrammarToWasm} from './_helpers.js';
 
 const scriptRel = relPath => new URL(relPath, import.meta.url);
 const grammarSource = fs.readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
@@ -30,7 +30,7 @@ test('basic matching (small)', async t => {
     {% assign year = page.started | date: '%Y' %}`;
   t.is(grammars.LiquidHTML.match(input).succeeded(), true);
 
-  const g = await toWasmGrammar(grammars.LiquidHTML, {startRules});
+  const g = await legacyGrammarToWasm(grammars.LiquidHTML, {startRules});
   t.is(matchWithInput(g, input), 1);
   t.is(unparse(g), input);
 });
@@ -60,7 +60,7 @@ test('book-review.liquid', async t => {
   t.is(grammars.LiquidHTML.match(input).succeeded(), true); // Trigger fillInputBuffer
   t.log(`Ohm.js: ${(performance.now() - start).toFixed(2)}ms`);
 
-  const g = await toWasmGrammar(grammars.LiquidHTML, {startRules});
+  const g = await legacyGrammarToWasm(grammars.LiquidHTML, {startRules});
   start = performance.now();
   t.is(matchWithInput(g, input), 1);
   t.log(`Wasm: ${(performance.now() - start).toFixed(2)}ms`);
@@ -119,7 +119,7 @@ test('tagMarkup', async t => {
 test('Not discards child failures', async t => {
   // Grammar where Not's child failures should be completely discarded
   const simpleG = ohm.grammar('G { start = (~space any)+ ">" }');
-  const wg = await toWasmGrammar(simpleG);
+  const wg = await legacyGrammarToWasm(simpleG);
 
   // 'abc!' fails because no '>' at end. Inside the star, ~space tries space
   // which fails and records "a space" — but Not should discard it.
@@ -130,7 +130,7 @@ test('Not discards child failures', async t => {
 
   // Test with alternation inside Not (like the real grammar)
   const altG = ohm.grammar('G { start = (~(space | "\'" | "{{") any)+ ">" }');
-  const wg2 = await toWasmGrammar(altG);
+  const wg2 = await legacyGrammarToWasm(altG);
   wg2.match('abc!').use(r2 => {
     const jsR2 = altG.match('abc!');
     t.is(r2.getExpectedText(), jsR2.getExpectedText());
@@ -146,7 +146,7 @@ const sortDescriptions = text =>
     .join(', ');
 
 test('failure message', async t => {
-  const g = await toWasmGrammar(grammars.LiquidHTML, {startRules});
+  const g = await legacyGrammarToWasm(grammars.LiquidHTML, {startRules});
   const getExpectedText = input => g.match(input).use(r => r.getExpectedText());
 
   t.is(getExpectedText('{%if cond }}'), '"%}"');

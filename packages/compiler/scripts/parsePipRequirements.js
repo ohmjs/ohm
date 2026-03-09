@@ -11,7 +11,7 @@ import process from 'node:process';
 import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js-legacy';
 
-import {unparse, toWasmGrammar} from '../test/_helpers.js';
+import {unparse, legacyGrammarToWasm} from '../test/_helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -32,7 +32,7 @@ const input = readFileSync(join(datadir, 'requirements_all.txt'), 'utf8');
   assert.equal(r.succeeded(), true, `JS parse failed: ${r.shortMessage}`);
 
   // --- Wasm ---
-  const g = await toWasmGrammar(grammar);
+  const g = await legacyGrammarToWasm(grammar);
   const {exports} = g._instance;
 
   const wasmStart = performance.now();
