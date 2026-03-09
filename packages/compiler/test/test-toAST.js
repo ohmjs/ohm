@@ -6,7 +6,7 @@ import * as ohm from 'ohm-js-legacy';
 import {toAST} from 'ohm-js-legacy/extras';
 import {grammar as v18Grammar} from 'ohm-js-legacy/v18';
 
-import {scriptRel, toWasmGrammar} from './_helpers.js';
+import {compileAndLoad, scriptRel, toWasmGrammar} from './_helpers.js';
 import {createToAst} from '@ohm-js/to-ast-compat';
 
 const arithmeticSrc = readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'));
@@ -31,7 +31,7 @@ const arithmetic2 = v18Grammar(arithmetic2Src);
 
 // Copied from test/extras/test-toAst.js and modified for the new toAST API.
 test('toAST basic', async t => {
-  const g = await toWasmGrammar(arithmetic);
+  const g = await compileAndLoad(arithmeticSrc.toString());
   let matchResult = g.match('10 + 20');
   let toAst = createToAst({
     AddExp_plus: {
@@ -184,14 +184,13 @@ test('toAST basic', async t => {
 test('listOf and friends - #394', async t => {
   // By default, toAST assumes that lexical rules represent indivisible tokens,
   // but that doesn't make sense for listOf, nonemptyListOf, and emptyListOf.
-  const g = ohm.grammar(`
+  const wasmGrammar = await compileAndLoad(`
     G {
       Exp = listOf<digit, "+">
           | ~end end Exp2 -- dummy // Defeat dead rule elimination
       Exp2 = ListOf<digit, "+">
     }
-  `);
-  const wasmGrammar = await toWasmGrammar(g, {startRules: ['Exp2']});
+  `, {startRules: ['Exp2']});
 
   const ast = (input, mapping, ruleName = 'Exp') => {
     const toAst = createToAst(mapping);
@@ -314,7 +313,7 @@ test('fast-check zoo', async t => {
 });
 
 test('this param is current node', async t => {
-  const g = await toWasmGrammar(arithmetic);
+  const g = await compileAndLoad(arithmeticSrc.toString());
   const matchResult = g.match('10 + 20');
   const toAst = createToAst({
     AddExp_plus(l, _, r) {

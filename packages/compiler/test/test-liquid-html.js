@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import * as ohm from 'ohm-js-legacy';
 import {performance} from 'perf_hooks';
 
-import {matchWithInput, unparse, toWasmGrammar} from './_helpers.js';
+import {compileAndLoadAll, matchWithInput, unparse, toWasmGrammar} from './_helpers.js';
 
 const scriptRel = relPath => new URL(relPath, import.meta.url);
 const grammarSource = fs.readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
@@ -13,8 +13,13 @@ const grammarSource = fs.readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8')
 const grammars = ohm.grammars(grammarSource);
 const startRules = ['LiquidHTML', 'AttrSingleQuoted', 'tagMarkup'];
 
+async function loadWasmLiquidHTML() {
+  const wg = await compileAndLoadAll(grammarSource, {startRules});
+  return wg.LiquidHTML;
+}
+
 test('basic compilation', async t => {
-  Object.values(grammars).forEach(async g => await toWasmGrammar(g, {startRules}));
+  await compileAndLoadAll(grammarSource, {startRules});
   t.pass();
 });
 
@@ -37,7 +42,7 @@ test('swatch.liquid', async t => {
     class="{% if x == 'x' %}x{% endif %}"
   {% endif %}
 >`;
-  const g = await toWasmGrammar(grammars.LiquidHTML, {startRules});
+  const g = await loadWasmLiquidHTML();
   t.is(matchWithInput(g, input), 1);
 });
 
@@ -45,7 +50,7 @@ test('html comment', async t => {
   const input = `{% if x %}
     <!-- x -->
   {% endif %}`;
-  const g = await toWasmGrammar(grammars.LiquidHTML, {startRules});
+  const g = await loadWasmLiquidHTML();
   t.is(matchWithInput(g, input), 1);
 });
 
@@ -71,7 +76,7 @@ test('liquidRawTagImpl', async t => {
         not a problem
     {%- endraw %}
   `;
-  const g = await toWasmGrammar(grammars.LiquidHTML, {startRules});
+  const g = await loadWasmLiquidHTML();
   const r = g.match(sourceCode);
   t.true(r.succeeded());
   const root = r._cst;
@@ -99,14 +104,14 @@ test('liquidRawTagImpl', async t => {
 
 test('AttrSingleQuoted', async t => {
   const sourceCode = 'single=‘single‘';
-  const g = await toWasmGrammar(grammars.LiquidHTML, {startRules});
+  const g = await loadWasmLiquidHTML();
   const r = g.match(sourceCode, 'AttrSingleQuoted');
   t.true(r.succeeded());
 });
 
 test('tagMarkup', async t => {
   const sourceCode = '"example-snippet", id: 2, foo█ ';
-  const g = await toWasmGrammar(grammars.LiquidHTML, {startRules});
+  const g = await loadWasmLiquidHTML();
   const r = g.match(sourceCode, 'tagMarkup');
   t.true(r.succeeded());
 });
