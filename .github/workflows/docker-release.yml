@@ -9,7 +9,7 @@ name: Docker Release
 
 on:
   push:
-    branches: [main]
+    branches: [main, docker-release-gha]
   workflow_dispatch:
     inputs:
       VERSION:
