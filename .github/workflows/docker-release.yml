@@ -1,11 +1,10 @@
 name: Docker Release
 
-# only run this on merge to main
-# clone the repo
-# set the VERSION environment variable ie `cat packages/runtime/package.json | jq -r '.version'`
-# use `docker manifest inspect ohmjs/ohm:$VERION` to verify that the release doesn't already exist before running the rest of the workflow
-# create a multi platfrom builder
-# build and push the image
+# This workflow was largely generated from the following prompt:
+#   "only run this on merge to main; clone the repo; set the VERSION environment
+#   variable from packages/runtime/package.json; use `docker manifest inspect`
+#   to verify the release doesn't already exist; create a multi-platform builder;
+#   build and push the image"
 
 on:
   push:

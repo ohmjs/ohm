@@ -14,15 +14,11 @@ services:
         - org.opencontainers.image.licenses=MIT
         - org.opencontainers.image.description=Ohm tooling - A library and language for building parsers, interpreters, compilers, etc.
       x-bake:
-        # only platforms supported by the base image (node:24-slim) are included here
-        # https://hub.docker.com/_/node/tags?name=24-slim
+        # even thought node:24-slim supports platforms linux/ppc64le & linux/s390x (see https://hub.docker.com/_/node/tags?name=24-slim),
+        # pnpm install fails for there two
         platforms:
           - linux/amd64
           - linux/arm64/v8
-          # # fails on pnpm install
-          # - linux/ppc64le
-          # - linux/s390x
-
       target: ${TARGET:-dist}
     volumes:
       - .:/local
