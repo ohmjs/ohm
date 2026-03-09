@@ -2,11 +2,10 @@ import test from 'ava';
 import * as fc from 'fast-check';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import * as ohm from 'ohm-js-legacy';
 import {toAST} from 'ohm-js-legacy/extras';
 import {grammar as v18Grammar} from 'ohm-js-legacy/v18';
 
-import {scriptRel, toWasmGrammar} from './_helpers.js';
+import {compileAndLoad, scriptRel, legacyGrammarToWasm} from './_helpers.js';
 import {createToAst} from '@ohm-js/to-ast-compat';
 
 const arithmeticSrc = readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'));
@@ -31,7 +30,7 @@ const arithmetic2 = v18Grammar(arithmetic2Src);
 
 // Copied from test/extras/test-toAst.js and modified for the new toAST API.
 test('toAST basic', async t => {
-  const g = await toWasmGrammar(arithmetic);
+  const g = await compileAndLoad(arithmeticSrc.toString());
   let matchResult = g.match('10 + 20');
   let toAst = createToAst({
     AddExp_plus: {
@@ -184,14 +183,16 @@ test('toAST basic', async t => {
 test('listOf and friends - #394', async t => {
   // By default, toAST assumes that lexical rules represent indivisible tokens,
   // but that doesn't make sense for listOf, nonemptyListOf, and emptyListOf.
-  const g = ohm.grammar(`
+  const wasmGrammar = await compileAndLoad(
+    `
     G {
       Exp = listOf<digit, "+">
           | ~end end Exp2 -- dummy // Defeat dead rule elimination
       Exp2 = ListOf<digit, "+">
     }
-  `);
-  const wasmGrammar = await toWasmGrammar(g, {startRules: ['Exp2']});
+  `,
+    {startRules: ['Exp2']}
+  );
 
   const ast = (input, mapping, ruleName = 'Exp') => {
     const toAst = createToAst(mapping);
@@ -276,7 +277,7 @@ function arbitraryMapping() {
 }
 
 test('arbitrary mappings (fast-check)', async t => {
-  const g = await toWasmGrammar(arithmetic2);
+  const g = await legacyGrammarToWasm(arithmetic2);
   const input = '(10+ 999)- 1 +222; 2';
   const wasmResult = g.match(input);
   const jsResult = arithmetic2.match(input);
@@ -298,7 +299,7 @@ test('arbitrary mappings (fast-check)', async t => {
 
 // Failures that fast-check has found, which we don't want to regress on.
 test('fast-check zoo', async t => {
-  const wasmGrammar = await toWasmGrammar(arithmetic2);
+  const wasmGrammar = await legacyGrammarToWasm(arithmetic2);
   const createAsts = (input, mapping) => {
     const toAst = createToAst(mapping);
     const wasmAst = wasmGrammar.match(input).use(r => toAst(r));
@@ -314,7 +315,7 @@ test('fast-check zoo', async t => {
 });
 
 test('this param is current node', async t => {
-  const g = await toWasmGrammar(arithmetic);
+  const g = await compileAndLoad(arithmeticSrc.toString());
   const matchResult = g.match('10 + 20');
   const toAst = createToAst({
     AddExp_plus(l, _, r) {

@@ -1,11 +1,10 @@
 import test from 'ava';
-import * as ohm from 'ohm-js-legacy';
 
 import {getMatchStats} from 'ohm-js/unstableDebug';
-import {toWasmGrammar} from './_helpers.js';
+import {compileAndLoad} from './_helpers.js';
 
 test('getMatchStats basic', async t => {
-  const g = await toWasmGrammar(ohm.grammar('G { start = "a" "b" }'));
+  const g = await compileAndLoad('G { start = "a" "b" }');
   g.match('ab').use(r => {
     t.true(r.succeeded());
     const stats = getMatchStats(r);
@@ -27,8 +26,8 @@ test('getMatchStats basic', async t => {
 });
 
 test('getMatchStats with alternatives', async t => {
-  const g = await toWasmGrammar(
-    ohm.grammar('G { start = big | small\n  big = "x" "y" "z"\n  small = "a" }')
+  const g = await compileAndLoad(
+    'G { start = big | small\n  big = "x" "y" "z"\n  small = "a" }'
   );
   g.match('a').use(r => {
     t.true(r.succeeded());
