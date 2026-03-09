@@ -11,12 +11,15 @@ import process from 'node:process';
 import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js-legacy';
 
-import {unparse, legacyGrammarToWasm} from '../test/_helpers.js';
+import {Grammar} from 'ohm-js';
+import {compile} from '../src/api.ts';
+import {unparse} from '../test/_helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
 
-const grammar = ohm.grammar(readFileSync(join(datadir, 'pep-508.ohm'), 'utf8'));
+const grammarSource = readFileSync(join(datadir, 'pep-508.ohm'), 'utf8');
+const grammar = ohm.grammar(grammarSource);
 const input = readFileSync(join(datadir, 'requirements_all.txt'), 'utf8');
 
 (async function main() {
@@ -32,7 +35,8 @@ const input = readFileSync(join(datadir, 'requirements_all.txt'), 'utf8');
   assert.equal(r.succeeded(), true, `JS parse failed: ${r.shortMessage}`);
 
   // --- Wasm ---
-  const g = await legacyGrammarToWasm(grammar);
+  const modBytes = compile(grammarSource);
+  const g = await Grammar.instantiate(modBytes);
   const {exports} = g._instance;
 
   const wasmStart = performance.now();
