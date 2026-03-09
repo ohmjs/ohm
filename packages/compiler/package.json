@@ -31,7 +31,6 @@
   "keywords": [],
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT",
-  "packageManager": "pnpm@10.10.0",
   "devDependencies": {
     "@ohm-js/to-ast-compat": "workspace:^",
     "@shopify/liquid-html-parser": "github:pdubroy/theme-tools#path:/packages/liquid-html-parser",

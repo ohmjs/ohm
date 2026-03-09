@@ -8,13 +8,6 @@
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT",
   "files": ["**/*.js"],
-  "dependencies": {
-    "commander": "^8.1.0",
-    "fast-glob": "^3.2.7"
-  },
-  "peerDependencies": {
-    "ohm-js": "^17.0.0"
-  },
   "scripts": {
     "build:tests": "tsc --target es2020 --module es2020 --moduleResolution node --allowSyntheticDefaultImports src/helpers/generateTypes.test.ts",
     "test": "pnpm build:tests && ava"
@@ -22,10 +15,17 @@
   "bin": {
     "ohm": "index.js"
   },
+  "dependencies": {
+    "commander": "^8.1.0",
+    "fast-glob": "^3.2.7",
+    "ohm-js-legacy": "workspace:^"
+  },
+  "peerDependencies": {
+    "ohm-js": "^17.0.0"
+  },
   "devDependencies": {
     "@types/require-from-string": "^1.2.1",
     "ava": "^6.0.0",
-    "ohm-js-legacy": "workspace:^",
     "require-from-string": "^2.0.2",
     "ts-dedent": "^2.2.0",
     "ts-morph": "^26.0.0"
