@@ -1,0 +1,7 @@
+go 1.24.2
+
+use (
+	./packages/compiler/test/go
+	./golang/examples
+	./golang/runtime
+)
