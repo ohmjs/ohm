@@ -1,19 +1,29 @@
 import test from 'ava';
+import {readFileSync} from 'node:fs';
 import {readFile} from 'node:fs/promises';
 import {dirname, join} from 'node:path';
 import {performance} from 'node:perf_hooks';
 import {fileURLToPath} from 'node:url';
 
 import * as es5js from '../../../examples/ecmascript/index.js';
-import {matchWithInput, unparse, legacyGrammarToWasm} from './_helpers.js';
+import {compileAndLoadAll, matchWithInput, unparse, legacyGrammarToWasm} from './_helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, 'data');
 
 const html5shivPath = join(datadir, '_html5shiv-3.7.3.js');
+const es5GrammarSource = readFileSync(
+  join(__dirname, '../../../examples/ecmascript/src/es5.ohm'),
+  'utf8'
+);
+
+async function loadES5() {
+  const grammars = await compileAndLoadAll(es5GrammarSource);
+  return grammars.ES5;
+}
 
 test('basic es5 examples', async t => {
-  const g = await legacyGrammarToWasm(es5js.grammar);
+  const g = await loadES5();
   t.is(matchWithInput(g, 'x = 3;'), 1);
   t.is(matchWithInput(g, 'function foo() { return 1; }'), 1);
 });
@@ -50,12 +60,12 @@ test('unparsing', async t => {
     /\d+/.test("123") && console.log(counter());
   `;
 
-  const g = await legacyGrammarToWasm(es5js.grammar);
+  const g = await loadES5();
   t.is(matchWithInput(g, source), 1);
   t.is(unparse(g).trimEnd(), source.trimEnd());
 });
 
 test('matching at end', async t => {
-  const g = await legacyGrammarToWasm(es5js.grammar);
+  const g = await loadES5();
   t.false(g.match('', 'letter').use(r => r.succeeded()));
 });

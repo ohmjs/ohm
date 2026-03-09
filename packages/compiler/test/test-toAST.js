@@ -2,7 +2,6 @@ import test from 'ava';
 import * as fc from 'fast-check';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import * as ohm from 'ohm-js-legacy';
 import {toAST} from 'ohm-js-legacy/extras';
 import {grammar as v18Grammar} from 'ohm-js-legacy/v18';
 

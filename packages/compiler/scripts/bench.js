@@ -104,7 +104,10 @@ group('JSON', () => {
     es5js.grammar,
     readFileSync(join(__dirname, '../build/es5.wasm'))
   );
-  jsonWasm = await legacyGrammarToWasm(json, readFileSync(join(__dirname, '../build/json.wasm')));
+  jsonWasm = await legacyGrammarToWasm(
+    json,
+    readFileSync(join(__dirname, '../build/json.wasm'))
+  );
 
   await run();
 })();
