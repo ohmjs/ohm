@@ -10,11 +10,6 @@ name: Docker Release
 on:
   push:
     branches: [main, docker-release-gha]
-  workflow_dispatch:
-    inputs:
-      VERSION:
-        description: 'Docker image version to build and push'
-        required: false
 
 jobs:
   docker:
@@ -26,11 +21,7 @@ jobs:
       - name: Get version
         id: version
         run: |
-          if [ -n "${{ inputs.VERSION }}" ]; then
-            echo "VERSION=${{ inputs.VERSION }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "VERSION=$(cat packages/runtime/package.json | jq -r '.version')" >> "$GITHUB_OUTPUT"
-          fi
+          echo "VERSION=$(cat packages/runtime/package.json | jq -r '.version')" >> "$GITHUB_OUTPUT"
 
       - name: Check if image already exists
         id: check
