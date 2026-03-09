@@ -36,6 +36,12 @@ COPY --from=build /ohm/packages/semantics       /ohm/packages/semantics
 COPY --from=build /ohm/packages/lang-python     /ohm/packages/lang-python
 COPY --from=build /ohm/packages/cli             /ohm/packages/cli
 
+# Note:
+#  The build stage fetched all dependencies, where as the dist stage only fetches production dependencies.
+#  This means that some symlinks, copied from the build stage, will be broken in the dist stage.
+#  Safely remove all broken symlinks.
+RUN find /ohm/packages -xtype l | xargs rm
+
 COPY ./docker/entrypoint.sh entrypoint.sh
 ENTRYPOINT [ "/ohm/entrypoint.sh" ]
 
