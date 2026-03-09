@@ -16,7 +16,12 @@ services:
       x-bake:
         # only platforms supported by the base image (node:24-slim) are included here
         # https://hub.docker.com/_/node/tags?name=24-slim
-        platforms: [linux/amd64,linux/arm64/v8,linux/ppc64le,linux/s390x]
+        platforms:
+          - linux/amd64
+          - linux/arm64/v8
+          # # fails on pnpm install
+          # - linux/ppc64le
+          # - linux/s390x
 
       target: ${TARGET:-dist}
     volumes:

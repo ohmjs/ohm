@@ -132,7 +132,8 @@ export VERSION=$(cat packages/runtime/package.json | jq -r '.version')
 # generate a person access token at https://app.docker.com/accounts/millergarym/settings/personal-access-tokens
 # assuming DHPAT contains your PAT
 echo $DHPAT | docker login -u <personal username> --password-stdin
-docker buildx bake --push
+cd docker
+docker buildx bake --allow=fs.read=.. --push
 ```
 
 `git describe --tag --dirty` produces a version string based on the nearest git tag, appending commit info and a `-dirty` suffix if there are uncommitted changes.
