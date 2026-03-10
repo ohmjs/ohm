@@ -145,16 +145,32 @@ export class CstView {
   }
 
   /**
-   * Map over grouped children. Works for both list and optional nodes.
+   * Iterate over logical items. Works for both list and optional nodes.
    *
    * - List (`_list`): groups children by the list's arity and calls `cb`
-   *   per group. Returns `T[]` with one entry per iteration.
-   * - Optional (`_opt`): all children form a single group. Returns `T[]`
-   *   with 0 elements (absent) or 1 element (present).
+   *   per group.
+   * - Optional (`_opt`): all children form a single group. Calls `cb`
+   *   once if present, not at all if absent.
+   */
+  forEachItem(handle: number, cb: (...children: number[]) => void): void {
+    this._iterItems(handle, cb);
+  }
+
+  /**
+   * Like `forEachItem`, but collects the return values into an array.
    */
   mapItems<T>(handle: number, cb: (...children: number[]) => T): T[] {
+    const results: T[] = [];
+    this._iterItems(handle, (...args) => {
+      results.push(cb(...args));
+    });
+    return results;
+  }
+
+  /** @internal — shared implementation for forEachItem / mapItems. */
+  private _iterItems(handle: number, cb: (...children: number[]) => void): void {
     const count = this.childCount(handle);
-    if (count === 0) return [];
+    if (count === 0) return;
 
     const raw = handle & MASK;
     const type = (this._ctx.view.getInt32(raw + 8, true) &
@@ -165,28 +181,23 @@ export class CstView {
         ? this._ctx.view.getInt32(raw + 8, true) >>> 2
         : count;
 
-    // Collect all packed child handles in one pass into a pre-sized array.
-    const children = new Array<number>(count);
-    let idx = 0;
-    this.forEachChild(handle, child => {
-      children[idx++] = child;
-    });
-
-    const numItems = arity <= 1 ? count : (count / arity) | 0;
-    const results = new Array<T>(numItems);
     if (arity <= 1) {
-      for (let i = 0; i < numItems; i++) {
-        results[i] = cb(children[i]);
-      }
+      this.forEachChild(handle, child => {
+        cb(child);
+      });
     } else {
-      // Reusable args buffer — one allocation, not one per group.
+      // Collect all packed child handles, then invoke cb in groups.
+      const children = new Array<number>(count);
+      let idx = 0;
+      this.forEachChild(handle, child => {
+        children[idx++] = child;
+      });
       const args = new Array<number>(arity);
-      for (let i = 0, r = 0; r < numItems; i += arity, r++) {
+      for (let i = 0; i < count; i += arity) {
         for (let j = 0; j < arity; j++) args[j] = children[i + j];
-        results[r] = cb.apply(undefined, args);
+        cb.apply(undefined, args);
       }
     }
-    return results;
   }
 
   /** Number of raw children stored in this match record. */
