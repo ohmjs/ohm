@@ -130,7 +130,7 @@ export function buildGrammars(
           visit(s.children[0]!);
         }
         rules.children.map((c: CstNode) => visit(c));
-        const g = decl.build();
+        const g = decl.build({v18: true});
         g.source = interval(node).trimmed();
         if (namespaceHas(namespace, grammarName)) {
           throw errors.duplicateGrammarDeclaration(g, namespace);
