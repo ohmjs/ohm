@@ -160,9 +160,7 @@ export class CstView {
     this._checkNull(handle);
     const k = this.kind(handle);
     if (k !== CstKind.List && k !== CstKind.Optional) {
-      throw new Error(
-        `forEachGroup() is only valid for list and optional nodes, got ${k}`
-      );
+      throw new Error(`forEachGroup() is only valid for list and optional nodes, got ${k}`);
     }
     const raw = handle & MASK;
     const count = this._ctx.view.getUint32(raw, true);
@@ -179,43 +177,12 @@ export class CstView {
     const savedPos = this._pos;
     this._pos = (handle - raw) / SHIFT;
     try {
-      // Stream groups directly — fast paths for common arities.
-      // Decode all children in a group before calling cb, then
-      // save/restore _pos around the callback for reentrancy safety.
-      switch (arity) {
-        case 1:
-          for (let i = 0; i < count; i++) {
-            const c0 = this._decodeChild(raw, i);
-            const p = this._pos; cb(c0); this._pos = p;
-          }
-          break;
-        case 2:
-          for (let i = 0; i < count; i += 2) {
-            const c0 = this._decodeChild(raw, i), c1 = this._decodeChild(raw, i + 1);
-            const p = this._pos; cb(c0, c1); this._pos = p;
-          }
-          break;
-        case 3:
-          for (let i = 0; i < count; i += 3) {
-            const c0 = this._decodeChild(raw, i), c1 = this._decodeChild(raw, i + 1),
-              c2 = this._decodeChild(raw, i + 2);
-            const p = this._pos; cb(c0, c1, c2); this._pos = p;
-          }
-          break;
-        case 4:
-          for (let i = 0; i < count; i += 4) {
-            const c0 = this._decodeChild(raw, i), c1 = this._decodeChild(raw, i + 1),
-              c2 = this._decodeChild(raw, i + 2), c3 = this._decodeChild(raw, i + 3);
-            const p = this._pos; cb(c0, c1, c2, c3); this._pos = p;
-          }
-          break;
-        default: {
-          const args = new Array<number>(arity);
-          for (let i = 0; i < count; i += arity) {
-            for (let j = 0; j < arity; j++) args[j] = this._decodeChild(raw, i + j);
-            const p = this._pos; cb.apply(undefined, args); this._pos = p;
-          }
-        }
+      const args = new Array<number>(arity);
+      for (let i = 0; i < count; i += arity) {
+        for (let j = 0; j < arity; j++) args[j] = this._decodeChild(raw, i + j);
+        const p = this._pos;
+        cb.apply(undefined, args);
+        this._pos = p;
       }
     } finally {
       this._pos = savedPos;
@@ -232,9 +199,6 @@ export class CstView {
    *
    * Not valid for terminals or lists — use `sourceString` for terminals
    * and `forEachGroup` for lists.
-   *
-   * Zero-allocation for nodes with up to 6 children. For zero-allocation
-   * traversal of any arity, use `forEachChild` directly.
    */
   unpack<T>(handle: number, cb: (...children: number[]) => T): T | undefined {
     this._checkNull(handle);
@@ -255,31 +219,9 @@ export class CstView {
       );
     }
     this._pos = (handle - raw) / SHIFT;
-    // Fast paths for common arities — no array allocation.
-    switch (count) {
-      case 0: return (cb as () => T)();
-      case 1: return (cb as any)(this._decodeChild(raw, 0));
-      case 2: return (cb as any)(this._decodeChild(raw, 0), this._decodeChild(raw, 1));
-      case 3: return (cb as any)(
-        this._decodeChild(raw, 0), this._decodeChild(raw, 1),
-        this._decodeChild(raw, 2));
-      case 4: return (cb as any)(
-        this._decodeChild(raw, 0), this._decodeChild(raw, 1),
-        this._decodeChild(raw, 2), this._decodeChild(raw, 3));
-      case 5: return (cb as any)(
-        this._decodeChild(raw, 0), this._decodeChild(raw, 1),
-        this._decodeChild(raw, 2), this._decodeChild(raw, 3),
-        this._decodeChild(raw, 4));
-      case 6: return (cb as any)(
-        this._decodeChild(raw, 0), this._decodeChild(raw, 1),
-        this._decodeChild(raw, 2), this._decodeChild(raw, 3),
-        this._decodeChild(raw, 4), this._decodeChild(raw, 5));
-      default: {
-        const children = new Array<number>(count);
-        for (let i = 0; i < count; i++) children[i] = this._decodeChild(raw, i);
-        return cb.apply(undefined, children);
-      }
-    }
+    const children = new Array<number>(count);
+    for (let i = 0; i < count; i++) children[i] = this._decodeChild(raw, i);
+    return cb.apply(undefined, children);
   }
 
   /**

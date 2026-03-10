@@ -177,13 +177,7 @@ test('string escape sequences', t => {
 });
 
 test('array with mixed types', t => {
-  t.deepEqual(parse(jsonGrammar, '[1, "two", true, null, [3]]'), [
-    1,
-    'two',
-    true,
-    null,
-    [3],
-  ]);
+  t.deepEqual(parse(jsonGrammar, '[1, "two", true, null, [3]]'), [1, 'two', true, null, [3]]);
 });
 
 test('deeply nested', t => {
