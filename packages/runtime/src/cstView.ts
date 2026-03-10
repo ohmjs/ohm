@@ -165,20 +165,26 @@ export class CstView {
         ? this._ctx.view.getInt32(raw + 8, true) >>> 2
         : count;
 
-    const results: T[] = [];
+    // Collect all packed child handles in one pass into a pre-sized array.
+    const children = new Array<number>(count);
+    let idx = 0;
+    this.forEachChild(handle, child => {
+      children[idx++] = child;
+    });
+
+    const numItems = arity <= 1 ? count : (count / arity) | 0;
+    const results = new Array<T>(numItems);
     if (arity <= 1) {
-      this.forEachChild(handle, child => {
-        results.push(cb(child));
-      });
+      for (let i = 0; i < numItems; i++) {
+        results[i] = cb(children[i]);
+      }
     } else {
-      const group: number[] = [];
-      this.forEachChild(handle, child => {
-        group.push(child);
-        if (group.length === arity) {
-          results.push(cb(...group));
-          group.length = 0;
-        }
-      });
+      // Reusable args buffer — one allocation, not one per group.
+      const args = new Array<number>(arity);
+      for (let i = 0, r = 0; r < numItems; i += arity, r++) {
+        for (let j = 0; j < arity; j++) args[j] = children[i + j];
+        results[r] = cb.apply(undefined, args);
+      }
     }
     return results;
   }
