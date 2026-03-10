@@ -93,7 +93,7 @@ export class GrammarDecl {
   }
 
   // Creates a Grammar instance, and if it passes the sanity checks, returns it.
-  build() {
+  build({v18 = false} = {}) {
     const grammar = new Grammar(
       this.name,
       this.ensureSuperGrammar(),
@@ -114,7 +114,7 @@ export class GrammarDecl {
     Object.keys(grammar.rules).forEach(ruleName => {
       const {body} = grammar.rules[ruleName];
       try {
-        body.assertChoicesHaveUniformArity(ruleName);
+        body.assertChoicesHaveUniformArity(ruleName, v18);
       } catch (e) {
         grammarErrors.push(e);
       }
