@@ -17,13 +17,14 @@ import * as ohm from 'ohm-js-legacy';
 import {Bench} from 'tinybench';
 
 import {Compiler} from '../src/Compiler.ts';
-import {unparse, toWasmGrammar} from '../test/_helpers.js';
+import {unparse} from '../test/_helpers.js';
 import {CstView} from '../../runtime/src/cstView.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
 
-const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html.ohm'), 'utf8'));
+const grammarSource = readFileSync(join(datadir, 'liquid-html.ohm'), 'utf8');
+const liquid = ohm.grammars(grammarSource);
 
 // Parse flags and positional args.
 const flags = new Set(process.argv.slice(2).filter(a => a.startsWith('--')));
@@ -78,9 +79,10 @@ const pattern = positionalArgs[0];
 
   // Compile to Wasm.
   const compileStart = bench.now();
-  const modBytes = new Compiler(liquid.LiquidHTML).compile();
+  const allBytes = compileGrammars(grammarSource);
   const compileTime = bench.now() - compileStart;
-  const g = await toWasmGrammar(liquid.LiquidHTML, {modBytes});
+  const modBytes = allBytes.LiquidHTML;
+  const g = await Grammar.instantiate(modBytes);
   const {exports} = g._instance;
   let peakWasmHeapBytes = 0;
   let peakWasmMemoryBytes = 0;
