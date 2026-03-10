@@ -32,9 +32,6 @@ export type CstKind = CstKindValue | string;
  * Bit 1 set, bit 0 clear — distinct from heap pointers (low 2 bits = 00)
  * and tagged terminals (bit 0 = 1).
  *
- * In packed mode, startIdx is embedded in the upper bits just like other
- * handles: startIdx * SHIFT + rawSpacesHandle.
- *
  * These are internal — consumers use the normal accessor methods on CstView.
  */
 function makeSpacesHandle(spacesLen: number): number {
@@ -48,20 +45,13 @@ function isSpacesHandle(raw: number): boolean {
 /**
  * Pack a raw CST handle and startIdx into a single Number handle.
  * Uses 53 of the available integer-precision bits in an IEEE 754 double
- * (27 bits for the pointer, 26 bits for startIdx). Accessor methods
- * (isTerminal, matchLength, etc.) transparently accept either a raw handle
- * or a handle with startIdx — they extract the low 27 bits via `& MASK`,
- * which is an identity operation for raw handles (< 2^27).
+ * (27 bits for the pointer, 26 bits for startIdx).
  */
-export function pack(rawHandle: number, startIdx: number): number {
+function pack(rawHandle: number, startIdx: number): number {
   return startIdx * SHIFT + rawHandle;
 }
 
-export function unpackHandle(handle: number): number {
-  return handle & MASK;
-}
-
-export function unpackStartIdx(handle: number): number {
+function unpackStartIdx(handle: number): number {
   const raw = handle & MASK;
   return (handle - raw) / SHIFT;
 }
@@ -84,15 +74,6 @@ export class CstView {
   readonly root: number;
   /** Handle for leading spaces before the root, or NULL_HANDLE if none. */
   readonly rootLeadingSpaces: number;
-
-  /** Raw handle for the root node (without startIdx). */
-  get rootHandle(): number {
-    return this.root & MASK;
-  }
-  /** startIdx for the root node. */
-  get rootStartIdx(): number {
-    return unpackStartIdx(this.root);
-  }
 
   /** @internal */
   constructor(
@@ -163,19 +144,27 @@ export class CstView {
     }
   }
 
-  /** Children per list item. Only valid when kind() === CstKind.List. */
-  listArity(handle: number): number {
-    const raw = handle & MASK;
-    return this._ctx.view.getInt32(raw + 8, true) >>> 2;
-  }
-
   /**
-   * Iterate list items grouped by arity. The callback receives the child
-   * handles for one iteration as arguments.
-   * Only valid when kind() === CstKind.List.
+   * Map over grouped children. Works for both list and optional nodes.
+   *
+   * - List (`_list`): groups children by the list's arity and calls `cb`
+   *   per group. Returns `T[]` with one entry per iteration.
+   * - Optional (`_opt`): all children form a single group. Returns `T[]`
+   *   with 0 elements (absent) or 1 element (present).
    */
-  mapList<T>(handle: number, cb: (...itemChildren: number[]) => T): T[] {
-    const arity = this.listArity(handle);
+  mapItems<T>(handle: number, cb: (...children: number[]) => T): T[] {
+    const count = this.childCount(handle);
+    if (count === 0) return [];
+
+    const raw = handle & MASK;
+    const type = (this._ctx.view.getInt32(raw + 8, true) &
+      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+    // For lists, arity is in the details field; for optionals, all children are one group.
+    const arity =
+      type === MatchRecordType.ITER_FLAG
+        ? this._ctx.view.getInt32(raw + 8, true) >>> 2
+        : count;
+
     const results: T[] = [];
     if (arity <= 1) {
       this.forEachChild(handle, child => {
@@ -194,27 +183,6 @@ export class CstView {
     return results;
   }
 
-  /**
-   * Unwrap an optional node. If present, calls `present` with the children.
-   * If absent, calls `absent` (or returns undefined).
-   * Only valid when kind() === CstKind.Optional.
-   */
-  mapOpt<T>(
-    handle: number,
-    present: (...children: number[]) => T,
-    absent?: () => T
-  ): T | undefined {
-    const count = this.childCount(handle);
-    if (count === 0) {
-      return absent ? absent() : undefined;
-    }
-    const children: number[] = [];
-    this.forEachChild(handle, child => {
-      children.push(child);
-    });
-    return present(...children);
-  }
-
   /** Number of raw children stored in this match record. */
   childCount(handle: number): number {
     const raw = handle & MASK;
@@ -228,22 +196,6 @@ export class CstView {
     if (isSpacesHandle(raw)) return raw >>> 2;
     if (isTaggedTerminal(raw)) return raw >>> 1;
     return this._ctx.view.getUint32(raw + 4, true);
-  }
-
-  /**
-   * Upper bits of typeAndDetails. For NONTERMINAL: the ruleId.
-   * For ITER_FLAG: the arity (children per iteration).
-   */
-  details(handle: number): number {
-    const raw = handle & MASK;
-    if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return 0;
-    return this._ctx.view.getInt32(raw + 8, true) >>> 2;
-  }
-
-  /** Handle (Wasm pointer) of the i-th raw child. */
-  childAt(handle: number, i: number): number {
-    const raw = handle & MASK;
-    return this._ctx.view.getUint32(raw + 16 + i * 4, true);
   }
 
   /** Source string for a node. startIdx is extracted from the handle. */
@@ -261,7 +213,7 @@ export class CstView {
   /**
    * Iterate over children. The callback receives (childHandle, leadingSpaces,
    * pos, index). leadingSpaces is a handle for the leading spaces node
-   * (works with accessor methods like matchLength, ctorName, sourceString),
+   * (works with accessor methods like matchLength, kind, sourceString),
    * or NULL_HANDLE (0) if none. `pos` is the child's absolute startIdx.
    */
   forEachChild(
