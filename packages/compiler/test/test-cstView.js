@@ -9,7 +9,7 @@ const jsonSource = readFileSync(scriptRel('../../lang-json/json.ohm'), 'utf-8');
 
 /**
  * Walk the CST via CstView and reconstruct a JS value, exercising unpack,
- * forEachChunk, mapChunks, and the basic accessors (kind, sourceString).
+ * forEachGroup, and the basic accessors (kind, sourceString).
  */
 function toJS(cst, handle) {
   const k = cst.kind(handle);
@@ -23,7 +23,7 @@ function toJS(cst, handle) {
         const obj = {};
         const [key, val] = parsePair(cst, firstPair);
         obj[key] = val;
-        cst.forEachChunk(restPairs, (_comma, pair) => {
+        cst.forEachGroup(restPairs, (_comma, pair) => {
           const [k2, v2] = parsePair(cst, pair);
           obj[k2] = v2;
         });
@@ -37,7 +37,7 @@ function toJS(cst, handle) {
       // "[" Value ("," Value)* "]"
       return cst.unpack(handle, (_open, firstValue, restValues, _close) => {
         const arr = [toJS(cst, firstValue)];
-        cst.forEachChunk(restValues, (_comma, value) => {
+        cst.forEachGroup(restValues, (_comma, value) => {
           arr.push(toJS(cst, value));
         });
         return arr;
@@ -46,7 +46,10 @@ function toJS(cst, handle) {
     case 'stringLiteral':
       // "\"" doubleStringCharacter* "\""
       return cst.unpack(handle, (_open, chars, _close) => {
-        const parts = cst.mapChunks(chars, char => toJS(cst, char));
+        const parts = [];
+        cst.forEachGroup(chars, char => {
+          parts.push(toJS(cst, char));
+        });
         return parts.join('');
       });
 
@@ -98,10 +101,7 @@ function toJS(cst, handle) {
       if (k === CstKind.Terminal) {
         return cst.sourceString(handle);
       }
-      return cst.unpack(handle, (...children) => {
-        if (children.length === 1) return toJS(cst, children[0]);
-        throw new Error(`Unhandled kind: ${k} with ${children.length} children`);
-      });
+      return toJS(cst, cst.onlyChild(handle));
   }
 }
 

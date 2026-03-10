@@ -69,6 +69,8 @@ export class CstView {
   private _ctx: MatchContext;
   /** @internal — precomputed rule ctor names (without parameterization). */
   private _ruleCtorNames: string[];
+  /** @internal — mutable cursor used by _decodeChild to avoid allocation. */
+  private _pos = 0;
 
   /** Handle for the root node (with startIdx packed in). */
   readonly root: number;
@@ -116,6 +118,7 @@ export class CstView {
 
   /** Extract the startIdx from a handle. */
   startIdx(handle: number): number {
+    this._checkNull(handle);
     return unpackStartIdx(handle);
   }
 
@@ -125,6 +128,7 @@ export class CstView {
    * '_opt', 'spaces') for other node types.
    */
   kind(handle: number): CstKind {
+    this._checkNull(handle);
     const raw = handle & MASK;
     if (isSpacesHandle(raw)) return CstKind.Spaces;
     if (isTaggedTerminal(raw)) return CstKind.Terminal;
@@ -145,52 +149,25 @@ export class CstView {
   }
 
   /**
-   * Iterate over logical chunks. Works for both list and optional nodes.
+   * Iterate over logical groups. Works for both list and optional nodes.
    *
    * - List (`_list`): groups children by the list's arity and calls `cb`
-   *   per chunk.
-   * - Optional (`_opt`): all children form a single chunk. Calls `cb`
+   *   per group.
+   * - Optional (`_opt`): all children form a single group. Calls `cb`
    *   once if present, not at all if absent.
    */
-  forEachChunk(handle: number, cb: (...children: number[]) => void): void {
-    this._iterChunks(handle, cb);
-  }
-
-  /**
-   * Unpack a node's children into the callback arguments.
-   *
-   * For nonterminals: calls `cb` once with all children, returns the result.
-   * For optionals: calls `cb` once if present (returns `T`), or returns
-   * `undefined` if absent.
-   */
-  unpack<T>(handle: number, cb: (...children: number[]) => T): T | undefined {
-    const count = this.childCount(handle);
-    if (count === 0) return undefined;
-    const children = new Array<number>(count);
-    let idx = 0;
-    this.forEachChild(handle, child => {
-      children[idx++] = child;
-    });
-    return cb.apply(undefined, children);
-  }
-
-  /**
-   * Like `forEachChunk`, but collects the return values into an array.
-   */
-  mapChunks<T>(handle: number, cb: (...children: number[]) => T): T[] {
-    const results: T[] = [];
-    this._iterChunks(handle, (...args) => {
-      results.push(cb(...args));
-    });
-    return results;
-  }
-
-  /** @internal — shared implementation for forEachChunk / mapChunks. */
-  private _iterChunks(handle: number, cb: (...children: number[]) => void): void {
-    const count = this.childCount(handle);
+  forEachGroup(handle: number, cb: (...children: number[]) => void): void {
+    this._checkNull(handle);
+    const k = this.kind(handle);
+    if (k !== CstKind.List && k !== CstKind.Optional) {
+      throw new Error(
+        `forEachGroup() is only valid for list and optional nodes, got ${k}`
+      );
+    }
+    const raw = handle & MASK;
+    const count = this._ctx.view.getUint32(raw, true);
     if (count === 0) return;
 
-    const raw = handle & MASK;
     const type = (this._ctx.view.getInt32(raw + 8, true) &
       MATCH_RECORD_TYPE_MASK) as MatchRecordType;
     // For lists, arity is in the details field; for optionals, all children are one group.
@@ -199,27 +176,131 @@ export class CstView {
         ? this._ctx.view.getInt32(raw + 8, true) >>> 2
         : count;
 
-    if (arity <= 1) {
-      this.forEachChild(handle, child => {
-        cb(child);
-      });
-    } else {
-      // Collect all packed child handles, then invoke cb in groups.
-      const children = new Array<number>(count);
-      let idx = 0;
-      this.forEachChild(handle, child => {
-        children[idx++] = child;
-      });
-      const args = new Array<number>(arity);
-      for (let i = 0; i < count; i += arity) {
-        for (let j = 0; j < arity; j++) args[j] = children[i + j];
-        cb.apply(undefined, args);
+    const savedPos = this._pos;
+    this._pos = (handle - raw) / SHIFT;
+    try {
+      // Stream groups directly — fast paths for common arities.
+      // Decode all children in a group before calling cb, then
+      // save/restore _pos around the callback for reentrancy safety.
+      switch (arity) {
+        case 1:
+          for (let i = 0; i < count; i++) {
+            const c0 = this._decodeChild(raw, i);
+            const p = this._pos; cb(c0); this._pos = p;
+          }
+          break;
+        case 2:
+          for (let i = 0; i < count; i += 2) {
+            const c0 = this._decodeChild(raw, i), c1 = this._decodeChild(raw, i + 1);
+            const p = this._pos; cb(c0, c1); this._pos = p;
+          }
+          break;
+        case 3:
+          for (let i = 0; i < count; i += 3) {
+            const c0 = this._decodeChild(raw, i), c1 = this._decodeChild(raw, i + 1),
+              c2 = this._decodeChild(raw, i + 2);
+            const p = this._pos; cb(c0, c1, c2); this._pos = p;
+          }
+          break;
+        case 4:
+          for (let i = 0; i < count; i += 4) {
+            const c0 = this._decodeChild(raw, i), c1 = this._decodeChild(raw, i + 1),
+              c2 = this._decodeChild(raw, i + 2), c3 = this._decodeChild(raw, i + 3);
+            const p = this._pos; cb(c0, c1, c2, c3); this._pos = p;
+          }
+          break;
+        default: {
+          const args = new Array<number>(arity);
+          for (let i = 0; i < count; i += arity) {
+            for (let j = 0; j < arity; j++) args[j] = this._decodeChild(raw, i + j);
+            const p = this._pos; cb.apply(undefined, args); this._pos = p;
+          }
+        }
+      }
+    } finally {
+      this._pos = savedPos;
+    }
+  }
+
+  /**
+   * Unpack a node's children into the callback arguments.
+   *
+   * For nonterminals: always calls `cb` with all children (even if zero),
+   * returns the result.
+   * For optionals: calls `cb` once if present (returns `T`), or returns
+   * `undefined` if absent.
+   *
+   * Not valid for terminals or lists — use `sourceString` for terminals
+   * and `forEachGroup` for lists.
+   *
+   * Zero-allocation for nodes with up to 6 children. For zero-allocation
+   * traversal of any arity, use `forEachChild` directly.
+   */
+  unpack<T>(handle: number, cb: (...children: number[]) => T): T | undefined {
+    this._checkNull(handle);
+    const k = this.kind(handle);
+    if (k === CstKind.Terminal || k === CstKind.Spaces) {
+      throw new Error(`unpack() is not valid for ${k} nodes; use sourceString() instead`);
+    }
+    if (k === CstKind.List) {
+      throw new Error(`unpack() is not valid for list nodes; use forEachGroup() instead`);
+    }
+    const raw = handle & MASK;
+    const count = this._ctx.view.getUint32(raw, true);
+    // For optionals, absent means no callback.
+    if (k === CstKind.Optional && count === 0) return undefined;
+    if (cb.length > count) {
+      throw new Error(
+        `unpack(): callback expects ${cb.length} args but ${k} has ${count} children`
+      );
+    }
+    this._pos = (handle - raw) / SHIFT;
+    // Fast paths for common arities — no array allocation.
+    switch (count) {
+      case 0: return (cb as () => T)();
+      case 1: return (cb as any)(this._decodeChild(raw, 0));
+      case 2: return (cb as any)(this._decodeChild(raw, 0), this._decodeChild(raw, 1));
+      case 3: return (cb as any)(
+        this._decodeChild(raw, 0), this._decodeChild(raw, 1),
+        this._decodeChild(raw, 2));
+      case 4: return (cb as any)(
+        this._decodeChild(raw, 0), this._decodeChild(raw, 1),
+        this._decodeChild(raw, 2), this._decodeChild(raw, 3));
+      case 5: return (cb as any)(
+        this._decodeChild(raw, 0), this._decodeChild(raw, 1),
+        this._decodeChild(raw, 2), this._decodeChild(raw, 3),
+        this._decodeChild(raw, 4));
+      case 6: return (cb as any)(
+        this._decodeChild(raw, 0), this._decodeChild(raw, 1),
+        this._decodeChild(raw, 2), this._decodeChild(raw, 3),
+        this._decodeChild(raw, 4), this._decodeChild(raw, 5));
+      default: {
+        const children = new Array<number>(count);
+        for (let i = 0; i < count; i++) children[i] = this._decodeChild(raw, i);
+        return cb.apply(undefined, children);
       }
     }
   }
 
+  /**
+   * Return the only child of a wrapper nonterminal. Throws if the node
+   * doesn't have exactly one child.
+   */
+  onlyChild(handle: number): number {
+    const raw = handle & MASK;
+    const count = this._ctx.view.getUint32(raw, true);
+    if (count !== 1) {
+      throw new Error(
+        `onlyChild(): expected 1 child, got ${count} (kind: ${this.kind(handle)})`
+      );
+    }
+    this._pos = (handle - raw) / SHIFT;
+    return this._decodeChild(raw, 0);
+  }
+
   /** Number of raw children stored in this match record. */
   childCount(handle: number): number {
+    this._checkNull(handle);
     const raw = handle & MASK;
     if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return 0;
     return this._ctx.view.getUint32(raw, true);
@@ -227,6 +308,7 @@ export class CstView {
 
   /** Length of matched input (in UTF-16 code units). */
   matchLength(handle: number): number {
+    this._checkNull(handle);
     const raw = handle & MASK;
     if (isSpacesHandle(raw)) return raw >>> 2;
     if (isTaggedTerminal(raw)) return raw >>> 1;
@@ -235,6 +317,7 @@ export class CstView {
 
   /** Source string for a node. startIdx is extracted from the handle. */
   sourceString(handle: number): string {
+    this._checkNull(handle);
     const raw = handle & MASK;
     const si = (handle - raw) / SHIFT;
     return this._ctx.input.slice(si, si + this.matchLength(raw));
@@ -255,8 +338,9 @@ export class CstView {
     handle: number,
     fn: (child: number, leadingSpaces: number, pos: number, index: number) => void
   ): void {
+    this._checkNull(handle);
     const raw = handle & MASK;
-    if (isTaggedTerminal(raw)) return;
+    if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return;
     const count = this._ctx.view.getUint32(raw, true);
     let childStart = (handle - raw) / SHIFT;
     const {getSpacesLenAt} = this._ctx;
@@ -277,6 +361,33 @@ export class CstView {
         : this._ctx.view.getUint32(rawChild + 4, true);
       fn(childHandle, leadingSpaces, childStart, i);
       childStart += len;
+    }
+  }
+
+  /**
+   * @internal — decode child at slot `i` of raw pointer `raw`.
+   * Reads and advances `this._pos`. Must be called sequentially for i = 0, 1, 2, ...
+   */
+  private _decodeChild(raw: number, i: number): number {
+    const rawChild = this._ctx.view.getUint32(raw + 16 + i * 4, true);
+    const {getSpacesLenAt} = this._ctx;
+    const rawSpacesLen =
+      getSpacesLenAt && this._hasParentSpaces(rawChild)
+        ? Math.max(0, getSpacesLenAt(this._pos))
+        : 0;
+    this._pos += rawSpacesLen;
+    const childHandle = this._pos * SHIFT + rawChild;
+    const len = isTaggedTerminal(rawChild)
+      ? rawChild >>> 1
+      : this._ctx.view.getUint32(rawChild + 4, true);
+    this._pos += len;
+    return childHandle;
+  }
+
+  /** @internal — throw on NULL_HANDLE to catch bugs early. */
+  private _checkNull(handle: number): void {
+    if (handle === NULL_HANDLE) {
+      throw new Error('NULL_HANDLE passed to CstView method');
     }
   }
 
