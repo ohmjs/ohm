@@ -145,30 +145,30 @@ export class CstView {
   }
 
   /**
-   * Iterate over logical items. Works for both list and optional nodes.
+   * Iterate over logical chunks. Works for both list and optional nodes.
    *
    * - List (`_list`): groups children by the list's arity and calls `cb`
-   *   per group.
-   * - Optional (`_opt`): all children form a single group. Calls `cb`
+   *   per chunk.
+   * - Optional (`_opt`): all children form a single chunk. Calls `cb`
    *   once if present, not at all if absent.
    */
-  forEachItem(handle: number, cb: (...children: number[]) => void): void {
-    this._iterItems(handle, cb);
+  forEachChunk(handle: number, cb: (...children: number[]) => void): void {
+    this._iterChunks(handle, cb);
   }
 
   /**
-   * Like `forEachItem`, but collects the return values into an array.
+   * Like `forEachChunk`, but collects the return values into an array.
    */
-  mapItems<T>(handle: number, cb: (...children: number[]) => T): T[] {
+  mapChunks<T>(handle: number, cb: (...children: number[]) => T): T[] {
     const results: T[] = [];
-    this._iterItems(handle, (...args) => {
+    this._iterChunks(handle, (...args) => {
       results.push(cb(...args));
     });
     return results;
   }
 
-  /** @internal — shared implementation for forEachItem / mapItems. */
-  private _iterItems(handle: number, cb: (...children: number[]) => void): void {
+  /** @internal — shared implementation for forEachChunk / mapChunks. */
+  private _iterChunks(handle: number, cb: (...children: number[]) => void): void {
     const count = this.childCount(handle);
     if (count === 0) return;
 
