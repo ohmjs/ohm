@@ -1,4 +1,5 @@
 import {assert, checkNotNull} from './assert.ts';
+import {CstView} from './cstView.ts';
 import {getLineAndColumn, getLineAndColumnMessage} from './extras.ts';
 
 export const MATCH_RECORD_TYPE_MASK = 0b11;
@@ -142,6 +143,8 @@ export class Grammar {
 
   /** @internal */
   private _instance?: WebAssembly.Instance = undefined;
+  /** @internal — precomputed rule constructor names (without parameterization). */
+  _ruleCtorNames: string[] = [];
   /** @internal */
   private _imports = {
     // System-level AssemblyScript imports.
@@ -317,6 +320,10 @@ export class Grammar {
       this._ruleIds.set(ruleName, this._ruleIds.size);
       this._ruleNames.push(ruleName);
     }
+    this._ruleCtorNames = this._ruleNames.map(n => {
+      const i = n.indexOf('<');
+      return i === -1 ? n : n.slice(0, i);
+    });
     for (const str of parseStringTable(module, 'strings')) {
       this._strings.push(str);
     }
@@ -1064,8 +1071,10 @@ function createMatchResult(
 }
 
 export class SucceededMatchResult extends MatchResult {
-  /** @internal */
-  _cst: CstNode;
+  /** @internal — lazily materialized CstNode tree (compatibility adapter). */
+  private _cstRoot?: CstNode;
+  /** @internal — lazily created CstView. */
+  private _cstView?: CstView;
 
   /** @internal */
   protected constructor(
@@ -1075,7 +1084,16 @@ export class SucceededMatchResult extends MatchResult {
     succeeded: boolean
   ) {
     super(grammar, startExpr, ctx, succeeded);
-    this._cst = grammar._getCstRoot(ctx);
+  }
+
+  /** Zero-allocation handle-based view of the CST. */
+  get cst(): CstView {
+    return (this._cstView ??= CstView.from(this));
+  }
+
+  /** @internal — for backward compat: lazily access _cst. */
+  get _cst(): CstNode {
+    return (this._cstRoot ??= this.grammar._getCstRoot(this._ctx));
   }
 
   getCstRoot(): CstNode {
