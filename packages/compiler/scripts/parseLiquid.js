@@ -16,9 +16,10 @@ import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js-legacy';
 import {Bench} from 'tinybench';
 
-import {Compiler} from '../src/Compiler.ts';
 import {unparse} from '../test/_helpers.js';
 import {CstView} from '../../runtime/src/cstView.ts';
+import {compileGrammars} from '../src/api.ts';
+import {Grammar} from '../../runtime/src/miniohm.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
