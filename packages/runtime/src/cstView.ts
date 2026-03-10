@@ -157,6 +157,24 @@ export class CstView {
   }
 
   /**
+   * Unpack a node's children into the callback arguments.
+   *
+   * For nonterminals: calls `cb` once with all children, returns the result.
+   * For optionals: calls `cb` once if present (returns `T`), or returns
+   * `undefined` if absent.
+   */
+  unpack<T>(handle: number, cb: (...children: number[]) => T): T | undefined {
+    const count = this.childCount(handle);
+    if (count === 0) return undefined;
+    const children = new Array<number>(count);
+    let idx = 0;
+    this.forEachChild(handle, child => {
+      children[idx++] = child;
+    });
+    return cb.apply(undefined, children);
+  }
+
+  /**
    * Like `forEachChunk`, but collects the return values into an array.
    */
   mapChunks<T>(handle: number, cb: (...children: number[]) => T): T[] {
