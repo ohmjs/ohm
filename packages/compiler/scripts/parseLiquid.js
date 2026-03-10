@@ -17,7 +17,6 @@ import * as ohm from 'ohm-js-legacy';
 import {Bench} from 'tinybench';
 
 import {unparse} from '../test/_helpers.js';
-import {CstView} from '../../runtime/src/cstView.ts';
 import {compileGrammars} from '../src/api.ts';
 import {Grammar} from '../../runtime/src/miniohm.ts';
 
@@ -35,7 +34,7 @@ const positionalArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
 // https://matklad.github.io/2024/03/22/basic-things.html
 const smallSize = flags.has('--small-size');
 const includeUnparse = flags.has('--include-unparse');
-const useCstReader = flags.has('--cst-reader') || flags.has('--cst-reader-packed');
+const useCstView = flags.has('--use-cstview');
 
 // Get pattern from command line arguments
 const pattern = positionalArgs[0];
@@ -106,24 +105,24 @@ const pattern = positionalArgs[0];
 
   // Walk CST using CstView (handles with startIdx), collecting terminal text.
   function unparseCstView(matchResult) {
-    const view = CstView.from(matchResult);
+    const {cst} = matchResult;
     let ans = '';
     function walk(handle) {
-      if (view.isTerminal(handle)) {
-        ans += view.sourceString(handle);
+      if (cst.kind(handle) === '_terminal') {
+        ans += cst.sourceString(handle);
         return;
       }
-      view.forEachChild(handle, (child, _leadingSpaces) => {
+      cst.forEachChild(handle, (child, _leadingSpaces) => {
         walk(child);
       });
     }
-    walk(view.root);
+    walk(cst.root);
     return ans;
   }
 
   const wasmLabel = includeUnparse ? 'Wasm parse+unparse' : 'Wasm parse';
   bench.add(
-    useCstReader ? `${wasmLabel} (CstView)` : wasmLabel,
+    useCstView ? `${wasmLabel} (CstView)` : wasmLabel,
     () => {
       let overriddenDuration = 0;
       for (const {input} of files) {
@@ -140,7 +139,7 @@ const pattern = positionalArgs[0];
             peakWasmMemoryBytes,
             exports.memory.buffer.byteLength
           );
-          return useCstReader ? unparseCstView(m) : unparse(g);
+          return useCstView ? unparseCstView(m) : unparse(g);
         });
         if (includeUnparse) overriddenDuration += bench.now() - start;
       }

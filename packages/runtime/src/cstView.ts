@@ -215,44 +215,6 @@ export class CstView {
     return present(...children);
   }
 
-  isTerminal(handle: number): boolean {
-    const raw = handle & MASK;
-    if (isSpacesHandle(raw)) return false;
-    if (isTaggedTerminal(raw)) return true;
-    return (
-      ((this._ctx.view.getInt32(raw + 8, true) &
-        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.TERMINAL
-    );
-  }
-
-  isNonterminal(handle: number): boolean {
-    const raw = handle & MASK;
-    if (isSpacesHandle(raw)) return true;
-    if (isTaggedTerminal(raw)) return false;
-    return (
-      ((this._ctx.view.getInt32(raw + 8, true) &
-        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.NONTERMINAL
-    );
-  }
-
-  isList(handle: number): boolean {
-    const raw = handle & MASK;
-    if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return false;
-    return (
-      ((this._ctx.view.getInt32(raw + 8, true) &
-        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.ITER_FLAG
-    );
-  }
-
-  isOptional(handle: number): boolean {
-    const raw = handle & MASK;
-    if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return false;
-    return (
-      ((this._ctx.view.getInt32(raw + 8, true) &
-        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.OPTIONAL
-    );
-  }
-
   /** Number of raw children stored in this match record. */
   childCount(handle: number): number {
     const raw = handle & MASK;
