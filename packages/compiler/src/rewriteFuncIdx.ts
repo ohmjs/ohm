@@ -1,6 +1,6 @@
 // Rewrites funcidx values in prebuilt WASM code section bytes to account
-// for additional imports in the dest module. Extracted from scripts/modparse.ts
-// so the Compiler can apply the adjustment at compile time.
+// for additional imports in the dest module. Used by both scripts/modparse.ts
+// (build time) and Compiler.ts (compile time).
 
 import {decodeULEB128, decodeSLEB128} from '@thi.ng/leb128';
 import * as w from '@wasmgroundup/emit';
