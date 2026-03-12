@@ -8,6 +8,7 @@ import type {Expr} from './ir.ts';
 import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
 import {assert, checkNotNull} from './assert.ts';
 import {grammar as parseGrammar} from './parseGrammars.ts';
+import {rewriteCodesecContents} from './rewriteFuncIdx.ts';
 
 // eslint-disable-next-line no-undef
 const DEBUG = typeof process !== 'undefined' && process.env.OHM_DEBUG === '1';
@@ -40,6 +41,7 @@ interface CompilerInternalOptions extends CompileOptions {
 }
 
 const defaultOptions: CompilerInternalOptions = {
+  debug: DEBUG,
   chunkedBindings: true,
   preallocNodes: true,
 };
@@ -166,7 +168,7 @@ class StringTable {
   }
 }
 
-const prebuiltFuncidx = (nm: string): number =>
+const prebuiltFuncidxBase = (nm: string): number =>
   checkNotNull((prebuilt.funcidxByName as Record<string, number>)[nm]);
 const prebuiltGlobalidx = (nm: string): number =>
   checkNotNull((prebuilt.globalidxByName as Record<string, number>)[nm]);
@@ -257,6 +259,7 @@ class Assembler {
   _frameDepth: number;
   _savedAtDepthStack: Set<string>[];
   useChunkedBindings: boolean;
+  funcidxAdjust = 0;
 
   static ALIGN_1_BYTE = 0;
   static ALIGN_2_BYTES = 1;
@@ -794,7 +797,7 @@ class Assembler {
   }
 
   callPrebuiltFunc(name: string): void {
-    this.emit(instr.call, w.funcidx(prebuiltFuncidx(name)));
+    this.emit(instr.call, w.funcidx(prebuiltFuncidxBase(name) + this.funcidxAdjust));
   }
 
   newIterNode(saved: SavedBacktrackPoint, arity: number, isOpt = false): void {
@@ -1060,6 +1063,10 @@ export class Compiler {
     return prebuilt.importsec.entryCount + this.importDecls.length;
   }
 
+  prebuiltFuncidx(name: string): number {
+    return prebuiltFuncidxBase(name) + this.importDecls.length;
+  }
+
   ruleId(name: string): number {
     return checkNotNull(this.ruleIdByName.getIndex(name), `Unknown rule: ${name}`);
   }
@@ -1117,7 +1124,7 @@ export class Compiler {
     asm.addBlocktype([], [w.valtype.i32]); // Rule eval
 
     // Reserve a fixed number of imports for debug labels.
-    if (DEBUG) {
+    if (this._options.debug) {
       for (let i = 0; i < 10000; i++) {
         this.importDecls.push({
           module: 'debug',
@@ -1127,6 +1134,7 @@ export class Compiler {
         });
       }
     }
+    asm.funcidxAdjust = this.importDecls.length;
     const functionDecls = this.functionDecls();
     this.rewriteDebugLabels(functionDecls);
     return this.buildModule(typeMap, functionDecls);
@@ -1516,7 +1524,6 @@ export class Compiler {
 
   buildModule(typeMap: TypeMap, functionDecls: FuncDecl[]): Uint8Array {
     const ruleNames = this.ruleIdByName.keys();
-    assert(this.importCount() === prebuilt.destImportCount, 'import count mismatch');
 
     // Ensure that `ruleNames` is in the correct order.
     ruleNames.forEach((n, i) =>
@@ -1555,7 +1562,7 @@ export class Compiler {
       'recordedFailuresAt',
       'recordFailures',
     ].forEach(name => {
-      exports.push(w.export_(name, w.exportdesc.func(w.funcidx(prebuiltFuncidx(name)))));
+      exports.push(w.export_(name, w.exportdesc.func(w.funcidx(this.prebuiltFuncidx(name)))));
     });
 
     // Export prebuilt globals used by the runtime (miniohm.ts) and internal tools.
@@ -1591,6 +1598,19 @@ export class Compiler {
     assert(indexOfStart !== -1, 'No start function found');
     const startFuncidx = compilerFuncOffset + indexOfStart;
 
+    // Rewrite prebuilt code section funcidx values to account for extra
+    // imports (e.g. debug imports) that weren't present when bundlewasm ran.
+    const srcImportCount = prebuilt.importsec.entryCount;
+    const destImportCount = this.importCount();
+    const adjustedCodesec = {
+      entryCount: prebuilt.codesec.entryCount,
+      contents: Array.from(rewriteCodesecContents(
+        new Uint8Array(prebuilt.codesec.contents),
+        srcImportCount,
+        destImportCount
+      )),
+    };
+
     const mod = w.module([
       mergeSections(w.SECTION_ID_TYPE, prebuilt.typesec, typeMap.getTypes()),
       mergeSections(w.SECTION_ID_IMPORT, prebuilt.importsec, imports),
@@ -1601,7 +1621,7 @@ export class Compiler {
       w.exportsec(exports),
       w.startsec(w.start(startFuncidx)),
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
-      mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
+      mergeSections(w.SECTION_ID_CODE, adjustedCodesec, codes),
       w.customsec(this.buildStringTable('ruleNames', ruleNames)),
       w.customsec(this.buildStringTable('strings', this._strings)),
       this.buildNameSec(functionDecls, compilerFuncOffset),
@@ -1644,7 +1664,7 @@ export class Compiler {
         if (typeof x !== 'string') return [x];
 
         // If debugging is disabled, just drop the string altogether.
-        if (!DEBUG) return [];
+        if (!this._options.debug) return [];
 
         // Claim one of the reserved debug functions…
         const idx = nextIdx++;
@@ -1692,7 +1712,7 @@ export class Compiler {
         asm.i32Const(0);
         asm.globalSet('useChunkedBindings');
       }
-      asm.emit(instr.call, w.funcidx(prebuilt.startFuncidx));
+      asm.emit(instr.call, w.funcidx(prebuilt.startFuncidx + this.importDecls.length));
     });
     ruleDecls.push(checkNotNull(asm._functionDecls.at(-1)));
 
