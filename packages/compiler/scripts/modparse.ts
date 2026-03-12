@@ -13,9 +13,9 @@ const WASM_NUMTYPES = [0x7c, 0x7d, 0x7e, 0x7f];
 const WASM_VECTYPE = 0x7b;
 const WASM_REFTYPES = [0x6f, 0x70];
 
-function checkNotNull<T>(x): NonNullable<T> {
+function checkNotNull<T>(x: T): NonNullable<T> {
   assert(x !== null, 'unexpected null value');
-  return x;
+  return x as NonNullable<T>;
 }
 
 function skipPreamble(bytes: Uint8Array): void {
