@@ -24,8 +24,8 @@ debug: clean
 	OHM_DEBUG=1 make
 
 .PHONY: bench
-bench: all scripts/bench.js build/es5.wasm build/json.wasm build/liquid-html.wasm
-	$(NODE) --expose-gc $(NODE_COMMON_FLAGS) scripts/bench.js
+bench: all scripts/bench.ts build/es5.wasm build/json.wasm build/liquid-html.wasm
+	$(NODE) --expose-gc $(NODE_COMMON_FLAGS) scripts/bench.ts
 
 .PHONY: dist-js
 dist-js: build/ohmRuntime.wasm_sections.ts build/ohm-grammar-wasm.ts $(SRC_TS_FILES)
