@@ -6,7 +6,7 @@ import {performance} from 'node:perf_hooks';
 import {fileURLToPath} from 'node:url';
 
 import * as es5js from '../../../examples/ecmascript/index.js';
-import {compileAndLoadAll, matchWithInput, unparse, legacyGrammarToWasm} from './_helpers.js';
+import {compileAndLoadAll, matchWithInput, unparse, legacyGrammarToWasm} from './_helpers.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, 'data');

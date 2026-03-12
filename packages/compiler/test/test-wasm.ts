@@ -5,7 +5,7 @@ import * as ohm from 'ohm-js-legacy';
 import {performance} from 'perf_hooks';
 
 import {Compiler} from '../src/Compiler.ts';
-import {compileAndLoad, matchWithInput, unparse, legacyGrammarToWasm} from './_helpers.js';
+import {compileAndLoad, matchWithInput, unparse, legacyGrammarToWasm} from './_helpers.ts';
 
 const SIZEOF_UINT32 = 4;
 
@@ -1291,7 +1291,7 @@ test('unmanaged MatchResult throws', async t => {
 // eslint-disable-next-line no-undef
 const nodeMajor = Number(process.versions.node.split('.')[0]);
 if (nodeMajor >= 24) {
-  await import('./_test-v24.js');
+  await import('./_test-v24.ts');
 }
 
 test('nested matching with use()', async t => {

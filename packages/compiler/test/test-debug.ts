@@ -1,7 +1,7 @@
 import test from 'ava';
 
 import {getMatchStats} from 'ohm-js/unstableDebug';
-import {compileAndLoad} from './_helpers.js';
+import {compileAndLoad} from './_helpers.ts';
 
 test('getMatchStats basic', async t => {
   const g = await compileAndLoad('G { start = "a" "b" }');

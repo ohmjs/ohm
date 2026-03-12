@@ -13,7 +13,7 @@ import * as ohm from 'ohm-js-legacy';
 
 import {Grammar} from 'ohm-js';
 import {compile} from '../src/api.ts';
-import {unparse} from '../test/_helpers.js';
+import {unparse} from '../test/_helpers.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');

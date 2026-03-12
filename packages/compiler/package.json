@@ -47,5 +47,10 @@
   },
   "peerDependencies": {
     "ohm-js": "workspace:^"
+  },
+  "ava": {
+    "extensions": {
+      "ts": "module"
+    }
   }
 }
