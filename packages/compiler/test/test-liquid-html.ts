@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import * as ohm from 'ohm-js-legacy';
 import {performance} from 'perf_hooks';
 
-import {compileAndLoadAll, matchWithInput, unparse, legacyGrammarToWasm} from './_helpers.js';
+import {compileAndLoadAll, matchWithInput, unparse, legacyGrammarToWasm} from './_helpers.ts';
 
 const scriptRel = relPath => new URL(relPath, import.meta.url);
 const grammarSource = fs.readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');

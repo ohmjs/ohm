@@ -4,7 +4,7 @@ import fc from 'fast-check';
 import {readFileSync} from 'node:fs';
 import {grammars, grammar} from 'ohm-js-legacy/v18';
 
-import {scriptRel, legacyGrammarToWasm} from './_helpers.js';
+import {scriptRel, legacyGrammarToWasm} from './_helpers.ts';
 
 const grammarSource = readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
 const ns = grammars(grammarSource);

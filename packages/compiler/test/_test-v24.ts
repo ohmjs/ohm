@@ -1,6 +1,6 @@
 // eslint-disable-next-line ava/no-ignored-test-files -- dynamically imported from test-wasm.js
 import test from 'ava';
-import {compileAndLoad} from './_helpers.js';
+import {compileAndLoad} from './_helpers.ts';
 
 test('nested matching with `using`', async t => {
   const g = await compileAndLoad('G { Start = letter+ | digit+ }');

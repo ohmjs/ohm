@@ -18,7 +18,7 @@ import {Bench} from 'tinybench';
 
 import {Grammar} from 'ohm-js';
 import {compileGrammars} from '../src/api.ts';
-import {unparse} from '../test/_helpers.js';
+import {unparse} from '../test/_helpers.ts';
 import {createReader} from '../../runtime/src/cstReader.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

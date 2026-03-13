@@ -5,7 +5,7 @@ import {run, bench, group, summary} from 'mitata';
 import * as ohm from 'ohm-js';
 
 import * as es5js from '../../../examples/ecmascript/index.js';
-import {legacyGrammarToWasm} from '../test/_helpers.js';
+import {legacyGrammarToWasm} from '../test/_helpers.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');

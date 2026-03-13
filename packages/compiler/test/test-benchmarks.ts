@@ -6,7 +6,7 @@ const execPromise = promisify(exec);
 
 test('benchmark smoke tests', async t => {
   const {stdout} = await execPromise(
-    "node scripts/parseLiquid.js --small-size 'test/data/*.liquid'"
+    "node scripts/parseLiquid.ts --small-size 'test/data/*.liquid'"
   );
   t.is(stdout.slice(0, 9), 'JS parse:');
 });

@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import {toAST} from 'ohm-js-legacy/extras';
 import {grammar as v18Grammar} from 'ohm-js-legacy/v18';
 
-import {compileAndLoad, scriptRel, legacyGrammarToWasm} from './_helpers.js';
+import {compileAndLoad, scriptRel, legacyGrammarToWasm} from './_helpers.ts';
 import {createToAst} from '@ohm-js/to-ast-compat';
 
 const arithmeticSrc = readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'));
