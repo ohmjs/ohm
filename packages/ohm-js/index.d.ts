@@ -105,9 +105,16 @@ export class PExpr {
   toString(): string;
   toDisplayString(): string;
 }
-export class Terminal extends PExpr {}
-export class Range extends PExpr {}
-export class Param extends PExpr {}
+export class Terminal extends PExpr {
+  obj: string;
+}
+export class Range extends PExpr {
+  from: string;
+  to: string;
+}
+export class Param extends PExpr {
+  index: number;
+}
 export class Alt extends PExpr {
   terms: PExpr[];
 }
@@ -116,14 +123,25 @@ export class Splice extends Alt {}
 export class Seq extends PExpr {
   factors: PExpr[];
 }
-export class Iter extends PExpr {}
+export class Iter extends PExpr {
+  expr: PExpr;
+}
 export class Star extends Iter {}
 export class Plus extends Iter {}
 export class Opt extends Iter {}
-export class Not extends PExpr {}
-export class Lookahead extends PExpr {}
-export class Lex extends PExpr {}
-export class Apply extends PExpr {}
+export class Not extends PExpr {
+  expr: PExpr;
+}
+export class Lookahead extends PExpr {
+  expr: PExpr;
+}
+export class Lex extends PExpr {
+  expr: PExpr;
+}
+export class Apply extends PExpr {
+  ruleName: string;
+  args: PExpr[];
+}
 export class UnicodeChar extends PExpr {}
 export class CaseInsensitiveTerminal extends PExpr {}
 
