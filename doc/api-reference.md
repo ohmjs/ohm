@@ -6,11 +6,15 @@ This page documents the API of Ohm/JS, a JavaScript library for working with gra
 
 **NOTE:** For grammars defined in a JavaScript string literal (i.e., not in a separate .ohm file), it's recommended to use a [template literal with the String.raw tag](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/raw).
 
-<b><pre class="api">ohm.grammar(source: string, optNamespace?: object) &rarr; Grammar</pre></b>
+```ts
+ohm.grammar(source: string, optNamespace?: object): Grammar
+```
 
 Instantiate the Grammar defined by `source`. If specified, `optNamespace` is an object in which references to other grammars should be resolved. For example, if the grammar source begins with an inheritance declaration like `MyGrammar <: OtherGrammar { ... }`, then `optNamespace` should have a property named `OtherGrammar`.
 
-<b><pre class="api">ohm.grammars(source: string, optNamespace?: object) &rarr; object</pre></b>
+```ts
+ohm.grammars(source: string, optNamespace?: object): object
+```
 
 Create a new object containing Grammar instances for all of the grammars defined in `source`. As with `ohm.grammar`, if `optNamespace` is specified, it is an object in which references to other grammars should be resolved. Additionally, it will be the prototype of the returned object.
 
@@ -21,7 +25,7 @@ Here is an example of instantiating a Grammar:
   const ohm = require('ohm-js');
 -->
 
-```
+```js
 const parentDef = String.raw`
   Parent {
     start = "parent"
@@ -36,7 +40,8 @@ const parentGrammar = ohm.grammar(parentDef);
 -->
 
 In the next example We instantiate a new grammar, *Child*, that inherits from our *Parent* grammar. We use the `ohm.grammars` method, which returns an object of our grammars:
-```
+
+```js
 const childDef = String.raw`
   Child <: Parent {
     start := "child"
@@ -54,7 +59,8 @@ console.log(Object.keys(childGrammar));
 -->
 
 You could also concatenate the grammar definitions, and then instantiate them. This results in an object with both Grammars:
-```
+
+```js
 const combinedDef = parentDef.concat(childDef);
 const grammars = ohm.grammars(combinedDef);
 console.log(Object.keys(grammars));
@@ -70,25 +76,38 @@ console.log(Object.keys(grammars));
 
 A Grammar instance `g` has the following methods:
 
-<a name="Grammar.match"><b><pre class="api">g.match(str: string, optStartRule?: string) &rarr; MatchResult</pre></b></a>
+<span id="Grammar.match"></span>
+```ts
+g.match(str: string, optStartRule?: string): MatchResult
+```
 
 Try to match `str` against `g`, returning a [MatchResult](#matchresult-objects). If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `g`'s definition.
 
-<b><pre class="api">g.matcher()</pre></b>
+```ts
+g.matcher()
+```
 
 Create a new [Matcher](#matcher-objects) object which supports incrementally matching `g` against a changing input string.
 
-<a name="Grammar.trace"><b><pre class="api" id="trace">g.trace(str: string, optStartRule?: string) &rarr; Trace</pre></b></a>
+<span id="Grammar.trace"></span>
+```ts
+g.trace(str: string, optStartRule?: string): Trace
+```
 
 Try to match `str` against `g`, returning a Trace object. `optStartRule` has the same meaning as in `g.match`. Trace objects have a `toString()` method, which returns a string which summarizes each parsing step (useful for debugging).
 
-<b><pre class="api">g.createSemantics() &rarr; Semantics</pre></b>
+```ts
+g.createSemantics(): Semantics
+```
 
-Create a new [Semantics](#semantics) object for `g`.
+Create a new [Semantics](#semantics-objects) object for `g`.
 
-<b><pre class="api" id="extendSemantics">g.extendSemantics(superSemantics: Semantics) &rarr; Semantics</pre></b>
+<span id="extendSemantics"></span>
+```ts
+g.extendSemantics(superSemantics: Semantics): Semantics
+```
 
-Create a new [Semantics](#semantics) object for `g` that inherits all of the operations and attributes in `superSemantics`. `g` must be a descendent of the grammar associated with `superSemantics`.
+Create a new [Semantics](#semantics-objects) object for `g` that inherits all of the operations and attributes in `superSemantics`. `g` must be a descendent of the grammar associated with `superSemantics`.
 
 ## Matcher objects
 
@@ -96,23 +115,33 @@ Matcher objects can be used to incrementally match a changing input against the 
 
 A Matcher instance `m` has the following methods:
 
-<b><pre class="api">m.getInput() &rarr; string</pre></b>
+```ts
+m.getInput(): string
+```
 
 Return the current input string.
 
-<b><pre class="api">m.setInput(str: string)</pre></b>
+```ts
+m.setInput(str: string)
+```
 
 Set the input string to `str`.
 
-<b><pre class="api">m.replaceInputRange(startIdx: number, endIdx: number, str: string)</pre></b>
+```ts
+m.replaceInputRange(startIdx: number, endIdx: number, str: string)
+```
 
 Edit the current input string, replacing the characters between `startIdx` and `endIdx` with `str`.
 
-<b><pre class="api">m.match(optStartRule?: string) &rarr; MatchResult</pre></b>
+```ts
+m.match(optStartRule?: string): MatchResult
+```
 
 Like [Grammar's `match` method](#Grammar.match), but operates incrementally.
 
-<b><pre class="api">m.trace(optStartRule?: string) &rarr; Trace</pre></b>
+```ts
+m.trace(optStartRule?: string): Trace
+```
 
 Like [Grammar's `trace` method](#Grammar.trace), but operates incrementally.
 
@@ -122,11 +151,15 @@ Internally, a successful MatchResult contains a _parse tree_, which is made up o
 
 A MatchResult instance `r` has the following methods:
 
-<b><pre class="api">r.succeeded() &rarr; boolean</pre></b>
+```ts
+r.succeeded(): boolean
+```
 
 Return `true` if the match succeeded, otherwise `false`.
 
-<b><pre class="api">r.failed() &rarr; boolean</pre></b>
+```ts
+r.failed(): boolean
+```
 
 Return `true` if the match failed, otherwise `false`.
 
@@ -134,23 +167,31 @@ Return `true` if the match failed, otherwise `false`.
 
 When `r.failed()` is `true`, `r` has the following additional properties and methods:
 
-<b><pre class="api">r.message: string</pre></b>
+```ts
+r.message: string
+```
 
 Contains a message indicating where and why the match failed. This message is suitable for end users of a language (i.e., people who do not have access to the grammar source).
 
-<b><pre class="api">r.shortMessage: string</pre></b>
+```ts
+r.shortMessage: string
+```
 
 Contains an abbreviated version of `r.message` that does not include an excerpt from the invalid input.
 
-<b><pre class="api">r.getRightmostFailurePosition() &rarr; number</pre></b>
+```ts
+r.getRightmostFailurePosition(): number
+```
 
 Return the index in the input stream at which the match failed.
 
-<b><pre class="api">r.getRightmostFailures() &rarr; Array</pre></b>
+```ts
+r.getRightmostFailures(): Array
+```
 
 Return an array of Failure objects describing the failures the occurred at the rightmost failure position.
 
-<h2 id="semantics">Semantics, Operations, and Attributes</h2>
+## Semantics, Operations, and Attributes
 
 An Operation represents a function that can be applied to a successful match result. Like a [Visitor](http://en.wikipedia.org/wiki/Visitor_pattern), an operation is evaluated by recursively walking the parse tree, and at each node, invoking the matching semantic action from its _action dictionary_.
 
@@ -165,21 +206,29 @@ This returns a parse node, whose properties correspond to the operations and att
 
 A Semantics instance `s` has the following methods, which all return `this` so they can be chained:
 
-<b><pre class="api">mySemantics.addOperation(nameOrSignature: string, actionDict: object) &rarr; Semantics</pre></b>
+```ts
+mySemantics.addOperation(nameOrSignature: string, actionDict: object): Semantics
+```
 
 Add a new Operation to this Semantics, using the [semantic actions](#semantic-actions) contained in `actionDict`. The first argument is either a name (e.g. `'prettyPrint'`) or a _signature_ which specifies the operation name and zero or more named parameters (e.g., `'prettyPrint()'`, `'prettyPrint(depth, strict)'`). It is an error if there is already an operation or attribute called `name` in this semantics.
 
 If the operation has arguments, they are accessible via `this.args` within a semantic action. For example, `this.args.depth` would hold the value of the `depth` argument for the current action.
 
-<b><pre class="api">mySemantics.addAttribute(name: string, actionDict: object) &rarr; Semantics</pre></b>
+```ts
+mySemantics.addAttribute(name: string, actionDict: object): Semantics
+```
 
 Exactly like `semantics.addOperation`, except it will add an Attribute to the semantics rather than an Operation.
 
-<b><pre class="api">mySemantics.extendOperation(name: string, actionDict: object) &rarr; Semantics</pre></b>
+```ts
+mySemantics.extendOperation(name: string, actionDict: object): Semantics
+```
 
 Extend the Operation named `name` with the semantic actions contained in `actionDict`. `name` must be the name of an operation in the super semantics — i.e., you must first extend the Semantics via [`extendSemantics`](#extendSemantics) before you can extend any of its operations.
 
-<b><pre class="api">semantics.extendAttribute(name: string, actionDict: object) &rarr; Semantics</pre></b>
+```ts
+semantics.extendAttribute(name: string, actionDict: object): Semantics
+```
 
 Exactly like `semantics.extendOperation`, except it will extend an Attribute of the super semantics rather than an Operation.
 
@@ -189,7 +238,7 @@ A semantic action is a function that computes the value of an operation or attri
 
 - _Rule application_, or _non-terminal_ nodes, which correspond to rule application expressions
 - _Terminal_ nodes, for string and number literals, and keyword expressions
-- _Iteration_ nodes, which are associated with expressions inside a [repetition operator](./syntax-reference.md#repetition-operators) (`*`, `+`, and `?`)
+- _Iteration_ nodes, which are associated with expressions inside a [repetition operator](./syntax-reference.md#repetition-operators---) (`*`, `+`, and `?`)
 
 Generally, you write a semantic action for each rule in your grammar, and store them together in an _action dictionary_. For example, given the following grammar:
 
@@ -239,7 +288,7 @@ The matching semantic action for a particular node is chosen as follows:
 - On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named `_terminal`.
 - On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named `_iter`.
 
-<span id="special-actions"></span>The `_iter`, `_nonterminal`, and `_terminal` actions are sometimes called _special actions_. `_iter` and `_nonterminal` take a variable number of arguments, which are typically captured into an array using [rest parameter syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters) , e.g. `_iter(...children) { ... }`. The `_terminal` action takes no arguments.
+<span id="special-actions"></span>The `_iter`, `_nonterminal`, and `_terminal` actions are sometimes called _special actions_. `_iter` and `_nonterminal` take a variable number of arguments, which are typically captured into an array using [rest parameter syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters) , e.g. <code>_iter(...children) &lbrace; ... &rbrace;</code>. The `_terminal` action takes no arguments.
 
 <!-- @markscript
   markscript.transformNextBlock((code) =>
@@ -250,7 +299,7 @@ The matching semantic action for a particular node is chosen as follows:
 
 _**NOTE:** Versions of Ohm prior to v16.0 had slightly different behaviour with regards to default semantic actions. See [here](./releases/ohm-js-16.0.md#default-semantic-actions) for more details._
 
-Note that you can also write semantic actions for built-in rules like `letter` or `digit`. For `ListOf`, please see the documentation on [asIteration](#asIteration) below.
+Note that you can also write semantic actions for built-in rules like `letter` or `digit`. For `ListOf`, please see the documentation on [asIteration](#asiteration) below.
 
 ### Parse Nodes
 
@@ -258,39 +307,57 @@ Each parse node is associated with a particular _parsing expression_ (a fragment
 
 A node `n` has the following methods and properties:
 
-<b><pre class="api">n.child(idx: number) &rarr; Node</pre></b>
+```ts
+n.child(idx: number): Node
+```
 
 Get the child at index `idx`.
 
-<b><pre class="api">n.isTerminal() &rarr; boolean</pre></b>
+```ts
+n.isTerminal(): boolean
+```
 
 `true` if the node is a terminal node, otherwise `false`.
 
-<b><pre class="api">n.isIteration() &rarr; boolean</pre></b>
+```ts
+n.isIteration(): boolean
+```
 
 `true` if the node is an iteration node (i.e., if it associated with a repetition operator in the grammar), otherwise `false`.
 
-<b><pre class="api">n.children: Array</pre></b>
+```ts
+n.children: Array
+```
 
 An array containing the node's children.
 
-<b><pre class="api">n.ctorName: string</pre></b>
+```ts
+n.ctorName: string
+```
 
 The name of grammar rule that created the node.
 
-<b><pre class="api">n.source: Interval</pre></b>
+```ts
+n.source: Interval
+```
 
 Captures the portion of the input that was consumed by the node.
 
-<b><pre class="api" id="Node-sourceString">n.sourceString: string</pre></b>
+```ts
+n.sourceString: string
+```
 
 The substring of the input that was consumed by the node. Equivalent to `n.source.contents`.
 
-<b><pre class="api">n.numChildren: number</pre></b>
+```ts
+n.numChildren: number
+```
 
 The number of child nodes that the node has.
 
-<b><pre class="api">n.isOptional() &rarr; boolean</pre></b>
+```ts
+n.isOptional(): boolean
+```
 
 `true` if the node is an iterator node having either one or no child (? operator), otherwise `false`.
 
@@ -323,7 +390,7 @@ G {
   const s = g_asIteration.createSemantics();
 -->
 
-```
+```js
 s.addOperation('upper()', {
   Start(list) {
     return list.asIteration().children.map(c => c.upper());

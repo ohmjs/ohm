@@ -18,12 +18,16 @@ You also need to install [pnpm](https://pnpm.io/).
 
 First, clone the repository:
 
-    git clone https://github.com/cdglabs/ohm.git
+```bash
+git clone https://github.com/cdglabs/ohm.git
+```
 
 Then, install the dev dependencies:
 
-    cd ohm
-    pnpm install
+```bash
+cd ohm
+pnpm install
+```
 
 _Note: the `postinstall` script (which is automatically run by `pnpm install`)
 will install a git pre-commit hook. See [here](#pre-commit-checks) for more
@@ -60,7 +64,7 @@ sense to disable the error:
 - If you added new `console.log` statement, and **you are sure that it is
   actual useful**, you can disable the warning like this:
 
-  ```
+  ```js
   console.log('a useful message');  // eslint-disable-line no-console
   ```
 

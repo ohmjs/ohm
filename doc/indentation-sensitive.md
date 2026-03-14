@@ -16,7 +16,7 @@ For these reasons, we decided to add built-in support for indentation-sensitive 
 
 To define an indentation-sensitive language, create a grammar that inherits from `ExperimentalIndentationSensitive`. For example, here is a grammar for language support nested lists of bullet points:
 
-```
+```js
 import * as ohm from 'ohm-js';
 
 const outline = ohm.grammar(
