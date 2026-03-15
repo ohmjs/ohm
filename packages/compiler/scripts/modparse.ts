@@ -5,9 +5,9 @@ import assert from 'node:assert';
 
 const textDecoder = new TextDecoder();
 
-function checkNotNull<T>(x): NonNullable<T> {
+function checkNotNull<T>(x: T): NonNullable<T> {
   assert(x !== null, 'unexpected null value');
-  return x;
+  return x as NonNullable<T>;
 }
 
 function skipPreamble(bytes: Uint8Array): void {

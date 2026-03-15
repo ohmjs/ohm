@@ -18,8 +18,12 @@
   },
   "include": [
     "src/**/*",
+    "test/**/*.ts",
+    "scripts/**/*.ts",
     "build/ohmRuntime.wasm_sections.ts",
     "build/ohm-grammar-wasm.ts",
-    "index.ts"
-  ]
+    "index.ts",
+    "tsdown.config.ts"
+  ],
+  "exclude": ["test/_stage-1-cst.spec.ts"]
 }
