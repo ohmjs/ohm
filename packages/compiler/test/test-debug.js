@@ -1,7 +1,10 @@
 import test from 'ava';
 
+import {Compiler} from '../src/Compiler.ts';
+import {Grammar} from 'ohm-js';
 import {getMatchStats} from 'ohm-js/unstableDebug';
 import {compileAndLoad} from './_helpers.js';
+import {grammars as parseGrammars} from '../src/parseGrammars.ts';
 
 test('getMatchStats basic', async t => {
   const g = await compileAndLoad('G { start = "a" "b" }');
@@ -23,6 +26,23 @@ test('getMatchStats basic', async t => {
     t.true(stats.memory.heapBytesUsed > 0);
     t.true(stats.memory.wasmMemoryBytes > 0);
   });
+});
+
+// Regression: compiling with debug: true adds extra imports that shift all
+// prebuilt funcidx values. Verify that the rewritten indices are correct.
+test('compile and match with debug: true', async t => {
+  const source = 'G { start = "a" "b" }';
+  const ns = parseGrammars(source);
+  const g = ns[Object.keys(ns).pop()];
+  const compiler = new Compiler(g, {debug: true});
+  const bytes = compiler.compile();
+
+  const wasmGrammar = new Grammar();
+  const debugImports = compiler.getDebugImports(() => {});
+  await wasmGrammar._instantiate(bytes, debugImports);
+
+  wasmGrammar.match('ab').use(r => t.true(r.succeeded()));
+  wasmGrammar.match('xx').use(r => t.true(r.failed()));
 });
 
 test('getMatchStats with alternatives', async t => {

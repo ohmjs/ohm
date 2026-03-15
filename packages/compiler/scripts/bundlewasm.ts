@@ -6,8 +6,6 @@ import * as w from '@wasmgroundup/emit';
 
 import {extractSections} from './modparse.ts';
 
-const importAdjust = process.env.OHM_DEBUG === '1' ? 10000 : 0;
-
 /*
   Extracts the code section from the AssemblyScript release build
   and writes it to a .ts module in the same directory.
@@ -17,18 +15,10 @@ const inputPath = process.argv[2];
 const outputPath = inputPath + '_sections.ts';
 
 const buf = fs.readFileSync(inputPath);
-const sections = extractSections(buf, {
-  destImportCountAdjustment: importAdjust,
-});
-
-// We've rewritten every funcidx in the function bodies to account for a
-// specific number of imports in the dest module. We record that number
-// to enable a run-time check that the final module is compatible.
-const destImportCount = importAdjust + sections.importsec.entryCount;
+const sections = extractSections(buf);
 
 let output = `const decodeBase64 = (str: string) => Array.from(atob(str), c => c.charCodeAt(0));
 
-export const destImportCount = ${destImportCount};
 export const startFuncidx = ${sections.startFuncidx};
 `;
 

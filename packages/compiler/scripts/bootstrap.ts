@@ -38,7 +38,9 @@ try {
   const g = ohm.grammar(source);
 
   // Compile to WASM.
-  const bytes = new Compiler(g).compile();
+  // Never include debug imports in the metagrammar — it's loaded via the
+  // sync Grammar constructor which doesn't support debug imports.
+  const bytes = new Compiler(g, {debug: false}).compile();
 
   // Write the raw .wasm file.
   writeFileSync(wasmPath, bytes);
