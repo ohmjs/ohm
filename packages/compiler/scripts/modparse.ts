@@ -3,8 +3,6 @@ import * as w from '@wasmgroundup/emit';
 
 import assert from 'node:assert';
 
-
-
 const textDecoder = new TextDecoder();
 
 function checkNotNull<T>(x): NonNullable<T> {
