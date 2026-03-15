@@ -163,6 +163,8 @@ export interface SeqNode<TChildren extends CstNodeChildren = CstNodeChildren> ex
 
 // @public (undocumented)
 export class SucceededMatchResult extends MatchResult {
+    // Warning: (ae-forgotten-export) The symbol "CstView" needs to be exported by the entry point index.d.ts
+    get cst(): CstView;
     // (undocumented)
     getCstRoot(): CstNode;
 }
