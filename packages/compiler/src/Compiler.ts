@@ -168,11 +168,6 @@ class StringTable {
   }
 }
 
-const prebuiltFuncidxBase = (nm: string): number =>
-  checkNotNull((prebuilt.funcidxByName as Record<string, number>)[nm]);
-const prebuiltGlobalidx = (nm: string): number =>
-  checkNotNull((prebuilt.globalidxByName as Record<string, number>)[nm]);
-
 // Produce a section combining `els` with the corresponding prebuilt section.
 // This only does a naive merge; no type or function indices are rewritten.
 function mergeSections(
@@ -259,7 +254,14 @@ class Assembler {
   _frameDepth: number;
   _savedAtDepthStack: Set<string>[];
   useChunkedBindings: boolean;
-  funcidxAdjust = 0;
+
+  // In WebAssembly, function indices (funcidx) are a flat numbering: imports
+  // come first, then locally-defined functions. The prebuilt module has its
+  // own import count, but the final module may have additional imports (e.g.,
+  // debug imports). Each extra import shifts every local function index up
+  // by one. This field holds the number of extra imports, so generated `call`
+  // instructions can target the correct funcidx in the final module.
+  _extraImportCount = 0;
 
   static ALIGN_1_BYTE = 0;
   static ALIGN_2_BYTES = 1;
@@ -341,12 +343,14 @@ class Assembler {
 
   // Pure codegen helpers (used to generate the function bodies).
 
-  globalidx(name: string): number {
-    return prebuiltGlobalidx(name);
+  globalidx(name: string): w.globalidx {
+    return w.globalidx(
+      checkNotNull((prebuilt.globalidxByName as Record<string, number>)[name])
+    );
   }
 
-  localidx(name: string): number {
-    return checkNotNull(this._locals?.get(name), `Unknown local: ${name}`);
+  localidx(name: string): w.localidx {
+    return w.localidx(checkNotNull(this._locals?.get(name), `Unknown local: ${name}`));
   }
 
   emit(...bytes: (number | w.Fragment | string)[]): void {
@@ -796,8 +800,13 @@ class Assembler {
     this.emit(instr.i32.add);
   }
 
+  prebuiltFuncidx(name: string): w.funcidx {
+    const baseIdx = checkNotNull((prebuilt.funcidxByName as Record<string, number>)[name]);
+    return w.funcidx(baseIdx + this._extraImportCount);
+  }
+
   callPrebuiltFunc(name: string): void {
-    this.emit(instr.call, w.funcidx(prebuiltFuncidxBase(name) + this.funcidxAdjust));
+    this.emit(instr.call, this.prebuiltFuncidx(name));
   }
 
   newIterNode(saved: SavedBacktrackPoint, arity: number, isOpt = false): void {
@@ -1063,10 +1072,6 @@ export class Compiler {
     return prebuilt.importsec.entryCount + this.importDecls.length;
   }
 
-  prebuiltFuncidx(name: string): number {
-    return prebuiltFuncidxBase(name) + this.importDecls.length;
-  }
-
   ruleId(name: string): number {
     return checkNotNull(this.ruleIdByName.getIndex(name), `Unknown rule: ${name}`);
   }
@@ -1134,7 +1139,7 @@ export class Compiler {
         });
       }
     }
-    asm.funcidxAdjust = this.importDecls.length;
+    asm._extraImportCount = this.importDecls.length;
     const functionDecls = this.functionDecls();
     this.rewriteDebugLabels(functionDecls);
     return this.buildModule(typeMap, functionDecls);
@@ -1562,7 +1567,7 @@ export class Compiler {
       'recordedFailuresAt',
       'recordFailures',
     ].forEach(name => {
-      exports.push(w.export_(name, w.exportdesc.func(w.funcidx(this.prebuiltFuncidx(name)))));
+      exports.push(w.export_(name, w.exportdesc.func(this.asm.prebuiltFuncidx(name))));
     });
 
     // Export prebuilt globals used by the runtime (miniohm.ts) and internal tools.
@@ -1604,11 +1609,13 @@ export class Compiler {
     const destImportCount = this.importCount();
     const adjustedCodesec = {
       entryCount: prebuilt.codesec.entryCount,
-      contents: Array.from(rewriteCodesecContents(
-        new Uint8Array(prebuilt.codesec.contents),
-        srcImportCount,
-        destImportCount
-      )),
+      contents: Array.from(
+        rewriteCodesecContents(
+          new Uint8Array(prebuilt.codesec.contents),
+          srcImportCount,
+          destImportCount
+        )
+      ),
     };
 
     const mod = w.module([
@@ -1712,7 +1719,7 @@ export class Compiler {
         asm.i32Const(0);
         asm.globalSet('useChunkedBindings');
       }
-      asm.emit(instr.call, w.funcidx(prebuilt.startFuncidx + this.importDecls.length));
+      asm.emit(instr.call, w.funcidx(prebuilt.startFuncidx + asm._extraImportCount));
     });
     ruleDecls.push(checkNotNull(asm._functionDecls.at(-1)));
 

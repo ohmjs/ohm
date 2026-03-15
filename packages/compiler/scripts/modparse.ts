@@ -3,7 +3,7 @@ import * as w from '@wasmgroundup/emit';
 
 import assert from 'node:assert';
 
-import {rewriteCodesecContents} from '../src/rewriteFuncIdx.ts';
+
 
 const textDecoder = new TextDecoder();
 
@@ -47,13 +47,8 @@ export type RawContents = {
   contents: Uint8Array;
 };
 
-interface ExtractOptions {
-  // The number of extra imports int the dest module.
-  destImportCountAdjustment?: number;
-}
-
 // Extracts the type, import, function, global, and code sections from a Wasm module.
-export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
+export function extractSections(bytes: Uint8Array) {
   skipPreamble(bytes);
 
   const parseU32 = () => {
@@ -76,7 +71,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   // Parse the export section. Returns {funcs, globals} maps of {name: idx}.
   // `funcidxAdjustment` adjusts function indices to account for the dest
   // module having more imports than the source module.
-  function parseExportSection(expectedId: number, funcidxAdjustment: number) {
+  function parseExportSection(expectedId: number) {
     const id = bytes[pos++];
     assert(id === expectedId, `expected section with id ${expectedId}, got ${id}`);
     const size = parseU32();
@@ -99,10 +94,8 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
       const index = parseU32();
 
       if (kind === 0x00) {
-        // Function export: adjust index for dest import count.
-        funcs[name] = index + funcidxAdjustment;
+        funcs[name] = index;
       } else if (kind === 0x03) {
-        // Global export: index is unchanged (globals aren't rewritten).
         globals[name] = index;
       }
     }
@@ -182,11 +175,6 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   let codesec: VecContents | undefined;
   let startFuncidx: number | undefined;
 
-  let srcImportCount = 0;
-  let destImportCount = 0;
-
-  const importAdjust = opts.destImportCountAdjustment ?? 0;
-
   let pos = 8;
   let lastId = -1;
   while (pos < bytes.length) {
@@ -203,26 +191,16 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
       typesec = parseVecSectionOpaque(id);
     } else if (id === 2) {
       importsec = parseVecSectionOpaque(id);
-      srcImportCount = importsec.entryCount;
-      destImportCount = srcImportCount + importAdjust;
     } else if (id === 3) {
       funcsec = parseVecSectionOpaque(id);
     } else if (id === 6) {
       globalsec = parseVecSectionOpaque(id);
     } else if (id === 7) {
-      exports = parseExportSection(id, destImportCount - srcImportCount);
+      exports = parseExportSection(id);
     } else if (id === 8) {
-      startFuncidx = parseStartSection(id) + destImportCount - srcImportCount;
+      startFuncidx = parseStartSection(id);
     } else if (id === 10) {
       codesec = parseVecSectionOpaque(id);
-      // Rewrite the code section to account for the number of imports that
-      // will exist in the final module. If `destImportCount` is not provided,
-      // assume that it's the same as srcImportCount.
-      codesec.contents = rewriteCodesecContents(
-        codesec.contents,
-        srcImportCount,
-        destImportCount
-      );
     } else if (id === 0) {
       // Custom section — check if it's the 'name' section.
       pos++; // consume section id
@@ -254,4 +232,3 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
     startFuncidx,
   };
 }
-

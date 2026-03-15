@@ -1,6 +1,6 @@
 // Rewrites funcidx values in prebuilt WASM code section bytes to account
-// for additional imports in the dest module. Used by both scripts/modparse.ts
-// (build time) and Compiler.ts (compile time).
+// for additional imports in the dest module. Used by Compiler.ts at compile
+// time to adjust prebuilt code for extra imports (e.g. debug imports).
 
 import {decodeULEB128, decodeSLEB128} from '@thi.ng/leb128';
 import * as w from '@wasmgroundup/emit';
@@ -18,7 +18,8 @@ function isValtype(t: number): boolean {
 }
 
 function checkValtype(t: number): number {
-  if (!isValtype(t)) throw new Error(`unrecognized valtype: 0x${t.toString(16).padStart(2, '0')}`);
+  if (!isValtype(t))
+    throw new Error(`unrecognized valtype: 0x${t.toString(16).padStart(2, '0')}`);
   return t;
 }
 
@@ -197,6 +198,11 @@ export function rewriteCodesecContents(
   srcImportCount: number,
   destImportCount: number
 ): Uint8Array {
+  if (destImportCount < srcImportCount) {
+    throw new Error(
+      `destImportCount (${destImportCount}) < srcImportCount (${srcImportCount})`
+    );
+  }
   if (srcImportCount === destImportCount) return bytes;
 
   let pos = 0;
