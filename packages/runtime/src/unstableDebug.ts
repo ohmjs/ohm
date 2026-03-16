@@ -78,8 +78,8 @@ function walkRecordTree(
     const ptr = stack.pop()!;
     stats.count++;
 
-    const count = view.getUint32(ptr, true);
-    const typeAndDetails = view.getInt32(ptr + 8, true);
+    const count = view.getUint32(ptr + 8, true);
+    const typeAndDetails = view.getInt32(ptr + 4, true);
     const type = typeAndDetails & MATCH_RECORD_TYPE_MASK;
 
     // Each match record: 16-byte header + count * 4 bytes of child pointers.

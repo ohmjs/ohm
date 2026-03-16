@@ -584,7 +584,7 @@ class CstNodeImpl implements CstNodeBase {
     switch (this.type) {
       case CstNodeType.NONTERMINAL: {
         const {ruleNames, view} = this._ctx;
-        const ruleId = view.getInt32(this._base + 8, true) >>> 2;
+        const ruleId = view.getInt32(this._base + 4, true) >>> 2;
         return ruleNames[ruleId].split('<')[0];
       }
       case CstNodeType.TERMINAL:
@@ -598,19 +598,19 @@ class CstNodeImpl implements CstNodeBase {
     }
   }
 
-  get count(): number {
-    if (isTaggedTerminal(this._base)) return 0;
-    return this._ctx.view.getUint32(this._base, true);
-  }
-
   get matchLength(): number {
     if (isTaggedTerminal(this._base)) return this._base >>> 1;
-    return this._ctx.view.getUint32(this._base + 4, true);
+    return this._ctx.view.getUint32(this._base, true);
   }
 
   get _typeAndDetails(): number {
     if (isTaggedTerminal(this._base)) return MatchRecordType.TERMINAL;
-    return this._ctx.view.getInt32(this._base + 8, true);
+    return this._ctx.view.getInt32(this._base + 4, true);
+  }
+
+  get count(): number {
+    if (isTaggedTerminal(this._base)) return 0;
+    return this._ctx.view.getUint32(this._base + 8, true);
   }
 
   get arity(): number {
@@ -680,7 +680,7 @@ class CstNodeImpl implements CstNodeBase {
       // Only query spaces for terminals and nonterminals — not for
       // iteration (ITER_FLAG) or optional nodes, which handle space
       // skipping internally.
-      const type = (this._ctx.view.getInt32(ptr + 8, true) &
+      const type = (this._ctx.view.getInt32(ptr + 4, true) &
         MATCH_RECORD_TYPE_MASK) as MatchRecordType;
       let spacesLen = 0;
       if (
