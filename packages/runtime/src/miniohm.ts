@@ -3,6 +3,12 @@ import {getLineAndColumn, getLineAndColumnMessage} from './extras.ts';
 
 export const MATCH_RECORD_TYPE_MASK = 0b11;
 
+// Byte offsets for fields in a CST match record (Wasm linear memory layout).
+export const CST_MATCH_LENGTH_OFFSET = 0;
+export const CST_TYPE_AND_DETAILS_OFFSET = 4;
+export const CST_CHILD_COUNT_OFFSET = 8;
+export const CST_CHILDREN_OFFSET = 16;
+
 // Tagged terminal: (matchLength << 1) | 1. Bit 0 distinguishes from real pointers.
 export function isTaggedTerminal(handle: number): boolean {
   return (handle & 1) !== 0;
@@ -584,7 +590,7 @@ class CstNodeImpl implements CstNodeBase {
     switch (this.type) {
       case CstNodeType.NONTERMINAL: {
         const {ruleNames, view} = this._ctx;
-        const ruleId = view.getInt32(this._base + 8, true) >>> 2;
+        const ruleId = view.getInt32(this._base + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
         return ruleNames[ruleId].split('<')[0];
       }
       case CstNodeType.TERMINAL:
@@ -598,19 +604,19 @@ class CstNodeImpl implements CstNodeBase {
     }
   }
 
-  get count(): number {
-    if (isTaggedTerminal(this._base)) return 0;
-    return this._ctx.view.getUint32(this._base, true);
-  }
-
   get matchLength(): number {
     if (isTaggedTerminal(this._base)) return this._base >>> 1;
-    return this._ctx.view.getUint32(this._base + 4, true);
+    return this._ctx.view.getUint32(this._base + CST_MATCH_LENGTH_OFFSET, true);
   }
 
   get _typeAndDetails(): number {
     if (isTaggedTerminal(this._base)) return MatchRecordType.TERMINAL;
-    return this._ctx.view.getInt32(this._base + 8, true);
+    return this._ctx.view.getInt32(this._base + CST_TYPE_AND_DETAILS_OFFSET, true);
+  }
+
+  get count(): number {
+    if (isTaggedTerminal(this._base)) return 0;
+    return this._ctx.view.getUint32(this._base + CST_CHILD_COUNT_OFFSET, true);
   }
 
   get arity(): number {
@@ -658,7 +664,7 @@ class CstNodeImpl implements CstNodeBase {
     let {startIdx} = this;
     const {getSpacesLenAt} = this._ctx;
     for (let i = 0; i < this.count; i++) {
-      const slotOffset = this._base + 16 + i * 4;
+      const slotOffset = this._base + CST_CHILDREN_OFFSET + i * 4;
       const ptr = this._ctx.view.getUint32(slotOffset, true);
 
       if (isTaggedTerminal(ptr)) {
@@ -680,7 +686,7 @@ class CstNodeImpl implements CstNodeBase {
       // Only query spaces for terminals and nonterminals — not for
       // iteration (ITER_FLAG) or optional nodes, which handle space
       // skipping internally.
-      const type = (this._ctx.view.getInt32(ptr + 8, true) &
+      const type = (this._ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true) &
         MATCH_RECORD_TYPE_MASK) as MatchRecordType;
       let spacesLen = 0;
       if (

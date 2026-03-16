@@ -30,12 +30,12 @@
  *
  *   Offset  Field
  *   ------  ----------------------------------
- *     0     count: i32         (number of children)
- *     4     matchLength: i32   (chars consumed)
- *     8     typeAndDetails: i32
+ *     0     matchLength: i32   (chars consumed)
+ *     4     typeAndDetails: i32
  *               bits [1:0] = node type
  *                 0=nonterminal, 2=iteration, 3=optional
  *               bits [31:2] = ruleId (nonterminal) or arity (iter)
+ *     8     count: i32         (number of children)
  *    12     failureOffset: i32  (relative to startIdx)
  *    16+    children: i32[]    (pointers to child nodes, or tagged terminals)
  *
@@ -249,24 +249,24 @@ export function bindingsAdvanceChunk(): void {
   return cstGetFailureOffset(entry);
 }
 
-@inline function cstGetCount(ptr: i32): i32 {
+@inline function cstGetMatchLength(ptr: i32): i32 {
   return load<i32>(<usize>ptr, 0);
 }
 
-@inline function cstSetCount(ptr: i32, count: i32): void {
-  store<i32>(<usize>ptr, count, 0);
-}
-
-@inline function cstGetMatchLength(ptr: i32): i32 {
-  return load<i32>(<usize>ptr, 4);
-}
-
 @inline function cstSetMatchLength(ptr: i32, len: i32): void {
-  store<i32>(<usize>ptr, len, 4);
+  store<i32>(<usize>ptr, len, 0);
 }
 
 @inline function cstSetTypeAndDetails(ptr: i32, val: i32): void {
-  store<i32>(<usize>ptr, val, 8);
+  store<i32>(<usize>ptr, val, 4);
+}
+
+@inline function cstGetCount(ptr: i32): i32 {
+  return load<i32>(<usize>ptr, 8);
+}
+
+@inline function cstSetCount(ptr: i32, count: i32): void {
+  store<i32>(<usize>ptr, count, 8);
 }
 
 @inline function cstGetFailureOffset(ptr: i32): i32 {

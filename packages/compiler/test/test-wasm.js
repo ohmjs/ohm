@@ -1860,9 +1860,9 @@ test('bindings chunks contain valid CST nodes and tagged terminals', async t => 
     // CST node pointer: must be 4-byte aligned.
     if ((val & 3) !== 0) return false;
     // Read the CST node header and sanity-check.
-    const count = view.getInt32(val, true);
-    const matchLength = view.getInt32(val + 4, true);
-    return count >= 0 && matchLength >= 0;
+    const matchLength = view.getInt32(val, true);
+    const count = view.getInt32(val + 8, true);
+    return matchLength >= 0 && count >= 0;
   }
 
   // Walk forward through all chunks. Every non-zero slot should be a valid
