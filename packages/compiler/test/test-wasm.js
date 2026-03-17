@@ -1957,6 +1957,6 @@ test('parameterized rules: growing parameters should not blow the stack', t => {
       );
       compiler.compile();
     },
-    {message: /Too many specializations/}
+    {message: /Excessively deep specialization/}
   );
 });

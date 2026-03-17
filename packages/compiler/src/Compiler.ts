@@ -1328,11 +1328,12 @@ export class Compiler {
     const patternsByRule = new Map<string, Map<string, Expr[]>>();
     const refCounts = new Map();
 
-    // Track how many unique specializations we've created per base rule.
-    // If this grows beyond a reasonable limit, the rule's parameters are
-    // expanding without bound (e.g. `grow<e> = e | grow<(e | "x")>`).
-    const MAX_SPECIALIZATIONS_PER_RULE = 32;
-    const specializationCounts = new Map<string, number>();
+    // Track the recursive specialization depth per base rule name.
+    // If specializing a rule leads to specializing the *same* rule again
+    // beyond this depth, the parameters are expanding without bound
+    // (e.g. `grow<e> = e | grow<(e | "x")>`).
+    const MAX_SPECIALIZATION_DEPTH = 32;
+    const specializationDepth = new Map<string, number>();
 
     const specialize = (exp: Expr): Expr =>
       ir.rewrite(exp, {
@@ -1345,16 +1346,16 @@ export class Compiler {
           // If not yet seen, recursively visit the body of the specialized
           // rule. Note that this also applies to non-parameterized rules!
           if (!newRules.has(specializedName)) {
+            const prevDepth = specializationDepth.get(ruleName) ?? 0;
             if (children.length > 0) {
-              const count = (specializationCounts.get(ruleName) || 0) + 1;
-              specializationCounts.set(ruleName, count);
-              if (count > MAX_SPECIALIZATIONS_PER_RULE) {
+              if (prevDepth >= MAX_SPECIALIZATION_DEPTH) {
                 throw new Error(
-                  `Too many specializations of rule '${ruleName}' (>${MAX_SPECIALIZATIONS_PER_RULE}). ` +
+                  `Excessively deep specialization of rule '${ruleName}' (>${MAX_SPECIALIZATION_DEPTH} levels). ` +
                     'This usually means its parameters grow on each recursive call, ' +
                     'producing an infinite number of specialized rules.'
                 );
               }
+              specializationDepth.set(ruleName, prevDepth + 1);
             }
             newRules.set(specializedName, {} as RuleInfo); // Prevent infinite recursion.
 
@@ -1363,6 +1364,9 @@ export class Compiler {
             let body = specialize(
               ir.substituteParams(ruleInfo.body, children as Exclude<Expr, ir.Param>[])
             );
+
+            // Restore the depth after the recursive visit.
+            specializationDepth.set(ruleName, prevDepth);
 
             // If there are any args, replace the body with an application of
             // the generalized rule.
