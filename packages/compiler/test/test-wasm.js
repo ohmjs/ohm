@@ -1947,12 +1947,14 @@ test('chunkedBindings: false', async t => {
 test('parameterized rules: growing parameters should not blow the stack', t => {
   t.throws(
     () => {
-      const compiler = new Compiler(ohm.grammar(`
+      const compiler = new Compiler(
+        ohm.grammar(`
         G {
           start = grow<"a">
           grow<e> = e | grow<(e | "x")>
         }
-      `));
+      `)
+      );
       compiler.compile();
     },
     {message: /Too many specializations/}
