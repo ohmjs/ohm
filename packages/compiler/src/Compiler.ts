@@ -1328,6 +1328,12 @@ export class Compiler {
     const patternsByRule = new Map<string, Map<string, Expr[]>>();
     const refCounts = new Map();
 
+    // Track how many unique specializations we've created per base rule.
+    // If this grows beyond a reasonable limit, the rule's parameters are
+    // expanding without bound (e.g. `grow<e> = e | grow<(e | "x")>`).
+    const MAX_SPECIALIZATIONS_PER_RULE = 32;
+    const specializationCounts = new Map<string, number>();
+
     const specialize = (exp: Expr): Expr =>
       ir.rewrite(exp, {
         Apply: app => {
@@ -1339,6 +1345,17 @@ export class Compiler {
           // If not yet seen, recursively visit the body of the specialized
           // rule. Note that this also applies to non-parameterized rules!
           if (!newRules.has(specializedName)) {
+            if (children.length > 0) {
+              const count = (specializationCounts.get(ruleName) || 0) + 1;
+              specializationCounts.set(ruleName, count);
+              if (count > MAX_SPECIALIZATIONS_PER_RULE) {
+                throw new Error(
+                  `Too many specializations of rule '${ruleName}' (>${MAX_SPECIALIZATIONS_PER_RULE}). ` +
+                    'This usually means its parameters grow on each recursive call, ' +
+                    'producing an infinite number of specialized rules.'
+                );
+              }
+            }
             newRules.set(specializedName, {} as RuleInfo); // Prevent infinite recursion.
 
             // Visit the body with the parameter substituted, to ensure we
