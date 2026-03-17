@@ -1939,3 +1939,24 @@ test('chunkedBindings: false', async t => {
     wasmGrammar.match('hello;').use(r => t.true(r.succeeded()));
   }
 });
+
+// When parameters grow at each recursive step — e.g., grow<(e | "x")> where
+// e keeps expanding — each specialization produces a new unique name, so the
+// placeholder cycle detection never fires. The specializer should detect this
+// and throw a clear error rather than blowing the stack / running out of memory.
+test('parameterized rules: growing parameters should not blow the stack', t => {
+  t.throws(
+    () => {
+      const compiler = new Compiler(
+        ohm.grammar(`
+        G {
+          start = grow<"a">
+          grow<e> = e | grow<(e | "x")>
+        }
+      `)
+      );
+      compiler.compile();
+    },
+    {message: /Excessively deep specialization/}
+  );
+});

@@ -1328,6 +1328,13 @@ export class Compiler {
     const patternsByRule = new Map<string, Map<string, Expr[]>>();
     const refCounts = new Map();
 
+    // Track the recursive specialization depth per base rule name.
+    // If specializing a rule leads to specializing the *same* rule again
+    // beyond this depth, the parameters are expanding without bound
+    // (e.g. `grow<e> = e | grow<(e | "x")>`).
+    const MAX_SPECIALIZATION_DEPTH = 32;
+    const specializationDepth = new Map<string, number>();
+
     const specialize = (exp: Expr): Expr =>
       ir.rewrite(exp, {
         Apply: app => {
@@ -1339,6 +1346,17 @@ export class Compiler {
           // If not yet seen, recursively visit the body of the specialized
           // rule. Note that this also applies to non-parameterized rules!
           if (!newRules.has(specializedName)) {
+            const prevDepth = specializationDepth.get(ruleName) ?? 0;
+            if (children.length > 0) {
+              if (prevDepth >= MAX_SPECIALIZATION_DEPTH) {
+                throw new Error(
+                  `Excessively deep specialization of rule '${ruleName}' (>${MAX_SPECIALIZATION_DEPTH} levels). ` +
+                    'This usually means its parameters grow on each recursive call, ' +
+                    'producing an infinite number of specialized rules.'
+                );
+              }
+              specializationDepth.set(ruleName, prevDepth + 1);
+            }
             newRules.set(specializedName, {} as RuleInfo); // Prevent infinite recursion.
 
             // Visit the body with the parameter substituted, to ensure we
@@ -1346,6 +1364,9 @@ export class Compiler {
             let body = specialize(
               ir.substituteParams(ruleInfo.body, children as Exclude<Expr, ir.Param>[])
             );
+
+            // Restore the depth after the recursive visit.
+            specializationDepth.set(ruleName, prevDepth);
 
             // If there are any args, replace the body with an application of
             // the generalized rule.
