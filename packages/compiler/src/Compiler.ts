@@ -630,7 +630,7 @@ class Assembler {
 
   saveNumBindings(): SavedBindingsState {
     if (this.posOnlyMode) {
-      return {getChunk() {}, getIdx() {}, restore() {}};
+      return noopBacktrackPoint.bindings;
     }
     if (!this.useChunkedBindings) {
       // Array mode: save a single length value.
