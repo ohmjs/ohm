@@ -191,7 +191,13 @@ export function bindingsAdvanceChunk(): void {
   bindingsIdx = 0;
 }
 
-@inline function bindingsPushChunked(value: i32): void {
+// Push a value onto the bindings.
+@inline function bindingsPush(value: i32): void {
+  if (!useChunkedBindings) {
+    bindingsArr.push(value);
+    bindingsIdx++;
+    return;
+  }
   store<i32>(<usize>(bindingsChunk + BINDINGS_CHUNK_HEADER + (bindingsIdx << 2)), value);
   bindingsIdx++;
   if (bindingsIdx === BINDINGS_CHUNK_CAPACITY) {
@@ -199,26 +205,10 @@ export function bindingsAdvanceChunk(): void {
   }
 }
 
-@inline function bindingsPushArray(value: i32): void {
-  bindingsArr.push(value);
-  bindingsIdx++;
-}
-
-@inline function bindingsReadChunked(chunk: i32, idx: i32): i32 {
+// Read a binding by chunk pointer and index within that chunk.
+@inline function bindingsRead(chunk: i32, idx: i32): i32 {
+  if (!useChunkedBindings) return unchecked(bindingsArr[idx]);
   return load<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)));
-}
-
-@inline function bindingsReadArray(_chunk: i32, idx: i32): i32 {
-  return unchecked(bindingsArr[idx]);
-}
-
-// Push a value onto the bindings.
-@inline function bindingsPush(value: i32): void {
-  if (useChunkedBindings) {
-    bindingsPushChunked(value);
-  } else {
-    bindingsPushArray(value);
-  }
 }
 
 @inline function memoEntryForFailure(failureOffset: i32): MemoEntry {
@@ -371,47 +361,28 @@ export function evalSpacesFull(targetPos: i32): i32 {
 
 // Restore bindings to a saved (chunk, idx) position. In array mode,
 // also trims the array to match.
-@inline function restoreBindingsChunked(chunk: i32, idx: i32): void {
+@inline function restoreBindings(chunk: i32, idx: i32): void {
   bindingsChunk = chunk;
   bindingsIdx = idx;
-}
-
-@inline function restoreBindingsArray(_chunk: i32, idx: i32): void {
-  bindingsChunk = 0;
-  bindingsIdx = idx;
-  bindingsArr.length = idx;
-}
-
-@inline function restoreBindings(chunk: i32, idx: i32): void {
-  if (useChunkedBindings) {
-    restoreBindingsChunked(chunk, idx);
-  } else {
-    restoreBindingsArray(chunk, idx);
+  if (!useChunkedBindings) {
+    bindingsChunk = 0;
+    bindingsArr.length = idx;
   }
-}
-
-function resetBindingsChunked(): void {
-  // Allocate initial chunk (or reuse first chunk after heap.reset()).
-  bindingsFirstChunk = allocBindingsChunk(0);
-  bindingsChunk = bindingsFirstChunk;
-  bindingsIdx = 0;
-}
-
-function resetBindingsArray(): void {
-  bindingsArr = new Array<i32>();
-  bindingsChunk = 0;
-  bindingsFirstChunk = 0;
-  bindingsIdx = 0;
 }
 
 function resetParsingState(): void {
   pos = 0;
   rightmostFailurePos = -1;
   if (useChunkedBindings) {
-    resetBindingsChunked();
+    // Allocate initial chunk (or reuse first chunk after heap.reset()).
+    bindingsFirstChunk = allocBindingsChunk(0);
+    bindingsChunk = bindingsFirstChunk;
   } else {
-    resetBindingsArray();
+    bindingsArr = new Array<i32>();
+    bindingsChunk = 0;
+    bindingsFirstChunk = 0;
   }
+  bindingsIdx = 0;
 }
 
 export function resetHeap(): void {
@@ -680,22 +651,14 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
   cstSetFailureOffset(ptr, failureOffset);
 
   // Copy children from (origChunk, origIdx) to the node.
-  if (useChunkedBindings) {
-    let chunk = origChunk;
-    let idx = origIdx;
-    for (let i = 0; i < numChildren; i++) {
-      store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindingsReadChunked(chunk, idx));
-      idx++;
-      if (idx === BINDINGS_CHUNK_CAPACITY) {
-        chunk = chunkNext(chunk);
-        idx = 0;
-      }
-    }
-  } else {
-    let idx = origIdx;
-    for (let i = 0; i < numChildren; i++) {
-      store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindingsReadArray(0, idx));
-      idx++;
+  let chunk = origChunk;
+  let idx = origIdx;
+  for (let i = 0; i < numChildren; i++) {
+    store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindingsRead(chunk, idx));
+    idx++;
+    if (useChunkedBindings && idx === BINDINGS_CHUNK_CAPACITY) {
+      chunk = chunkNext(chunk);
+      idx = 0;
     }
   }
 
@@ -733,7 +696,8 @@ export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, ori
   return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, -1);
 }
 
-@inline function getBindingsLengthChunked(): i32 {
+export function getBindingsLength(): i32 {
+  if (!useChunkedBindings) return bindingsArr.length;
   // Compute total length by walking the chunk list from first to current.
   let count: i32 = 0;
   let chunk = bindingsFirstChunk;
@@ -744,11 +708,12 @@ export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, ori
   return count + bindingsIdx;
 }
 
-@inline function getBindingsLengthArray(): i32 {
-  return bindingsArr.length;
-}
-
-@inline function setBindingsLengthChunked(len: i32): void {
+export function setBindingsLength(len: i32): void {
+  if (!useChunkedBindings) {
+    bindingsArr.length = len;
+    bindingsIdx = len;
+    return;
+  }
   // Walk from first chunk to find the right chunk+idx.
   let chunk = bindingsFirstChunk;
   while (len >= BINDINGS_CHUNK_CAPACITY) {
@@ -759,38 +724,14 @@ export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, ori
   bindingsIdx = len;
 }
 
-@inline function setBindingsLengthArray(len: i32): void {
-  bindingsArr.length = len;
-  bindingsIdx = len;
-}
-
-@inline function bindingsAtChunked(i: i32): i32 {
+export function bindingsAt(i: i32): i32 {
+  if (!useChunkedBindings) return unchecked(bindingsArr[i]);
   let chunk = bindingsFirstChunk;
   while (i >= BINDINGS_CHUNK_CAPACITY) {
     chunk = chunkNext(chunk);
     i -= BINDINGS_CHUNK_CAPACITY;
   }
-  return bindingsReadChunked(chunk, i);
-}
-
-@inline function bindingsAtArray(i: i32): i32 {
-  return unchecked(bindingsArr[i]);
-}
-
-export function getBindingsLength(): i32 {
-  return useChunkedBindings ? getBindingsLengthChunked() : getBindingsLengthArray();
-}
-
-export function setBindingsLength(len: i32): void {
-  if (useChunkedBindings) {
-    setBindingsLengthChunked(len);
-  } else {
-    setBindingsLengthArray(len);
-  }
-}
-
-export function bindingsAt(i: i32): i32 {
-  return useChunkedBindings ? bindingsAtChunked(i) : bindingsAtArray(i);
+  return bindingsRead(chunk, i);
 }
 
 // TODO: Find a way to call this directly from generated code.
