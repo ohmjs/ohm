@@ -27,7 +27,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "publish:beta": "pnpm publish --tag beta --no-git-checks"
+    "publish:next": "pnpm publish --tag beta --no-git-checks && npm dist-tag add $npm_package_name@$npm_package_version next"
   },
   "peerDependencies": {
     "ohm-js": ">= 17.5.0 || >= 18.0.0-0"

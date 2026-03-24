@@ -24,7 +24,7 @@
     "api-report": "api-extractor run",
     "build": "make",
     "build-and-test": "make && ava test",
-    "publish:beta": "pnpm publish --tag beta --no-git-checks",
+    "publish:next": "pnpm publish --tag beta --no-git-checks && npm dist-tag add $npm_package_name@$npm_package_version next",
     "test": "ava test"
   },
   "type": "module",
