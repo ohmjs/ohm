@@ -715,7 +715,9 @@ class CstNodeImpl implements CstNodeBase {
       // Nonterminals determine syntactic context from their name;
       // other node types (iter, opt) inherit from the parent.
       const childSyntactic =
-        type === MatchRecordType.NONTERMINAL ? isSyntacticRule(this._ctx, ptr) : this._syntactic;
+        type === MatchRecordType.NONTERMINAL
+          ? isSyntacticRule(this._ctx, ptr)
+          : this._syntactic;
       const node = new CstNodeImpl(this._ctx, ptr, startIdx, childSyntactic);
       if (spacesLen > 0) {
         node.leadingSpaces = new LazySpacesNode(this._ctx, startIdx - spacesLen, spacesLen);
