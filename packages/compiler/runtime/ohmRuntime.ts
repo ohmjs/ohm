@@ -177,9 +177,13 @@ function allocBindingsChunk(prev: i32): i32 {
   return ptr;
 }
 
+@inline function chunkNext(chunk: i32): i32 {
+  return load<i32>(<usize>(chunk + 4));
+}
+
 // Called when current chunk is full.
 export function bindingsAdvanceChunk(): void {
-  let next = load<i32>(<usize>(bindingsChunk + 4));
+  let next = chunkNext(bindingsChunk);
   if (next === 0) {
     next = allocBindingsChunk(bindingsChunk);
   }
@@ -187,13 +191,7 @@ export function bindingsAdvanceChunk(): void {
   bindingsIdx = 0;
 }
 
-// Push a value onto the bindings.
-@inline function bindingsPush(value: i32): void {
-  if (!useChunkedBindings) {
-    bindingsArr.push(value);
-    bindingsIdx++;
-    return;
-  }
+@inline function bindingsPushChunked(value: i32): void {
   store<i32>(<usize>(bindingsChunk + BINDINGS_CHUNK_HEADER + (bindingsIdx << 2)), value);
   bindingsIdx++;
   if (bindingsIdx === BINDINGS_CHUNK_CAPACITY) {
@@ -201,16 +199,26 @@ export function bindingsAdvanceChunk(): void {
   }
 }
 
-// Read a binding by chunk pointer and index within that chunk.
-@inline function bindingsRead(chunk: i32, idx: i32): i32 {
-  if (!useChunkedBindings) return unchecked(bindingsArr[idx]);
+@inline function bindingsPushArray(value: i32): void {
+  bindingsArr.push(value);
+  bindingsIdx++;
+}
+
+@inline function bindingsReadChunked(chunk: i32, idx: i32): i32 {
   return load<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)));
 }
 
-// Write a binding at a specific chunk + index position.
-@inline function bindingsWrite(chunk: i32, idx: i32, value: i32): void {
-  if (!useChunkedBindings) { unchecked(bindingsArr[idx] = value); return; }
-  store<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)), value);
+@inline function bindingsReadArray(_chunk: i32, idx: i32): i32 {
+  return unchecked(bindingsArr[idx]);
+}
+
+// Push a value onto the bindings.
+@inline function bindingsPush(value: i32): void {
+  if (useChunkedBindings) {
+    bindingsPushChunked(value);
+  } else {
+    bindingsPushArray(value);
+  }
 }
 
 @inline function memoEntryForFailure(failureOffset: i32): MemoEntry {
@@ -363,25 +371,47 @@ export function evalSpacesFull(targetPos: i32): i32 {
 
 // Restore bindings to a saved (chunk, idx) position. In array mode,
 // also trims the array to match.
-@inline function restoreBindings(chunk: i32, idx: i32): void {
+@inline function restoreBindingsChunked(chunk: i32, idx: i32): void {
   bindingsChunk = chunk;
   bindingsIdx = idx;
-  if (!useChunkedBindings) bindingsArr.length = idx;
+}
+
+@inline function restoreBindingsArray(_chunk: i32, idx: i32): void {
+  bindingsChunk = 0;
+  bindingsIdx = idx;
+  bindingsArr.length = idx;
+}
+
+@inline function restoreBindings(chunk: i32, idx: i32): void {
+  if (useChunkedBindings) {
+    restoreBindingsChunked(chunk, idx);
+  } else {
+    restoreBindingsArray(chunk, idx);
+  }
+}
+
+function resetBindingsChunked(): void {
+  // Allocate initial chunk (or reuse first chunk after heap.reset()).
+  bindingsFirstChunk = allocBindingsChunk(0);
+  bindingsChunk = bindingsFirstChunk;
+  bindingsIdx = 0;
+}
+
+function resetBindingsArray(): void {
+  bindingsArr = new Array<i32>();
+  bindingsChunk = 0;
+  bindingsFirstChunk = 0;
+  bindingsIdx = 0;
 }
 
 function resetParsingState(): void {
   pos = 0;
   rightmostFailurePos = -1;
   if (useChunkedBindings) {
-    // Allocate initial chunk (or reuse first chunk after heap.reset()).
-    bindingsFirstChunk = allocBindingsChunk(0);
-    bindingsChunk = bindingsFirstChunk;
+    resetBindingsChunked();
   } else {
-    bindingsArr = new Array<i32>();
-    bindingsChunk = 0;
-    bindingsFirstChunk = 0;
+    resetBindingsArray();
   }
-  bindingsIdx = 0;
 }
 
 export function resetHeap(): void {
@@ -650,14 +680,22 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
   cstSetFailureOffset(ptr, failureOffset);
 
   // Copy children from (origChunk, origIdx) to the node.
-  let chunk = origChunk;
-  let idx = origIdx;
-  for (let i = 0; i < numChildren; i++) {
-    store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindingsRead(chunk, idx));
-    idx++;
-    if (useChunkedBindings && idx === BINDINGS_CHUNK_CAPACITY) {
-      chunk = load<i32>(<usize>(chunk + 4)); // next
-      idx = 0;
+  if (useChunkedBindings) {
+    let chunk = origChunk;
+    let idx = origIdx;
+    for (let i = 0; i < numChildren; i++) {
+      store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindingsReadChunked(chunk, idx));
+      idx++;
+      if (idx === BINDINGS_CHUNK_CAPACITY) {
+        chunk = chunkNext(chunk);
+        idx = 0;
+      }
+    }
+  } else {
+    let idx = origIdx;
+    for (let i = 0; i < numChildren; i++) {
+      store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindingsReadArray(0, idx));
+      idx++;
     }
   }
 
@@ -695,42 +733,64 @@ export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, ori
   return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, -1);
 }
 
-export function getBindingsLength(): i32 {
-  if (!useChunkedBindings) return bindingsArr.length;
+@inline function getBindingsLengthChunked(): i32 {
   // Compute total length by walking the chunk list from first to current.
   let count: i32 = 0;
   let chunk = bindingsFirstChunk;
   while (chunk !== bindingsChunk) {
     count += BINDINGS_CHUNK_CAPACITY;
-    chunk = load<i32>(<usize>(chunk + 4)); // next
+    chunk = chunkNext(chunk);
   }
   return count + bindingsIdx;
 }
 
-export function setBindingsLength(len: i32): void {
-  if (!useChunkedBindings) {
-    bindingsArr.length = len;
-    bindingsIdx = len;
-    return;
-  }
+@inline function getBindingsLengthArray(): i32 {
+  return bindingsArr.length;
+}
+
+@inline function setBindingsLengthChunked(len: i32): void {
   // Walk from first chunk to find the right chunk+idx.
   let chunk = bindingsFirstChunk;
   while (len >= BINDINGS_CHUNK_CAPACITY) {
-    chunk = load<i32>(<usize>(chunk + 4)); // next
+    chunk = chunkNext(chunk);
     len -= BINDINGS_CHUNK_CAPACITY;
   }
   bindingsChunk = chunk;
   bindingsIdx = len;
 }
 
-export function bindingsAt(i: i32): i32 {
-  if (!useChunkedBindings) return unchecked(bindingsArr[i]);
+@inline function setBindingsLengthArray(len: i32): void {
+  bindingsArr.length = len;
+  bindingsIdx = len;
+}
+
+@inline function bindingsAtChunked(i: i32): i32 {
   let chunk = bindingsFirstChunk;
   while (i >= BINDINGS_CHUNK_CAPACITY) {
-    chunk = load<i32>(<usize>(chunk + 4)); // next
+    chunk = chunkNext(chunk);
     i -= BINDINGS_CHUNK_CAPACITY;
   }
-  return bindingsRead(chunk, i);
+  return bindingsReadChunked(chunk, i);
+}
+
+@inline function bindingsAtArray(i: i32): i32 {
+  return unchecked(bindingsArr[i]);
+}
+
+export function getBindingsLength(): i32 {
+  return useChunkedBindings ? getBindingsLengthChunked() : getBindingsLengthArray();
+}
+
+export function setBindingsLength(len: i32): void {
+  if (useChunkedBindings) {
+    setBindingsLengthChunked(len);
+  } else {
+    setBindingsLengthArray(len);
+  }
+}
+
+export function bindingsAt(i: i32): i32 {
+  return useChunkedBindings ? bindingsAtChunked(i) : bindingsAtArray(i);
 }
 
 // TODO: Find a way to call this directly from generated code.
