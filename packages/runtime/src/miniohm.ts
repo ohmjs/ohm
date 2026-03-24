@@ -54,11 +54,18 @@ const UnicodeCategoryNames = [
 const utf8 = new TextDecoder('utf-8');
 const utf16le = new TextDecoder('utf-16le');
 
+function isSyntacticRuleName(ruleName: string): boolean {
+  const firstChar = ruleName[0];
+  return firstChar === firstChar.toUpperCase();
+}
+
+function getRuleId(ctx: MatchContext, ptr: number): number {
+  return ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
+}
+
 // Check whether the nonterminal at `ptr` is a syntactic rule (name starts with uppercase).
 function isSyntacticRule(ctx: MatchContext, ptr: number): boolean {
-  const ruleId = ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
-  const name = ctx.ruleNames[ruleId];
-  return name[0] === name[0].toUpperCase();
+  return ctx.ruleIsSyntactic[getRuleId(ctx, ptr)];
 }
 
 // Minimal implementation of Interval (for FailedMatchResult)
@@ -206,6 +213,8 @@ export class Grammar {
   /** @internal */
   private _ruleNames: string[] = [];
   /** @internal */
+  private _ruleIsSyntactic: boolean[] = [];
+  /** @internal */
   private _input = '';
 
   /** @internal */
@@ -326,9 +335,11 @@ export class Grammar {
   private _extractStrings(module: WebAssembly.Module): void {
     assert(this._ruleNames.length === 0);
     assert(this._ruleIds.size === 0);
+    assert(this._ruleIsSyntactic.length === 0);
     for (const ruleName of parseStringTable(module, 'ruleNames')) {
       this._ruleIds.set(ruleName, this._ruleIds.size);
       this._ruleNames.push(ruleName);
+      this._ruleIsSyntactic.push(isSyntacticRuleName(ruleName));
     }
     for (const str of parseStringTable(module, 'strings')) {
       this._strings.push(str);
@@ -370,6 +381,7 @@ export class Grammar {
 
     const ctx: MatchContext = {
       ruleNames: this._ruleNames,
+      ruleIsSyntactic: this._ruleIsSyntactic,
       view: new DataView(buffer),
       input,
       getSpacesLenAt: exports.getSpacesLenAt,
@@ -424,6 +436,7 @@ export class Grammar {
     const {exports} = this._instance as any;
     ctx ??= {
       ruleNames: this._ruleNames,
+      ruleIsSyntactic: this._ruleIsSyntactic,
       view: new DataView(exports.memory.buffer),
       input: this._input,
       getSpacesLenAt: exports.getSpacesLenAt,
@@ -456,6 +469,7 @@ export class Grammar {
 
 export interface MatchContext {
   ruleNames: string[];
+  ruleIsSyntactic: boolean[];
   view: DataView;
   input: string;
   getSpacesLenAt?: (pos: number) => number;
@@ -540,8 +554,8 @@ class CstNodeImpl implements CstNodeBase {
   source: {startIdx: number; endIdx: number};
 
   // Whether this node's children are in a syntactic context (i.e., have
-  // implicit space skipping between them). Nonterminals set this based on
-  // their rule name; other node types inherit from their parent.
+  // implicit space skipping between them). Nonterminals set this from
+  // their rule id; other node types inherit from their parent.
   _syntactic!: boolean;
 
   constructor(ctx: MatchContext, ptr: number, startIdx: number, syntactic?: boolean) {
@@ -701,8 +715,8 @@ class CstNodeImpl implements CstNodeBase {
       // Only query spaces for terminals and nonterminals — not for
       // iteration (ITER_FLAG) or optional nodes, which handle space
       // skipping internally.
-      const type = (this._ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true) &
-        MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+      const typeAndDetails = this._ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true);
+      const type = (typeAndDetails & MATCH_RECORD_TYPE_MASK) as MatchRecordType;
       let spacesLen = 0;
       if (
         doSpaceLookup &&
@@ -716,7 +730,7 @@ class CstNodeImpl implements CstNodeBase {
       // other node types (iter, opt) inherit from the parent.
       const childSyntactic =
         type === MatchRecordType.NONTERMINAL
-          ? isSyntacticRule(this._ctx, ptr)
+          ? this._ctx.ruleIsSyntactic[typeAndDetails >>> 2]
           : this._syntactic;
       const node = new CstNodeImpl(this._ctx, ptr, startIdx, childSyntactic);
       if (spacesLen > 0) {
@@ -734,13 +748,12 @@ class CstNodeImpl implements CstNodeBase {
 
   isSyntactic(): boolean {
     assert(this.isNonterminal(), 'Not a nonterminal');
-    const firstChar = this.ctorName[0];
-    return firstChar === firstChar.toUpperCase();
+    return this._syntactic;
   }
 
   isLexical(): boolean {
     assert(this.isNonterminal(), 'Not a nonterminal');
-    return !this.isSyntactic();
+    return !this._syntactic;
   }
 
   toString(): string {
