@@ -54,13 +54,6 @@ const UnicodeCategoryNames = [
 const utf8 = new TextDecoder('utf-8');
 const utf16le = new TextDecoder('utf-16le');
 
-// Check whether the nonterminal at `ptr` is a syntactic rule (name starts with uppercase).
-function isSyntacticRule(ctx: MatchContext, ptr: number): boolean {
-  const ruleId = ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
-  const name = ctx.ruleNames[ruleId];
-  return name[0] === name[0].toUpperCase();
-}
-
 // Minimal implementation of Interval (for FailedMatchResult)
 export class Interval {
   startIdx: number;
@@ -432,7 +425,7 @@ export class Grammar {
     };
     const spacesLen = Math.max(0, exports.getSpacesLenAt(0));
     const rootAddr = exports.bindingsAt(0);
-    const root = new CstNodeImpl(ctx, rootAddr, spacesLen, isSyntacticRule(ctx, rootAddr));
+    const root = new CstNodeImpl(ctx, rootAddr, spacesLen);
     if (spacesLen > 0) {
       root.leadingSpaces = new LazySpacesNode(ctx, 0, spacesLen);
     }
@@ -539,17 +532,11 @@ class CstNodeImpl implements CstNodeBase {
   leadingSpaces?: NonterminalNode = undefined;
   source: {startIdx: number; endIdx: number};
 
-  // Whether this node's children are in a syntactic context (i.e., have
-  // implicit space skipping between them). Nonterminals set this based on
-  // their rule name; other node types inherit from their parent.
-  _syntactic!: boolean;
-
-  constructor(ctx: MatchContext, ptr: number, startIdx: number, syntactic?: boolean) {
+  constructor(ctx: MatchContext, ptr: number, startIdx: number) {
     // Non-enumerable properties
     Object.defineProperties(this, {
       _ctx: {value: ctx},
       _children: {writable: true},
-      _syntactic: {value: syntactic ?? false, writable: true},
     });
     this._base = ptr;
     this.startIdx = startIdx;
@@ -676,8 +663,6 @@ class CstNodeImpl implements CstNodeBase {
     const children: (CstNodeImpl | TaggedTerminalNode)[] = [];
     let {startIdx} = this;
     const {getSpacesLenAt} = this._ctx;
-    // Only look up implicit spaces when we're in a syntactic context.
-    const doSpaceLookup = this._syntactic && !!getSpacesLenAt;
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + CST_CHILDREN_OFFSET + i * 4;
       const ptr = this._ctx.view.getUint32(slotOffset, true);
@@ -685,8 +670,8 @@ class CstNodeImpl implements CstNodeBase {
       if (isTaggedTerminal(ptr)) {
         // Tagged terminals always have parent-level space skipping.
         let spacesLen = 0;
-        if (doSpaceLookup) {
-          spacesLen = Math.max(0, getSpacesLenAt!(startIdx));
+        if (getSpacesLenAt) {
+          spacesLen = Math.max(0, getSpacesLenAt(startIdx));
           if (spacesLen > 0) startIdx += spacesLen;
         }
         const node = new TaggedTerminalNode(this._ctx, ptr, startIdx);
@@ -705,20 +690,14 @@ class CstNodeImpl implements CstNodeBase {
         MATCH_RECORD_TYPE_MASK) as MatchRecordType;
       let spacesLen = 0;
       if (
-        doSpaceLookup &&
+        getSpacesLenAt &&
         (type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL)
       ) {
-        spacesLen = Math.max(0, getSpacesLenAt!(startIdx));
+        spacesLen = Math.max(0, getSpacesLenAt(startIdx));
         if (spacesLen > 0) startIdx += spacesLen;
       }
 
-      // Nonterminals determine syntactic context from their name;
-      // other node types (iter, opt) inherit from the parent.
-      const childSyntactic =
-        type === MatchRecordType.NONTERMINAL
-          ? isSyntacticRule(this._ctx, ptr)
-          : this._syntactic;
-      const node = new CstNodeImpl(this._ctx, ptr, startIdx, childSyntactic);
+      const node = new CstNodeImpl(this._ctx, ptr, startIdx);
       if (spacesLen > 0) {
         node.leadingSpaces = new LazySpacesNode(this._ctx, startIdx - spacesLen, spacesLen);
       }
@@ -845,8 +824,10 @@ class LazySpacesNode implements NonterminalNode {
     if (memory && this._ctx.view.buffer !== memory.buffer) {
       this._ctx.view = new DataView(memory.buffer);
     }
-    // The spaces rule is lexical, so pass syntactic=false.
-    const fullNode = new CstNodeImpl(this._ctx, ptr, this._startIdx, false);
+    // Use a context without getSpacesLenAt: children inside the spaces
+    // rule are in a lexical context and must not have space skipping applied.
+    const innerCtx = {...this._ctx, getSpacesLenAt: undefined};
+    const fullNode = new CstNodeImpl(innerCtx, ptr, this._startIdx);
     return fullNode.children;
   }
 
