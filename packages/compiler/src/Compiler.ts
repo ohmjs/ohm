@@ -254,6 +254,7 @@ class Assembler {
   _frameDepth: number;
   _savedAtDepthStack: Set<string>[];
   useChunkedBindings: boolean;
+  posOnlyMode: boolean;
 
   // In WebAssembly, function indices (funcidx) are a flat numbering: imports
   // come first, then locally-defined functions. The prebuilt module has its
@@ -281,6 +282,7 @@ class Assembler {
     this._frameDepth = 0;
     this._savedAtDepthStack = [];
     this.useChunkedBindings = useChunkedBindings;
+    this.posOnlyMode = false;
 
     this._typeMap = typeMap;
   }
@@ -627,6 +629,9 @@ class Assembler {
   }
 
   saveNumBindings(): SavedBindingsState {
+    if (this.posOnlyMode) {
+      return {getChunk() {}, getIdx() {}, restore() {}};
+    }
     if (!this.useChunkedBindings) {
       // Array mode: save a single length value.
       this.callPrebuiltFunc('getBindingsLength');
@@ -707,6 +712,7 @@ class Assembler {
   }
 
   maybeRecordFailure(origPosThunk: () => void, failureId: number): void {
+    if (this.posOnlyMode) return;
     this.globalGet('errorMessagePos');
     this.i32Const(0);
     this.emit(instr.i32.ge_s);
@@ -810,6 +816,10 @@ class Assembler {
   }
 
   newIterNode(saved: SavedBacktrackPoint, arity: number, isOpt = false): void {
+    if (this.posOnlyMode) {
+      this.i32Const(1);
+      return;
+    }
     saved.pos.get();
     this.globalGet('pos');
     saved.bindings.getChunk();
@@ -822,6 +832,10 @@ class Assembler {
   // Wrap the bindings accumulated since the last pushDepth() in a
   // nonterminal node.
   newNonterminalNode(saved: SavedBacktrackPoint, ruleId: number): void {
+    if (this.posOnlyMode) {
+      this.i32Const(1);
+      return;
+    }
     saved.pos.get();
     this.globalGet('pos');
     this.i32Const(ruleId);
@@ -833,6 +847,10 @@ class Assembler {
 
   // [startIdx: i32] -> [tagged: i32]
   newTerminalNode(): void {
+    if (this.posOnlyMode) {
+      this.i32Const(1);
+      return;
+    }
     this.localGet('postSpacesPos');
     this.globalGet('pos');
     this.callPrebuiltFunc('newTerminalNode');
@@ -854,10 +872,12 @@ class Assembler {
   }
 
   pushFluffySavePoint(): void {
+    if (this.posOnlyMode) return;
     this.callPrebuiltFunc('pushFluffySavePoint');
   }
 
   popFluffySavePoint(shouldMark: boolean): void {
+    if (this.posOnlyMode) return;
     this.i32Const(shouldMark ? 1 : 0);
     this.callPrebuiltFunc('popFluffySavePoint');
   }
@@ -865,6 +885,7 @@ class Assembler {
   // Pop the fluffy save point, marking failures as fluffy only when
   // pos matches errorMessagePos. This mirrors ohm-js's scoped failure recording.
   popFluffySavePointIfAtErrorPos(): void {
+    if (this.posOnlyMode) return;
     this.globalGet('errorMessagePos');
     this.globalGet('pos');
     this.i32Eq();
@@ -875,6 +896,7 @@ class Assembler {
   // On success, mark failures as fluffy if pos is at errorMessagePos;
   // on failure, discard without marking.
   popFluffySavePointOnResult(): void {
+    if (this.posOnlyMode) return;
     this.localGet('ret');
     this.ifElse(
       w.blocktype.empty,
@@ -1262,10 +1284,11 @@ export class Compiler {
     const restoreFailurePos = name === '$spaces';
 
     const descriptionId = ruleInfo.description ? this._strings.add(ruleInfo.description) : -1;
-    const hasDescription = descriptionId >= 0;
+    const hasDescription = !asm.posOnlyMode && descriptionId >= 0;
 
+    const funcName = asm.posOnlyMode ? `$${name}_posOnly` : `$${name}`;
     this.beginLexContext(!ruleInfo.isSyntactic);
-    asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
+    asm.addFunction(funcName, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
       asm.addLocal('postSpacesPos', w.valtype.i32);
@@ -1605,10 +1628,11 @@ export class Compiler {
       exports.push(w.export_(name, [0x03, prebuilt.globalidxByName[name]]));
     }
     // The module will have a table containing references to all of the rule eval functions,
-    // plus a compiler-generated $isRuleSyntactic dispatch function at the end.
-    // The rule ID can be used directly as the table index; $isRuleSyntactic is at index numRules.
+    // plus compiler-generated helper functions at the end:
+    //   [numRules]     = $isRuleSyntactic
+    //   [numRules + 1] = $spaces pos-only (for evalSpacesImplicit)
     const numRules = this.ruleIdByName.size;
-    const tableSize = numRules + 1; // +1 for $isRuleSyntactic
+    const tableSize = numRules + 2; // +1 for $isRuleSyntactic, +1 for $spaces pos-only
     const table = w.table(
       w.tabletype(w.elemtype.funcref, w.limits.minmax(tableSize, tableSize))
     );
@@ -1617,6 +1641,10 @@ export class Compiler {
     const isRuleSyntacticIdx = functionDecls.findIndex(f => f.name === '$isRuleSyntactic');
     assert(isRuleSyntacticIdx !== -1, 'No $isRuleSyntactic function found');
     tableData.push(w.funcidx(compilerFuncOffset + isRuleSyntacticIdx));
+    // Add $spaces pos-only as the next table entry.
+    const spacesPosOnlyIdx = functionDecls.findIndex(f => f.name === '$$spaces_posOnly');
+    assert(spacesPosOnlyIdx !== -1, 'No $$spaces_posOnly function found');
+    tableData.push(w.funcidx(compilerFuncOffset + spacesPosOnlyIdx));
     assert(tableSize === tableData.length, 'Invalid table size');
 
     // Determine the index of the start function.
@@ -1771,6 +1799,12 @@ export class Compiler {
       asm.i32Const(0);
     });
     ruleDecls.push(checkNotNull(asm._functionDecls.at(-1)));
+
+    // Compile a pos-only version of $spaces that skips all CST building.
+    // This goes into the table at index numRules + 1.
+    asm.posOnlyMode = true;
+    ruleDecls.push(this.compileRule('$spaces'));
+    asm.posOnlyMode = false;
 
     return ruleDecls;
   }
@@ -2009,7 +2043,7 @@ export class Compiler {
 
     const {asm} = this;
 
-    if (this.shouldInlineRule(exp.ruleName)) {
+    if (this.shouldInlineRule(exp.ruleName) || asm.posOnlyMode) {
       this.emitInlinedApply(exp);
       return;
     }

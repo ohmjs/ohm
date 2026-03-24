@@ -824,7 +824,10 @@ class LazySpacesNode implements NonterminalNode {
     if (memory && this._ctx.view.buffer !== memory.buffer) {
       this._ctx.view = new DataView(memory.buffer);
     }
-    const fullNode = new CstNodeImpl(this._ctx, ptr, this._startIdx);
+    // Use a context without getSpacesLenAt: children inside the spaces
+    // rule are in a lexical context and must not have space skipping applied.
+    const innerCtx = {...this._ctx, getSpacesLenAt: undefined};
+    const fullNode = new CstNodeImpl(innerCtx, ptr, this._startIdx);
     return fullNode.children;
   }
 

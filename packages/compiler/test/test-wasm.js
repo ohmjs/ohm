@@ -212,6 +212,48 @@ test('cst: leadingSpaces children via lazy parsing', async t => {
   });
 });
 
+test('cst: leadingSpaces with custom spaces rule', async t => {
+  const g = await compileAndLoad(`G {
+    Start = word+
+    word = letter+
+    space += comment
+    comment = "//" (~"\\n" any)*
+  }`);
+  g.match('abc // yo\n def').use(r => {
+    t.true(r.succeeded());
+    const root = r.getCstRoot();
+
+    // The Plus list should contain two words.
+    const list = root.children[0];
+    t.is(list.children.length, 2);
+
+    const [word1, word2] = list.children;
+    t.is(word1.sourceString, 'abc');
+    t.is(word2.sourceString, 'def');
+
+    // word2 should have leadingSpaces covering the comment and whitespace.
+    const spaces = word2.leadingSpaces;
+    t.truthy(spaces);
+    t.is(spaces.ctorName, 'spaces');
+    t.is(spaces.sourceString, ' // yo\n ');
+    t.is(spaces.matchLength, 8);
+
+    // Lazy CST children should have correct source strings.
+    const starList = spaces.children[0];
+    t.true(starList.isList());
+    t.is(starList.children.length, 4);
+    t.is(starList.children[0].sourceString, ' ');
+    t.is(starList.children[1].sourceString, '// yo');
+    t.is(starList.children[2].sourceString, '\n');
+    t.is(starList.children[3].sourceString, ' ');
+
+    // The comment child should be a 'space' wrapping a 'comment'.
+    const commentSpace = starList.children[1];
+    t.is(commentSpace.ctorName, 'space');
+    t.is(commentSpace.children[0].ctorName, 'comment');
+  });
+});
+
 test('cst: lazy parsing survives memory.grow()', async t => {
   const g = await compileAndLoad('G { Start = "x" }');
   g.match('  x').use(r => {
