@@ -299,6 +299,8 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
 
 // Evaluate $spaces without allocating a CST node or pushing a binding.
 // Stores a sentinel in the memo table encoding just the match length.
+// Calls the pos-only compiled version of $spaces (at table index numRules + 1),
+// which skips all CST building internally.
 export function evalSpacesImplicit(): void {
   const memo = memoTableGet(pos, IMPLICIT_SPACES_RULE_ID);
   if (memo !== EMPTY) {
@@ -307,11 +309,8 @@ export function evalSpacesImplicit(): void {
     return;
   }
   const origPos = pos;
-  const origChunk = bindingsChunk;
-  const origIdx = bindingsIdx;
-  evalRuleBody(IMPLICIT_SPACES_RULE_ID);
+  call_indirect<RuleEvalResult>(numRules + 1);
   const matchLen = <i32>pos - <i32>origPos;
-  restoreBindings(origChunk, origIdx); // discard child bindings
   memoTableSet(origPos, IMPLICIT_SPACES_RULE_ID, (matchLen << 2) | MEMO_SPACES_FLAG);
 }
 
