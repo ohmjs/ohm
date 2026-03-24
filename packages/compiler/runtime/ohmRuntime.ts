@@ -177,9 +177,13 @@ function allocBindingsChunk(prev: i32): i32 {
   return ptr;
 }
 
+@inline function chunkNext(chunk: i32): i32 {
+  return load<i32>(<usize>(chunk + 4));
+}
+
 // Called when current chunk is full.
 export function bindingsAdvanceChunk(): void {
-  let next = load<i32>(<usize>(bindingsChunk + 4));
+  let next = chunkNext(bindingsChunk);
   if (next === 0) {
     next = allocBindingsChunk(bindingsChunk);
   }
@@ -205,12 +209,6 @@ export function bindingsAdvanceChunk(): void {
 @inline function bindingsRead(chunk: i32, idx: i32): i32 {
   if (!useChunkedBindings) return unchecked(bindingsArr[idx]);
   return load<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)));
-}
-
-// Write a binding at a specific chunk + index position.
-@inline function bindingsWrite(chunk: i32, idx: i32, value: i32): void {
-  if (!useChunkedBindings) { unchecked(bindingsArr[idx] = value); return; }
-  store<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)), value);
 }
 
 @inline function memoEntryForFailure(failureOffset: i32): MemoEntry {
@@ -366,7 +364,10 @@ export function evalSpacesFull(targetPos: i32): i32 {
 @inline function restoreBindings(chunk: i32, idx: i32): void {
   bindingsChunk = chunk;
   bindingsIdx = idx;
-  if (!useChunkedBindings) bindingsArr.length = idx;
+  if (!useChunkedBindings) {
+    bindingsChunk = 0;
+    bindingsArr.length = idx;
+  }
 }
 
 function resetParsingState(): void {
@@ -656,7 +657,7 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
     store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindingsRead(chunk, idx));
     idx++;
     if (useChunkedBindings && idx === BINDINGS_CHUNK_CAPACITY) {
-      chunk = load<i32>(<usize>(chunk + 4)); // next
+      chunk = chunkNext(chunk);
       idx = 0;
     }
   }
@@ -702,7 +703,7 @@ export function getBindingsLength(): i32 {
   let chunk = bindingsFirstChunk;
   while (chunk !== bindingsChunk) {
     count += BINDINGS_CHUNK_CAPACITY;
-    chunk = load<i32>(<usize>(chunk + 4)); // next
+    chunk = chunkNext(chunk);
   }
   return count + bindingsIdx;
 }
@@ -716,7 +717,7 @@ export function setBindingsLength(len: i32): void {
   // Walk from first chunk to find the right chunk+idx.
   let chunk = bindingsFirstChunk;
   while (len >= BINDINGS_CHUNK_CAPACITY) {
-    chunk = load<i32>(<usize>(chunk + 4)); // next
+    chunk = chunkNext(chunk);
     len -= BINDINGS_CHUNK_CAPACITY;
   }
   bindingsChunk = chunk;
@@ -727,7 +728,7 @@ export function bindingsAt(i: i32): i32 {
   if (!useChunkedBindings) return unchecked(bindingsArr[i]);
   let chunk = bindingsFirstChunk;
   while (i >= BINDINGS_CHUNK_CAPACITY) {
-    chunk = load<i32>(<usize>(chunk + 4)); // next
+    chunk = chunkNext(chunk);
     i -= BINDINGS_CHUNK_CAPACITY;
   }
   return bindingsRead(chunk, i);
