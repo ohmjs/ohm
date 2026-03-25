@@ -279,10 +279,23 @@ func (r *MatchResult) Close() {
 }
 
 func (r *MatchResult) cstContext() *cstContext {
+	g := r.grammar
+	spacesFunc := g.module.ExportedFunction("getSpacesLenAt")
+	var getSpacesLenAt func(pos int) int
+	if spacesFunc != nil {
+		getSpacesLenAt = func(pos int) int {
+			results, err := spacesFunc.Call(g.ctx, uint64(pos))
+			if err != nil {
+				return -1
+			}
+			return int(int32(results[0]))
+		}
+	}
 	return &cstContext{
-		ruleNames:  r.grammar.ruleNames,
-		memory:     r.grammar.module.Memory(),
-		inputUTF16: r.inputUTF16,
+		ruleNames:      g.ruleNames,
+		memory:         g.module.Memory(),
+		inputUTF16:     r.inputUTF16,
+		getSpacesLenAt: getSpacesLenAt,
 	}
 }
 
@@ -352,8 +365,17 @@ func (r *MatchResult) GetAllBindings() ([]*CstNode, error) {
 	}
 	numBindings := int(lenResults[0])
 
-	nodes := make([]*CstNode, numBindings)
+	// Determine leading spaces offset (for syntactic start rules in pos-only mode,
+	// there is no $spaces binding, but the root node starts after leading spaces).
 	startIdx := 0
+	if ctx.getSpacesLenAt != nil {
+		spacesLen := ctx.getSpacesLenAt(0)
+		if spacesLen > 0 {
+			startIdx = spacesLen
+		}
+	}
+
+	nodes := make([]*CstNode, numBindings)
 	for i := 0; i < numBindings; i++ {
 		results, err := bindingsAtFunc.Call(g.ctx, uint64(i))
 		if err != nil {

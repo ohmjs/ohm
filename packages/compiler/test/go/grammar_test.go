@@ -5,13 +5,29 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"unicode/utf16"
 )
 
 // unparseAll walks all binding nodes and reconstructs the full input text.
+// It includes implicit leading/trailing spaces.
 func unparseAll(nodes []*CstNode) string {
+	if len(nodes) == 0 {
+		return ""
+	}
 	var result strings.Builder
+	ctx := nodes[0].ctx
+	startIdx := 0
 	for _, node := range nodes {
+		// Emit leading spaces before this binding node.
+		if node.startIdx > startIdx {
+			result.WriteString(string(utf16.Decode(ctx.inputUTF16[startIdx:node.startIdx])))
+		}
 		unparseNode(node, &result)
+		startIdx = node.startIdx + node.MatchLength()
+	}
+	// Emit any trailing content (e.g., trailing whitespace after the last binding).
+	if startIdx < len(ctx.inputUTF16) {
+		result.WriteString(string(utf16.Decode(ctx.inputUTF16[startIdx:])))
 	}
 	return result.String()
 }
@@ -21,8 +37,21 @@ func unparseNode(node *CstNode, result *strings.Builder) {
 		result.WriteString(node.Value())
 		return
 	}
-	for _, child := range node.Children() {
+	if node.tagged {
+		return
+	}
+	children := node.Children()
+	startIdx := node.startIdx
+	for _, child := range children {
+		// Emit any implicit spaces before this child.
+		if child.startIdx > startIdx {
+			spacesLen := child.startIdx - startIdx
+			if spacesLen > 0 && spacesLen+startIdx <= len(node.ctx.inputUTF16) {
+				result.WriteString(string(utf16.Decode(node.ctx.inputUTF16[startIdx : startIdx+spacesLen])))
+			}
+		}
 		unparseNode(child, result)
+		startIdx = child.startIdx + child.MatchLength()
 	}
 }
 
