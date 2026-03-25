@@ -37,9 +37,6 @@ func unparseNode(node *CstNode, result *strings.Builder) {
 		result.WriteString(node.Value())
 		return
 	}
-	if node.tagged {
-		return
-	}
 	children := node.Children()
 	startIdx := node.startIdx
 	for _, child := range children {

@@ -7,12 +7,14 @@ import (
 	"github.com/tetratelabs/wazero/api"
 )
 
-// CstNodeType constants matching the ohm-js CstNodeType enum.
+// CstNodeType represents the type of a CST node.
+type CstNodeType int
+
 const (
-	CstNodeTypeNonterminal = 0
-	CstNodeTypeTerminal    = 1
-	CstNodeTypeList        = 2
-	CstNodeTypeOpt         = 3
+	CstNodeTypeNonterminal CstNodeType = 0
+	CstNodeTypeTerminal    CstNodeType = 1
+	CstNodeTypeList        CstNodeType = 2
+	CstNodeTypeOpt         CstNodeType = 3
 )
 
 const (
@@ -38,19 +40,14 @@ type cstContext struct {
 type CstNode struct {
 	ctx      *cstContext
 	base     uint32
-	startIdx int  // position in the input (UTF-16 code units)
-	tagged   bool // true if this is a tagged terminal (not a real CST node)
+	startIdx int // position in the input (UTF-16 code units)
 }
 
 func newCstNode(ctx *cstContext, base uint32, startIdx int) *CstNode {
-	return &CstNode{ctx: ctx, base: base, startIdx: startIdx, tagged: false}
+	return &CstNode{ctx: ctx, base: base, startIdx: startIdx}
 }
 
-func newTaggedTerminal(ctx *cstContext, raw uint32, startIdx int) *CstNode {
-	return &CstNode{ctx: ctx, base: raw, startIdx: startIdx, tagged: true}
-}
-
-func isTaggedTerminal(raw uint32) bool {
+func isTerminal(raw uint32) bool {
 	return raw&1 == 1
 }
 
@@ -73,7 +70,7 @@ func (n *CstNode) ruleID() int32 {
 }
 
 func (n *CstNode) count() uint32 {
-	if n.tagged {
+	if isTerminal(n.base) {
 		return 0
 	}
 	data, ok := n.ctx.memory.Read(n.base+8, 4)
@@ -86,22 +83,11 @@ func (n *CstNode) count() uint32 {
 // --- public API (matches the ohm-js CstNode interface) ---
 
 // Type returns the CstNodeType for this node.
-func (n *CstNode) Type() int {
-	if n.tagged {
+func (n *CstNode) Type() CstNodeType {
+	if isTerminal(n.base) {
 		return CstNodeTypeTerminal
 	}
-	switch n.matchRecordType() {
-	case 0:
-		return CstNodeTypeNonterminal
-	case 1:
-		return CstNodeTypeTerminal
-	case 2:
-		return CstNodeTypeList
-	case 3:
-		return CstNodeTypeOpt
-	default:
-		return -1
-	}
+	return CstNodeType(n.matchRecordType())
 }
 
 // CtorName returns the constructor name for this node.
@@ -128,7 +114,7 @@ func (n *CstNode) CtorName() string {
 
 // MatchLength returns the number of UTF-16 code units consumed by this node.
 func (n *CstNode) MatchLength() int {
-	if n.tagged {
+	if isTerminal(n.base) {
 		return int(n.base >> 1)
 	}
 	data, ok := n.ctx.memory.Read(n.base, 4)
@@ -189,7 +175,7 @@ func (n *CstNode) IsLexical() bool {
 // hasParentSpaces returns true if this raw child value should have
 // implicit leading spaces inserted by the parent (syntactic rules).
 func (n *CstNode) hasParentSpaces(raw uint32) bool {
-	if isTaggedTerminal(raw) {
+	if isTerminal(raw) {
 		return true
 	}
 	typ := readNodeType(n.ctx.memory, raw)
@@ -197,19 +183,19 @@ func (n *CstNode) hasParentSpaces(raw uint32) bool {
 }
 
 // readNodeType reads the node type from a CST node pointer.
-func readNodeType(mem api.Memory, ptr uint32) int {
+func readNodeType(mem api.Memory, ptr uint32) CstNodeType {
 	data, ok := mem.Read(ptr+4, 4) // typeAndDetails at offset 4
 	if !ok {
 		return -1
 	}
-	return int(readInt32(data, 0) & matchRecordTypeMask)
+	return CstNodeType(readInt32(data, 0) & matchRecordTypeMask)
 }
 
 // Children returns the child nodes, with startIdx properly tracked.
 // For children of syntactic rules, implicit leading spaces are accounted
 // for when computing startIdx.
 func (n *CstNode) Children() []*CstNode {
-	if n.tagged {
+	if isTerminal(n.base) {
 		return nil
 	}
 	count := n.count()
@@ -237,12 +223,7 @@ func (n *CstNode) Children() []*CstNode {
 			}
 		}
 
-		var child *CstNode
-		if isTaggedTerminal(raw) {
-			child = newTaggedTerminal(n.ctx, raw, startIdx)
-		} else {
-			child = newCstNode(n.ctx, raw, startIdx)
-		}
+		child := newCstNode(n.ctx, raw, startIdx)
 		children[i] = child
 		startIdx += child.MatchLength()
 	}
