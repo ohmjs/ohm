@@ -6,11 +6,14 @@ import {parseArgs} from 'node:util';
 
 import {Bench} from 'tinybench';
 import {grammar} from '@ohm-js/compiler/compat';
+import {grammar as grammarLegacy} from 'ohm-js-legacy';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const json = grammar(readFileSync(path.join(__dirname, 'json.ohm'), 'utf-8'));
 const fastjson = grammar(readFileSync(path.join(__dirname, 'fastjson.ohm'), 'utf-8'));
+const jsonV17 = grammarLegacy(readFileSync(path.join(__dirname, 'json.ohm'), 'utf-8'));
+const fastjsonV17 = grammarLegacy(readFileSync(path.join(__dirname, 'fastjson.ohm'), 'utf-8'));
 
 // The benchmark file assigns a JSON string to `self.sample`.
 // Evaluate it to extract the actual JSON.
@@ -43,6 +46,8 @@ const opts = {
 
 bench.add('JSON', () => json.match(input).use(r => r.succeeded()), opts);
 bench.add('FastJSON', () => fastjson.match(input).use(r => r.succeeded()), opts);
+bench.add('JSON (v17)', () => jsonV17.match(input).succeeded(), opts);
+bench.add('FastJSON (v17)', () => fastjsonV17.match(input).succeeded(), opts);
 bench.add('JSON.parse', () => JSON.parse(input), opts);
 
 (async () => {
