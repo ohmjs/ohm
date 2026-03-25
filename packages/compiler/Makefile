@@ -50,6 +50,39 @@ build/json.wasm: src/cli.ts ../lang-json/json.ohm
 build/liquid-html.wasm: src/cli.ts test/data/liquid-html.ohm
 	$(NODE) src/cli.ts -g LiquidHTML -o build/liquid-html.wasm test/data/liquid-html.ohm
 
+JAVY ?= javy
+
+# --- Javy: self-contained Wasm build of the compiler ---
+#
+# Javy (https://github.com/bytecodealliance/javy) compiles JavaScript into a
+# standalone Wasm module by embedding QuickJS. This lets us run the Ohm
+# compiler in any environment with a Wasm runtime, without requiring Node.js.
+#
+# How it works:
+#   1. tsdown bundles the compiler into a single IIFE (build/compiler-javy.iife.js),
+#      using ohm-js-legacy for grammar parsing (pure JS, no Wasm dependency)
+#      and stubbing out ohm-js v18 (which requires WebAssembly).
+#   2. Javy compiles the IIFE into a Wasm module (build/compiler.wasm).
+#
+# The resulting module reads an Ohm grammar from stdin and writes compiled
+# Wasm bytes to stdout. Errors are written to stderr.
+#
+# Prerequisites: `javy` CLI (https://github.com/bytecodealliance/javy/releases)
+# Testing requires `wasmtime` (https://wasmtime.dev/).
+.PHONY: compiler-wasm
+compiler-wasm: build/compiler.wasm
+
+build/compiler-javy.iife.js: src/javy-entry.ts src/javy-api.ts src/javy-ohm-js-stub.ts \
+    build/ohmRuntime.wasm_sections.ts build/ohm-grammar-wasm.ts $(SRC_TS_FILES) tsdown.javy.config.ts
+	pnpm tsdown --config tsdown.javy.config.ts
+
+build/compiler.wasm: build/compiler-javy.iife.js
+	$(JAVY) build $< -o $@
+
+.PHONY: test-compiler-wasm
+test-compiler-wasm: build/compiler.wasm
+	pnpm ava test/_test-javy.js
+
 .PHONY: go-test-es5
 go-test-es5: build/es5.wasm
 	cd test/go && go test -v

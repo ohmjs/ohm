@@ -2,7 +2,7 @@
 // for additional imports in the dest module. Used by Compiler.ts at compile
 // time to adjust prebuilt code for extra imports (e.g. debug imports).
 
-import {decodeULEB128, decodeSLEB128} from '@thi.ng/leb128';
+import {decodeULEB128, decodeSLEB128} from './leb128.ts';
 import * as w from '@wasmgroundup/emit';
 
 // For sanity checking, assume that the number of locals is never
