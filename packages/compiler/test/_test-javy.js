@@ -1,8 +1,11 @@
 // Tests for the Javy-compiled Wasm module (build/compiler.wasm).
 // Run via `make test-compiler-wasm`.
 
+/* eslint-disable ava/no-ignored-test-files */
+
 import test from 'ava';
 import {execFileSync} from 'node:child_process';
+import {URL} from 'node:url';
 import {Grammar} from 'ohm-js';
 
 import {compile} from '../src/javy-api.ts';
