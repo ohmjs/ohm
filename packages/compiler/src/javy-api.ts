@@ -18,4 +18,3 @@ export function compile(source: string, grammarName?: string): Uint8Array {
   }
   return new Compiler(g, {debug: false}).compile();
 }
-

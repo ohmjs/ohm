@@ -1,10 +1,7 @@
 // Pure JS LEB128 decoding, replacing @thi.ng/leb128 (which uses Wasm internally).
 // API matches @thi.ng/leb128: (data: Uint8Array, offset?: number) => [bigint, number]
 
-export function decodeULEB128(
-  data: Uint8Array,
-  offset: number = 0
-): [bigint, number] {
+export function decodeULEB128(data: Uint8Array, offset: number = 0): [bigint, number] {
   let result = 0n;
   let shift = 0n;
   let pos = offset;
@@ -17,10 +14,7 @@ export function decodeULEB128(
   return [result, pos - offset];
 }
 
-export function decodeSLEB128(
-  data: Uint8Array,
-  offset: number = 0
-): [bigint, number] {
+export function decodeSLEB128(data: Uint8Array, offset: number = 0): [bigint, number] {
   let result = 0n;
   let shift = 0n;
   let pos = offset;

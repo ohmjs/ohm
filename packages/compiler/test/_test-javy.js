@@ -10,9 +10,7 @@ import {compile} from '../src/javy-api.ts';
 const COMPILER_WASM = new URL('../build/compiler.wasm', import.meta.url).pathname;
 
 function javyCompile(grammarSource, grammarName) {
-  const input = grammarName
-    ? `#grammarName ${grammarName}\n${grammarSource}`
-    : grammarSource;
+  const input = grammarName ? `#grammarName ${grammarName}\n${grammarSource}` : grammarSource;
   return execFileSync('wasmtime', [COMPILER_WASM], {
     input,
     maxBuffer: 1024 * 1024,
