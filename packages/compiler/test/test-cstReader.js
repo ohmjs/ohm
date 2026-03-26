@@ -71,7 +71,7 @@ test('iteration (list) node', async t => {
   g.match('aaa').use(mr => {
     const reader = createReader(mr);
     let listHandle;
-    reader.forEachChild(reader.root, (child) => {
+    reader.forEachChild(reader.root, child => {
       listHandle = child;
     });
     t.true(reader.isList(listHandle));
@@ -79,7 +79,7 @@ test('iteration (list) node', async t => {
     t.is(reader.childCount(listHandle), 3);
 
     const items = [];
-    reader.forEachChild(listHandle, (child) => {
+    reader.forEachChild(listHandle, child => {
       items.push(reader.sourceString(child));
     });
     t.deepEqual(items, ['a', 'a', 'a']);
@@ -91,12 +91,12 @@ test('iteration with nonterminals', async t => {
   g.match('abc').use(mr => {
     const reader = createReader(mr);
     let listHandle;
-    reader.forEachChild(reader.root, (child) => {
+    reader.forEachChild(reader.root, child => {
       listHandle = child;
     });
     t.true(reader.isList(listHandle));
     const items = [];
-    reader.forEachChild(listHandle, (child) => {
+    reader.forEachChild(listHandle, child => {
       items.push(reader.sourceString(child));
     });
     t.is(items.length, 3);
@@ -109,7 +109,7 @@ test('optional node: present', async t => {
   g.match('a').use(mr => {
     const reader = createReader(mr);
     let opt;
-    reader.forEachChild(reader.root, (child) => {
+    reader.forEachChild(reader.root, child => {
       opt = child;
     });
     t.true(reader.isOptional(opt));
@@ -124,7 +124,7 @@ test('optional node: absent', async t => {
   g.match('').use(mr => {
     const reader = createReader(mr);
     let opt;
-    reader.forEachChild(reader.root, (child) => {
+    reader.forEachChild(reader.root, child => {
       opt = child;
     });
     t.true(reader.isOptional(opt));
@@ -145,7 +145,7 @@ test('unparse: simple terminals', async t => {
         ans += reader.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, (child) => walk(child));
+      reader.forEachChild(handle, child => walk(child));
     }
     walk(reader.root);
     t.is(ans, 'abcd');
@@ -162,7 +162,7 @@ test('unparse: with rule application', async t => {
         ans += reader.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, (child) => walk(child));
+      reader.forEachChild(handle, child => walk(child));
     }
     walk(reader.root);
     t.is(ans, 'xy');
@@ -179,7 +179,7 @@ test('unparse: with nonterminals', async t => {
         ans += reader.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, (child) => walk(child));
+      reader.forEachChild(handle, child => walk(child));
     }
     walk(reader.root);
     t.is(ans, 'helloworld');
@@ -197,7 +197,7 @@ test('unparse: unicode', async t => {
         ans += reader.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, (child) => walk(child));
+      reader.forEachChild(handle, child => walk(child));
     }
     walk(reader.root);
     t.is(ans, input);
@@ -269,7 +269,7 @@ test('childCount is 0 for tagged terminals', async t => {
   g.match('x').use(mr => {
     const reader = createReader(mr);
     let termChild;
-    reader.forEachChild(reader.root, (child) => {
+    reader.forEachChild(reader.root, child => {
       termChild = child;
     });
     t.true(reader.isTerminal(termChild));

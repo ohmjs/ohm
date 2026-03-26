@@ -242,7 +242,6 @@ export function createReader(result: SucceededMatchResult): CstReader {
 
   const spacesLen = Math.max(0, exports.getSpacesLenAt(0));
   const rootPtr = exports.bindingsAt(0);
-  const rootLeadingSpaces =
-    spacesLen > 0 ? 0 * SHIFT + makeSpacesHandle(spacesLen) : 0;
+  const rootLeadingSpaces = spacesLen > 0 ? 0 * SHIFT + makeSpacesHandle(spacesLen) : 0;
   return new CstReader(ctx, pack(rootPtr, spacesLen), rootLeadingSpaces);
 }
