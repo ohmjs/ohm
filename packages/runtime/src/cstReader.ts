@@ -3,12 +3,15 @@ import {
   CST_CHILDREN_OFFSET,
   CST_MATCH_LENGTH_OFFSET,
   CST_TYPE_AND_DETAILS_OFFSET,
+  CstNodeType,
   isTaggedTerminal,
   MATCH_RECORD_TYPE_MASK,
   MatchRecordType,
 } from './miniohm.ts';
 
 import type {MatchContext, SucceededMatchResult} from './miniohm.ts';
+
+export {CstNodeType};
 
 const HANDLE_BITS = 27;
 const SHIFT = 2 ** HANDLE_BITS; // 134217728
@@ -87,42 +90,17 @@ export class CstReader {
     return unpackStartIdx(handle);
   }
 
-  isTerminal(handle: number): boolean {
+  /** Node type: NONTERMINAL, TERMINAL, LIST, or OPT. */
+  type(handle: number): CstNodeType {
     const raw = handle & MASK;
-    if (isSpacesHandle(raw)) return false;
-    if (isTaggedTerminal(raw)) return true;
-    return (
-      ((this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) &
-        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.TERMINAL
-    );
-  }
-
-  isNonterminal(handle: number): boolean {
-    const raw = handle & MASK;
-    if (isSpacesHandle(raw)) return true;
-    if (isTaggedTerminal(raw)) return false;
-    return (
-      ((this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) &
-        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.NONTERMINAL
-    );
-  }
-
-  isList(handle: number): boolean {
-    const raw = handle & MASK;
-    if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return false;
-    return (
-      ((this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) &
-        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.ITER_FLAG
-    );
-  }
-
-  isOptional(handle: number): boolean {
-    const raw = handle & MASK;
-    if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return false;
-    return (
-      ((this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) &
-        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.OPTIONAL
-    );
+    if (isSpacesHandle(raw)) return CstNodeType.NONTERMINAL;
+    if (isTaggedTerminal(raw)) return CstNodeType.TERMINAL;
+    const mrType = (this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) &
+      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+    if (mrType === MatchRecordType.NONTERMINAL) return CstNodeType.NONTERMINAL;
+    if (mrType === MatchRecordType.TERMINAL) return CstNodeType.TERMINAL;
+    if (mrType === MatchRecordType.ITER_FLAG) return CstNodeType.LIST;
+    return CstNodeType.OPT;
   }
 
   /** Number of raw children stored in this match record. */

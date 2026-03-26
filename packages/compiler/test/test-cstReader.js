@@ -1,6 +1,6 @@
 import test from 'ava';
 
-import {createReader, NULL_HANDLE} from '../../runtime/src/cstReader.ts';
+import {createReader, CstNodeType, NULL_HANDLE} from '../../runtime/src/cstReader.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
 
 test('root node basics', async t => {
@@ -9,10 +9,7 @@ test('root node basics', async t => {
 
   g.match('abcd').use(mr => {
     const reader = createReader(mr);
-    t.false(reader.isTerminal(reader.root));
-    t.true(reader.isNonterminal(reader.root));
-    t.false(reader.isList(reader.root));
-    t.false(reader.isOptional(reader.root));
+    t.is(reader.type(reader.root), CstNodeType.NONTERMINAL);
     t.is(reader.matchLength(reader.root), 4);
     t.is(reader.ctorName(reader.root), 'start');
     t.is(reader.childCount(reader.root), 2);
@@ -33,7 +30,7 @@ test('terminal children', async t => {
     t.is(children.length, 2);
 
     // First child: "ab"
-    t.true(reader.isTerminal(children[0].child));
+    t.is(reader.type(children[0].child), CstNodeType.TERMINAL);
     t.is(reader.matchLength(children[0].child), 2);
     t.is(reader.ctorName(children[0].child), '_terminal');
     t.is(reader.sourceString(children[0].child), 'ab');
@@ -41,7 +38,7 @@ test('terminal children', async t => {
     t.is(children[0].index, 0);
 
     // Second child: "cd"
-    t.true(reader.isTerminal(children[1].child));
+    t.is(reader.type(children[1].child), CstNodeType.TERMINAL);
     t.is(reader.matchLength(children[1].child), 2);
     t.is(reader.sourceString(children[1].child), 'cd');
     t.is(children[1].index, 1);
@@ -59,8 +56,8 @@ test('nonterminal children', async t => {
     t.is(children.length, 2);
     t.is(reader.ctorName(children[0].child), 'a');
     t.is(reader.ctorName(children[1].child), 'b');
-    t.true(reader.isNonterminal(children[0].child));
-    t.true(reader.isNonterminal(children[1].child));
+    t.is(reader.type(children[0].child), CstNodeType.NONTERMINAL);
+    t.is(reader.type(children[1].child), CstNodeType.NONTERMINAL);
     t.is(reader.sourceString(children[0].child), 'x');
     t.is(reader.sourceString(children[1].child), 'y');
   });
@@ -74,7 +71,7 @@ test('iteration (list) node', async t => {
     reader.forEachChild(reader.root, child => {
       listHandle = child;
     });
-    t.true(reader.isList(listHandle));
+    t.is(reader.type(listHandle), CstNodeType.LIST);
     t.is(reader.ctorName(listHandle), '_list');
     t.is(reader.childCount(listHandle), 3);
 
@@ -94,7 +91,7 @@ test('iteration with nonterminals', async t => {
     reader.forEachChild(reader.root, child => {
       listHandle = child;
     });
-    t.true(reader.isList(listHandle));
+    t.is(reader.type(listHandle), CstNodeType.LIST);
     const items = [];
     reader.forEachChild(listHandle, child => {
       items.push(reader.sourceString(child));
@@ -112,7 +109,7 @@ test('optional node: present', async t => {
     reader.forEachChild(reader.root, child => {
       opt = child;
     });
-    t.true(reader.isOptional(opt));
+    t.is(reader.type(opt), CstNodeType.OPT);
     t.is(reader.ctorName(opt), '_opt');
     t.is(reader.childCount(opt), 1);
     t.is(reader.matchLength(opt), 1);
@@ -127,7 +124,7 @@ test('optional node: absent', async t => {
     reader.forEachChild(reader.root, child => {
       opt = child;
     });
-    t.true(reader.isOptional(opt));
+    t.is(reader.type(opt), CstNodeType.OPT);
     t.is(reader.childCount(opt), 0);
     t.is(reader.matchLength(opt), 0);
   });
@@ -141,7 +138,7 @@ test('unparse: simple terminals', async t => {
     const reader = createReader(mr);
     let ans = '';
     function walk(handle) {
-      if (reader.isTerminal(handle)) {
+      if (reader.type(handle) === CstNodeType.TERMINAL) {
         ans += reader.sourceString(handle);
         return;
       }
@@ -158,7 +155,7 @@ test('unparse: with rule application', async t => {
     const reader = createReader(mr);
     let ans = '';
     function walk(handle) {
-      if (reader.isTerminal(handle)) {
+      if (reader.type(handle) === CstNodeType.TERMINAL) {
         ans += reader.sourceString(handle);
         return;
       }
@@ -175,7 +172,7 @@ test('unparse: with nonterminals', async t => {
     const reader = createReader(mr);
     let ans = '';
     function walk(handle) {
-      if (reader.isTerminal(handle)) {
+      if (reader.type(handle) === CstNodeType.TERMINAL) {
         ans += reader.sourceString(handle);
         return;
       }
@@ -193,7 +190,7 @@ test('unparse: unicode', async t => {
     const reader = createReader(mr);
     let ans = '';
     function walk(handle) {
-      if (reader.isTerminal(handle)) {
+      if (reader.type(handle) === CstNodeType.TERMINAL) {
         ans += reader.sourceString(handle);
         return;
       }
@@ -213,8 +210,7 @@ test('rootLeadingSpaces: present', async t => {
     t.not(reader.rootLeadingSpaces, NULL_HANDLE);
     t.is(reader.matchLength(reader.rootLeadingSpaces), 2);
     t.is(reader.ctorName(reader.rootLeadingSpaces), 'spaces');
-    t.false(reader.isTerminal(reader.rootLeadingSpaces));
-    t.true(reader.isNonterminal(reader.rootLeadingSpaces));
+    t.is(reader.type(reader.rootLeadingSpaces), CstNodeType.NONTERMINAL);
     t.is(reader.sourceString(reader.rootLeadingSpaces), '  ');
   });
 });
@@ -272,7 +268,7 @@ test('childCount is 0 for tagged terminals', async t => {
     reader.forEachChild(reader.root, child => {
       termChild = child;
     });
-    t.true(reader.isTerminal(termChild));
+    t.is(reader.type(termChild), CstNodeType.TERMINAL);
     t.is(reader.childCount(termChild), 0);
   });
 });
