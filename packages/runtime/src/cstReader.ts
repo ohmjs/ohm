@@ -5,8 +5,8 @@ import {
   CST_TYPE_AND_DETAILS_OFFSET,
   CstNodeType,
   isTaggedTerminal,
-  MATCH_RECORD_TYPE_MASK,
   MatchRecordType,
+  rawMatchRecordType,
 } from './miniohm.ts';
 
 import type {MatchContext, SucceededMatchResult} from './miniohm.ts';
@@ -95,8 +95,7 @@ export class CstReader {
     const raw = handle & MASK;
     if (isSpacesHandle(raw)) return CstNodeType.NONTERMINAL;
     if (isTaggedTerminal(raw)) return CstNodeType.TERMINAL;
-    const mrType = (this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) &
-      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+    const mrType = rawMatchRecordType(this._ctx.view, raw);
     if (mrType === MatchRecordType.NONTERMINAL) return CstNodeType.NONTERMINAL;
     if (mrType === MatchRecordType.TERMINAL) return CstNodeType.TERMINAL;
     if (mrType === MatchRecordType.ITER_FLAG) return CstNodeType.LIST;
@@ -126,8 +125,7 @@ export class CstReader {
     const raw = handle & MASK;
     if (isSpacesHandle(raw)) return 'spaces';
     if (isTaggedTerminal(raw)) return '_terminal';
-    const type = (this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) &
-      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+    const type = rawMatchRecordType(this._ctx.view, raw);
     if (type === MatchRecordType.NONTERMINAL) {
       const ruleId = this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
       return this._ctx.ruleNames[ruleId].split('<')[0];
@@ -173,9 +171,17 @@ export class CstReader {
     let childStart = (handle - raw) / SHIFT;
     const {getSpacesLenAt} = this._ctx;
     for (let i = 0; i < count; i++) {
-      const rawChild = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
+      let rawChild = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
+
+      // Unwrap WRAPPED nodes (suppress leading spaces).
+      let suppressSpaces = false;
+      if (!isTaggedTerminal(rawChild) && rawMatchRecordType(this._ctx.view, rawChild) === MatchRecordType.WRAPPED) {
+        suppressSpaces = true;
+        rawChild = this._ctx.view.getUint32(rawChild + CST_CHILDREN_OFFSET, true);
+      }
+
       const rawSpacesLen =
-        getSpacesLenAt && this._hasParentSpaces(rawChild)
+        !suppressSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
           ? Math.max(0, getSpacesLenAt(childStart))
           : 0;
       // Pack the spaces handle with startIdx so sourceString() works.
@@ -195,8 +201,7 @@ export class CstReader {
   /** Check whether a raw child handle has parent-level space skipping. */
   private _hasParentSpaces(rawChild: number): boolean {
     if (isTaggedTerminal(rawChild)) return true;
-    const type = (this._ctx.view.getInt32(rawChild + CST_TYPE_AND_DETAILS_OFFSET, true) &
-      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+    const type = rawMatchRecordType(this._ctx.view, rawChild);
     return type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL;
   }
 }

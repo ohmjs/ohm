@@ -2114,8 +2114,24 @@ export class Compiler {
   }
 
   emitLex({child}: ir.Lex): void {
+    const {asm} = this;
+    const wasLexical = this.inLexicalContext();
     this._lexContextStack.push(true);
-    this.emitPExpr(child);
+
+    if (!wasLexical && !asm.posOnlyMode) {
+      const saved = asm.saveNumBindings();
+      this.emitPExpr(child);
+      // On success, wrap all bindings produced inside the lex.
+      asm.localGet('ret');
+      asm.emit(instr.if, w.blocktype.empty);
+      saved.getChunk();
+      saved.getIdx();
+      asm.callPrebuiltFunc('wrapBindingsFrom');
+      asm.emit(instr.end);
+    } else {
+      this.emitPExpr(child);
+    }
+
     this._lexContextStack.pop();
   }
 
@@ -2282,6 +2298,7 @@ export class Compiler {
       this.asm.callPrebuiltFunc('evalSpacesImplicit');
     }
   }
+
 
   // Shared loop skeleton for Star (and the Star part of Plus).
   // `outer` is the backtrack point from before the iteration started.

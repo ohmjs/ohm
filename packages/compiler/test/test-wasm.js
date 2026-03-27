@@ -2003,7 +2003,7 @@ test('parameterized rules: growing parameters should not blow the stack', t => {
   );
 });
 
-test.failing('leadingSpaces in a lexical context', async t => {
+test('leadingSpaces in a lexical context', async t => {
   const wasmGrammar = await compileAndLoad(`
     G {
       Start = ">" "a" digit

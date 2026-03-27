@@ -14,10 +14,19 @@ export function isTaggedTerminal(handle: number): boolean {
   return (handle & 1) !== 0;
 }
 
+// Extract the MatchRecordType from a raw (non-tagged-terminal) CST pointer.
+export function rawMatchRecordType(view: DataView, ptr: number): MatchRecordType {
+  return (view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true) &
+    MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+}
+
 // A MatchRecord is the representation of a CstNode in Wasm linear memory.
+// WRAPPED (1) reuses the TERMINAL slot — heap-allocated terminals don't exist
+// (they use tagged integers), so value 1 is safe for wrapped nodes.
 export const MatchRecordType = {
   NONTERMINAL: 0,
-  TERMINAL: 1,
+  WRAPPED: 1,
+  TERMINAL: 1, // Only for tagged-integer detection, never in heap nodes.
   ITER_FLAG: 2,
   OPTIONAL: 3,
 } as const;
@@ -694,12 +703,19 @@ class CstNodeImpl implements CstNodeBase {
     const doSpaceLookup = this._syntactic && !!getSpacesLenAt;
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + CST_CHILDREN_OFFSET + i * 4;
-      const ptr = this._ctx.view.getUint32(slotOffset, true);
+      let ptr = this._ctx.view.getUint32(slotOffset, true);
+
+      // Unwrap WRAPPED nodes (edge metadata: suppress leading spaces).
+      let suppressSpaces = false;
+      if (!isTaggedTerminal(ptr) && rawMatchRecordType(this._ctx.view, ptr) === MatchRecordType.WRAPPED) {
+        suppressSpaces = true;
+        ptr = this._ctx.view.getUint32(ptr + CST_CHILDREN_OFFSET, true);
+      }
 
       if (isTaggedTerminal(ptr)) {
         // Tagged terminals always have parent-level space skipping.
         let spacesLen = 0;
-        if (doSpaceLookup) {
+        if (doSpaceLookup && !suppressSpaces) {
           spacesLen = Math.max(0, getSpacesLenAt!(startIdx));
           if (spacesLen > 0) startIdx += spacesLen;
         }
@@ -716,10 +732,11 @@ class CstNodeImpl implements CstNodeBase {
       // iteration (ITER_FLAG) or optional nodes, which handle space
       // skipping internally.
       const typeAndDetails = this._ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true);
-      const type = (typeAndDetails & MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+      const type = rawMatchRecordType(this._ctx.view, ptr);
       let spacesLen = 0;
       if (
         doSpaceLookup &&
+        !suppressSpaces &&
         (type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL)
       ) {
         spacesLen = Math.max(0, getSpacesLenAt!(startIdx));
