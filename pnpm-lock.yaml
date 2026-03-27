@@ -225,6 +225,9 @@ importers:
       ohm-js:
         specifier: workspace:*
         version: link:../runtime
+      ohm-js-legacy:
+        specifier: workspace:^
+        version: link:../ohm-js
     devDependencies:
       fast-check:
         specifier: ^4.2.0

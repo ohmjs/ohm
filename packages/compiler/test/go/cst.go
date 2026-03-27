@@ -7,12 +7,14 @@ import (
 	"github.com/tetratelabs/wazero/api"
 )
 
-// CstNodeType constants matching the ohm-js CstNodeType enum.
+// CstNodeType represents the type of a CST node.
+type CstNodeType int
+
 const (
-	CstNodeTypeNonterminal = 0
-	CstNodeTypeTerminal    = 1
-	CstNodeTypeList        = 2
-	CstNodeTypeOpt         = 3
+	CstNodeTypeNonterminal CstNodeType = 0
+	CstNodeTypeTerminal    CstNodeType = 1
+	CstNodeTypeList        CstNodeType = 2
+	CstNodeTypeOpt         CstNodeType = 3
 )
 
 const (
@@ -23,13 +25,18 @@ const (
 
 // cstContext holds shared state for all CstNodes from a single match result.
 type cstContext struct {
-	ruleNames  []string
-	memory     api.Memory
-	inputUTF16 []uint16
+	ruleNames      []string
+	memory         api.Memory
+	inputUTF16     []uint16
+	getSpacesLenAt func(pos int) int // returns spaces length at a position, or -1
 }
 
 // CstNode represents a node in the concrete syntax tree.
 // Its API mirrors the ohm-js CstNode interface.
+//
+// Child slot values in the CST use a tagged encoding:
+//   - If bit 0 is set: tagged terminal, matchLength = value >> 1
+//   - Otherwise: pointer to a CST node in Wasm memory
 type CstNode struct {
 	ctx      *cstContext
 	base     uint32
@@ -40,10 +47,14 @@ func newCstNode(ctx *cstContext, base uint32, startIdx int) *CstNode {
 	return &CstNode{ctx: ctx, base: base, startIdx: startIdx}
 }
 
+func isTerminal(raw uint32) bool {
+	return raw&1 == 1
+}
+
 // --- internal field accessors ---
 
 func (n *CstNode) typeAndDetails() int32 {
-	data, ok := n.ctx.memory.Read(n.base+8, 4)
+	data, ok := n.ctx.memory.Read(n.base+4, 4)
 	if !ok {
 		return 0
 	}
@@ -59,7 +70,10 @@ func (n *CstNode) ruleID() int32 {
 }
 
 func (n *CstNode) count() uint32 {
-	data, ok := n.ctx.memory.Read(n.base, 4)
+	if isTerminal(n.base) {
+		return 0
+	}
+	data, ok := n.ctx.memory.Read(n.base+8, 4)
 	if !ok {
 		return 0
 	}
@@ -69,19 +83,11 @@ func (n *CstNode) count() uint32 {
 // --- public API (matches the ohm-js CstNode interface) ---
 
 // Type returns the CstNodeType for this node.
-func (n *CstNode) Type() int {
-	switch n.matchRecordType() {
-	case 0:
-		return CstNodeTypeNonterminal
-	case 1:
+func (n *CstNode) Type() CstNodeType {
+	if isTerminal(n.base) {
 		return CstNodeTypeTerminal
-	case 2:
-		return CstNodeTypeList
-	case 3:
-		return CstNodeTypeOpt
-	default:
-		return -1
 	}
+	return CstNodeType(n.matchRecordType())
 }
 
 // CtorName returns the constructor name for this node.
@@ -108,7 +114,10 @@ func (n *CstNode) CtorName() string {
 
 // MatchLength returns the number of UTF-16 code units consumed by this node.
 func (n *CstNode) MatchLength() int {
-	data, ok := n.ctx.memory.Read(n.base+4, 4)
+	if isTerminal(n.base) {
+		return int(n.base >> 1)
+	}
+	data, ok := n.ctx.memory.Read(n.base, 4)
 	if !ok {
 		return 0
 	}
@@ -122,13 +131,17 @@ func (n *CstNode) Source() (startIdx, endIdx int) {
 
 // SourceString returns the portion of the input matched by this node.
 func (n *CstNode) SourceString() string {
+	matchLen := n.MatchLength()
+	if matchLen == 0 {
+		return ""
+	}
 	start := n.startIdx
-	end := start + n.MatchLength()
+	end := start + matchLen
+	if start < 0 || start >= len(n.ctx.inputUTF16) {
+		return ""
+	}
 	if end > len(n.ctx.inputUTF16) {
 		end = len(n.ctx.inputUTF16)
-	}
-	if start >= end {
-		return ""
 	}
 	return string(utf16.Decode(n.ctx.inputUTF16[start:end]))
 }
@@ -159,22 +172,58 @@ func (n *CstNode) IsLexical() bool {
 	return n.IsNonterminal() && !n.IsSyntactic()
 }
 
+// hasParentSpaces returns true if this raw child value should have
+// implicit leading spaces inserted by the parent (syntactic rules).
+func (n *CstNode) hasParentSpaces(raw uint32) bool {
+	if isTerminal(raw) {
+		return true
+	}
+	typ := readNodeType(n.ctx.memory, raw)
+	return typ == CstNodeTypeNonterminal || typ == CstNodeTypeTerminal
+}
+
+// readNodeType reads the node type from a CST node pointer.
+func readNodeType(mem api.Memory, ptr uint32) CstNodeType {
+	data, ok := mem.Read(ptr+4, 4) // typeAndDetails at offset 4
+	if !ok {
+		return -1
+	}
+	return CstNodeType(readInt32(data, 0) & matchRecordTypeMask)
+}
+
 // Children returns the child nodes, with startIdx properly tracked.
+// For children of syntactic rules, implicit leading spaces are accounted
+// for when computing startIdx.
 func (n *CstNode) Children() []*CstNode {
+	if isTerminal(n.base) {
+		return nil
+	}
 	count := n.count()
 	if count == 0 {
 		return nil
 	}
 	children := make([]*CstNode, count)
 	startIdx := n.startIdx
+	endIdx := n.startIdx + n.MatchLength()
 	for i := uint32(0); i < count; i++ {
 		slotOffset := n.base + cstNodeHeaderSize + i*slotSize
 		data, ok := n.ctx.memory.Read(slotOffset, 4)
 		if !ok {
 			return children[:i]
 		}
-		childBase := readUint32(data, 0)
-		child := newCstNode(n.ctx, childBase, startIdx)
+		raw := readUint32(data, 0)
+
+		// Account for implicit leading spaces.
+		// Only apply if spaces were actually recorded at this position
+		// and the result stays within the parent's span.
+		if n.ctx.getSpacesLenAt != nil && n.hasParentSpaces(raw) {
+			spacesLen := n.ctx.getSpacesLenAt(startIdx)
+			if spacesLen > 0 && startIdx+spacesLen <= endIdx {
+				startIdx += spacesLen
+			}
+		}
+
+		child := newCstNode(n.ctx, raw, startIdx)
 		children[i] = child
 		startIdx += child.MatchLength()
 	}
