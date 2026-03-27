@@ -815,7 +815,12 @@ class Assembler {
     this.emit(instr.call, this.prebuiltFuncidx(name));
   }
 
-  newIterNode(saved: SavedBacktrackPoint, arity: number, isOpt = false): void {
+  newIterNode(
+    saved: SavedBacktrackPoint,
+    arity: number,
+    isOpt: boolean,
+    childrenAreSyntactic: boolean
+  ): void {
     if (this.posOnlyMode) {
       this.i32Const(1);
       return;
@@ -826,12 +831,17 @@ class Assembler {
     saved.bindings.getIdx();
     this.i32Const(arity);
     this.i32Const(isOpt ? 1 : 0);
+    this.i32Const(childrenAreSyntactic ? 1 : 0);
     this.callPrebuiltFunc('newIterationNode');
   }
 
   // Wrap the bindings accumulated since the last pushDepth() in a
   // nonterminal node.
-  newNonterminalNode(saved: SavedBacktrackPoint, ruleId: number): void {
+  newNonterminalNode(
+    saved: SavedBacktrackPoint,
+    ruleId: number,
+    parentSpacesAllowed: boolean
+  ): void {
     if (this.posOnlyMode) {
       this.i32Const(1);
       return;
@@ -842,17 +852,19 @@ class Assembler {
     saved.bindings.getChunk();
     saved.bindings.getIdx();
     this.i32Const(-1);
+    this.i32Const(parentSpacesAllowed ? 1 : 0);
     this.callPrebuiltFunc('newNonterminalNode');
   }
 
   // [startIdx: i32] -> [tagged: i32]
-  newTerminalNode(): void {
+  newTerminalNode(parentSpacesAllowed: boolean): void {
     if (this.posOnlyMode) {
       this.i32Const(1);
       return;
     }
     this.localGet('postSpacesPos');
     this.globalGet('pos');
+    this.i32Const(parentSpacesAllowed ? 1 : 0);
     this.callPrebuiltFunc('newTerminalNode');
   }
 
@@ -2032,6 +2044,7 @@ export class Compiler {
     const {asm} = this;
     asm.i32Const(this.ruleId(exp.ruleName));
     asm.i32Const(exp.caseIdx);
+    asm.i32Const(!this.inLexicalContext() ? 1 : 0);
     asm.callPrebuiltFunc('evalApplyGeneralized');
     asm.localSet('ret');
   }
@@ -2049,6 +2062,7 @@ export class Compiler {
     }
 
     const ruleId = this.ruleId(exp.ruleName);
+    const parentSpacesAllowed = !this.inLexicalContext();
     asm.i32Const(ruleId);
 
     const preallocInner = this._preallocRules.get(exp.ruleName);
@@ -2056,10 +2070,13 @@ export class Compiler {
       const innerPreallocIdx =
         preallocInner !== '$term' ? this.ruleId(preallocInner) - this._maxMemoizedRuleId : -1;
       asm.i32Const(innerPreallocIdx);
+      asm.i32Const(parentSpacesAllowed ? 1 : 0);
       asm.callPrebuiltFunc('evalApplyPrealloc');
     } else if (ruleId >= this._maxMemoizedRuleId) {
+      asm.i32Const(parentSpacesAllowed ? 1 : 0);
       asm.callPrebuiltFunc('evalApplyNoMemo0');
     } else {
+      asm.i32Const(parentSpacesAllowed ? 1 : 0);
       asm.callPrebuiltFunc('evalApply0');
     }
     // The application may have updated rightmostFailurePos; if so, we may
@@ -2075,6 +2092,8 @@ export class Compiler {
     const {asm} = this;
     const ruleId = this.ruleId(exp.ruleName);
     const ruleInfo = getNotNull(this.rules!, exp.ruleName);
+    // parentSpacesAllowed is from the OUTER context (before pushing lex context).
+    const parentSpacesAllowed = !this.inLexicalContext();
 
     asm.pushDepth();
     const saved = asm.saveBacktrackPoint();
@@ -2087,7 +2106,7 @@ export class Compiler {
     // On success, wrap the body's bindings in a nonterminal node.
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
-      asm.newNonterminalNode(saved, ruleId);
+      asm.newNonterminalNode(saved, ruleId, parentSpacesAllowed);
       asm.localSet('ret');
     });
 
@@ -2207,7 +2226,7 @@ export class Compiler {
       saved.pos.restore();
       saved.bindings.restore();
     });
-    asm.newIterNode(saved, ir.outArity(exp.child), true);
+    asm.newIterNode(saved, ir.outArity(exp.child), true, !this.inLexicalContext());
     // Opt always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
@@ -2317,7 +2336,7 @@ export class Compiler {
     loop!.pos.restore();
     loop!.bindings.restore();
     asm.popDepth();
-    asm.newIterNode(outer, ir.outArity(child));
+    asm.newIterNode(outer, ir.outArity(child), false, !this.inLexicalContext());
     // Star always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
@@ -2338,7 +2357,7 @@ export class Compiler {
     asm.emit(instr.i32.add);
     asm.globalSet('pos');
 
-    asm.newTerminalNode();
+    asm.newTerminalNode(!this.inLexicalContext());
     asm.localSet('ret'); // consume the return value
   }
 
@@ -2448,7 +2467,7 @@ export class Compiler {
           w.blocktype.empty,
           () => {
             thunk();
-            asm.newTerminalNode();
+            asm.newTerminalNode(!this.inLexicalContext());
             asm.localSet('ret');
             asm.break(asm.depthOf('_done'));
           },

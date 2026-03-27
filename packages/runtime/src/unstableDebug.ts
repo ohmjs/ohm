@@ -1,7 +1,18 @@
 import type {SucceededMatchResult} from './miniohm.ts';
 
 const MATCH_RECORD_TYPE_MASK = 0b11;
+const NODE_DETAILS_SHIFT = 3;
 const MEMO_BLOCK_ENTRIES = 16;
+
+// Decode a child word stored in a node's children array.
+// Terminal child word: bit 0 = 1, matchLength = word >>> 2.
+// Pointer child word: bit 0 = 0, ptr = word & ~3.
+function childWordIsTerminal(word: number): boolean {
+  return (word & 1) !== 0;
+}
+function childWordPtr(word: number): number {
+  return word & ~3;
+}
 
 export interface MatchRecordStats {
   /** Number of unique match records visited. */
@@ -89,7 +100,7 @@ function walkRecordTree(
       case 0: {
         // NONTERMINAL
         stats.countByType.nonterminal++;
-        const ruleId = typeAndDetails >>> 2;
+        const ruleId = typeAndDetails >>> 3;
         const ruleName = ruleNames[ruleId]?.split('<')[0] ?? `unknown(${ruleId})`;
         stats.countByRule[ruleName] = (stats.countByRule[ruleName] ?? 0) + 1;
         break;
@@ -103,13 +114,16 @@ function walkRecordTree(
     }
 
     for (let i = count - 1; i >= 0; i--) {
-      const childPtr = view.getUint32(ptr + 16 + i * 4, true);
-      if (childPtr & 1) {
-        // Tagged terminal: not a heap object.
+      const childWord = view.getUint32(ptr + 16 + i * 4, true);
+      if (childWordIsTerminal(childWord)) {
+        // Terminal child word: not a heap object.
         stats.countByType.terminal++;
-      } else if (!visited.has(childPtr)) {
-        visited.add(childPtr);
-        stack.push(childPtr);
+      } else {
+        const childPtr = childWordPtr(childWord);
+        if (!visited.has(childPtr)) {
+          visited.add(childPtr);
+          stack.push(childPtr);
+        }
       }
     }
   }

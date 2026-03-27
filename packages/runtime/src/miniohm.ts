@@ -3,6 +3,12 @@ import {getLineAndColumn, getLineAndColumnMessage} from './extras.ts';
 
 export const MATCH_RECORD_TYPE_MASK = 0b11;
 
+// Bit 2 of typeAndDetails: whether this node's children are in a syntactic context.
+export const NODE_CHILDREN_SYNTACTIC_FLAG = 0b100;
+
+// Upper bits of typeAndDetails hold ruleId or arity, shifted left by 3.
+export const NODE_DETAILS_SHIFT = 3;
+
 // Byte offsets for fields in a CST match record (Wasm linear memory layout).
 export const CST_MATCH_LENGTH_OFFSET = 0;
 export const CST_TYPE_AND_DETAILS_OFFSET = 4;
@@ -10,6 +16,8 @@ export const CST_CHILD_COUNT_OFFSET = 8;
 export const CST_CHILDREN_OFFSET = 16;
 
 // Tagged terminal: (matchLength << 1) | 1. Bit 0 distinguishes from real pointers.
+// NOTE: This is the PUBLIC handle format (used by external consumers).
+// Internal child words use a different encoding with 2 bits of metadata.
 export function isTaggedTerminal(handle: number): boolean {
   return (handle & 1) !== 0;
 }
@@ -60,7 +68,7 @@ function isSyntacticRuleName(ruleName: string): boolean {
 }
 
 function getRuleId(ctx: MatchContext, ptr: number): number {
-  return ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
+  return ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true) >>> NODE_DETAILS_SHIFT;
 }
 
 // Check whether the nonterminal at `ptr` is a syntactic rule (name starts with uppercase).
@@ -617,7 +625,8 @@ class CstNodeImpl implements CstNodeBase {
     switch (this.type) {
       case CstNodeType.NONTERMINAL: {
         const {ruleNames, view} = this._ctx;
-        const ruleId = view.getInt32(this._base + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
+        const ruleId =
+          view.getInt32(this._base + CST_TYPE_AND_DETAILS_OFFSET, true) >>> NODE_DETAILS_SHIFT;
         return ruleNames[ruleId].split('<')[0];
       }
       case CstNodeType.TERMINAL:
@@ -647,7 +656,7 @@ class CstNodeImpl implements CstNodeBase {
   }
 
   get arity(): number {
-    return this._typeAndDetails >>> 2;
+    return this._typeAndDetails >>> NODE_DETAILS_SHIFT;
   }
 
   get children(): CstNodeChildren {
@@ -690,48 +699,58 @@ class CstNodeImpl implements CstNodeBase {
     const children: (CstNodeImpl | TaggedTerminalNode)[] = [];
     let {startIdx} = this;
     const {getSpacesLenAt} = this._ctx;
-    // Only look up implicit spaces when we're in a syntactic context.
-    const doSpaceLookup = this._syntactic && !!getSpacesLenAt;
+
+    // Read the childrenAreSyntactic bit from this node's header.
+    const parentTypeAndDetails = this._ctx.view.getInt32(
+      this._base + CST_TYPE_AND_DETAILS_OFFSET,
+      true
+    );
+    const childrenAreSyntactic = (parentTypeAndDetails & NODE_CHILDREN_SYNTACTIC_FLAG) !== 0;
+
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + CST_CHILDREN_OFFSET + i * 4;
-      const ptr = this._ctx.view.getUint32(slotOffset, true);
+      const childWord = this._ctx.view.getUint32(slotOffset, true);
 
-      if (isTaggedTerminal(ptr)) {
-        // Tagged terminals always have parent-level space skipping.
+      // Extract per-edge metadata from the child word.
+      const parentSpacesAllowed = (childWord & 0b10) !== 0;
+      const doSpaceLookup = childrenAreSyntactic && parentSpacesAllowed && !!getSpacesLenAt;
+
+      if (childWord & 1) {
+        // Terminal child word: (matchLength << 2) | flags
+        const matchLength = childWord >>> 2;
         let spacesLen = 0;
         if (doSpaceLookup) {
           spacesLen = Math.max(0, getSpacesLenAt!(startIdx));
           if (spacesLen > 0) startIdx += spacesLen;
         }
-        const node = new TaggedTerminalNode(this._ctx, ptr, startIdx);
+        // Convert to public tagged terminal format for TaggedTerminalNode.
+        const taggedHandle = (matchLength << 1) | 1;
+        const node = new TaggedTerminalNode(this._ctx, taggedHandle, startIdx);
         if (spacesLen > 0) {
           node.leadingSpaces = new LazySpacesNode(this._ctx, startIdx - spacesLen, spacesLen);
         }
         children.push(node);
-        startIdx += node.matchLength;
+        startIdx += matchLength;
         continue;
       }
 
-      // Only query spaces for terminals and nonterminals — not for
-      // iteration (ITER_FLAG) or optional nodes, which handle space
-      // skipping internally.
+      // Pointer child word: ptr | flags — strip low bits to get real pointer.
+      const ptr = childWord & ~3;
       const typeAndDetails = this._ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true);
       const type = (typeAndDetails & MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+
       let spacesLen = 0;
-      if (
-        doSpaceLookup &&
-        (type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL)
-      ) {
+      if (doSpaceLookup) {
         spacesLen = Math.max(0, getSpacesLenAt!(startIdx));
         if (spacesLen > 0) startIdx += spacesLen;
       }
 
-      // Nonterminals determine syntactic context from their name;
-      // other node types (iter, opt) inherit from the parent.
+      // Nonterminals determine syntactic context from their rule name;
+      // iter/opt nodes get it from their own childrenAreSyntactic bit.
       const childSyntactic =
         type === MatchRecordType.NONTERMINAL
-          ? this._ctx.ruleIsSyntactic[typeAndDetails >>> 2]
-          : this._syntactic;
+          ? this._ctx.ruleIsSyntactic[typeAndDetails >>> NODE_DETAILS_SHIFT]
+          : (typeAndDetails & NODE_CHILDREN_SYNTACTIC_FLAG) !== 0;
       const node = new CstNodeImpl(this._ctx, ptr, startIdx, childSyntactic);
       if (spacesLen > 0) {
         node.leadingSpaces = new LazySpacesNode(this._ctx, startIdx - spacesLen, spacesLen);

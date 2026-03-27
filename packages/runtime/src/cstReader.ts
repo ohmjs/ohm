@@ -7,6 +7,8 @@ import {
   isTaggedTerminal,
   MATCH_RECORD_TYPE_MASK,
   MatchRecordType,
+  NODE_CHILDREN_SYNTACTIC_FLAG,
+  NODE_DETAILS_SHIFT,
 } from './miniohm.ts';
 
 import type {MatchContext, SucceededMatchResult} from './miniohm.ts';
@@ -129,7 +131,9 @@ export class CstReader {
     const type = (this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) &
       MATCH_RECORD_TYPE_MASK) as MatchRecordType;
     if (type === MatchRecordType.NONTERMINAL) {
-      const ruleId = this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
+      const ruleId =
+        this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) >>>
+        NODE_DETAILS_SHIFT;
       return this._ctx.ruleNames[ruleId].split('<')[0];
     }
     if (type === MatchRecordType.TERMINAL) return '_terminal';
@@ -144,7 +148,9 @@ export class CstReader {
   details(handle: number): number {
     const raw = handle & MASK;
     if (isSpacesHandle(raw) || isTaggedTerminal(raw)) return 0;
-    return this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
+    return (
+      this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) >>> NODE_DETAILS_SHIFT
+    );
   }
 
   /** Source string for a node (startIdx is extracted from the handle). */
@@ -172,10 +178,33 @@ export class CstReader {
     const count = this._ctx.view.getUint32(raw + CST_CHILD_COUNT_OFFSET, true);
     let childStart = (handle - raw) / SHIFT;
     const {getSpacesLenAt} = this._ctx;
+
+    // Read the childrenAreSyntactic bit from the parent node header.
+    const typeAndDetails = this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true);
+    const childrenAreSyntactic = (typeAndDetails & NODE_CHILDREN_SYNTACTIC_FLAG) !== 0;
+
     for (let i = 0; i < count; i++) {
-      const rawChild = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
+      const childWord = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
+
+      // Extract per-edge parentSpacesAllowed flag from child word.
+      const parentSpacesAllowed = (childWord & 0b10) !== 0;
+
+      // Decode child word to raw handle.
+      let rawChild: number;
+      let len: number;
+      if (childWord & 1) {
+        // Terminal child word: (matchLength << 2) | flags
+        len = childWord >>> 2;
+        rawChild = (len << 1) | 1; // Convert to public tagged terminal format
+      } else {
+        // Pointer child word: ptr | flags
+        rawChild = childWord & ~3;
+        len = this._ctx.view.getUint32(rawChild + CST_MATCH_LENGTH_OFFSET, true);
+      }
+
+      // Look up spaces only if both node bit and edge flag are set.
       const rawSpacesLen =
-        getSpacesLenAt && this._hasParentSpaces(rawChild)
+        getSpacesLenAt && childrenAreSyntactic && parentSpacesAllowed
           ? Math.max(0, getSpacesLenAt(childStart))
           : 0;
       // Pack the spaces handle with startIdx so sourceString() works.
@@ -184,20 +213,9 @@ export class CstReader {
         rawSpacesLen > 0 ? spacesStartIdx * SHIFT + makeSpacesHandle(rawSpacesLen) : 0;
       childStart += rawSpacesLen;
       const childHandle = childStart * SHIFT + rawChild;
-      const len = isTaggedTerminal(rawChild)
-        ? rawChild >>> 1
-        : this._ctx.view.getUint32(rawChild + CST_MATCH_LENGTH_OFFSET, true);
       fn(childHandle, leadingSpaces, childStart, i);
       childStart += len;
     }
-  }
-
-  /** Check whether a raw child handle has parent-level space skipping. */
-  private _hasParentSpaces(rawChild: number): boolean {
-    if (isTaggedTerminal(rawChild)) return true;
-    const type = (this._ctx.view.getInt32(rawChild + CST_TYPE_AND_DETAILS_OFFSET, true) &
-      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
-    return type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL;
   }
 }
 

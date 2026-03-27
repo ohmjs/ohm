@@ -1895,15 +1895,17 @@ test('bindings chunks contain valid CST nodes and tagged terminals', async t => 
     firstChunk = view.getInt32(firstChunk, true);
   }
 
-  // Checks that a value is a valid CST node pointer or tagged terminal.
+  // Checks that a value is a valid child word (terminal or pointer with edge flags).
   function isValidBinding(val) {
-    // Tagged terminal: bit 0 = 1.
+    // Terminal child word: bit 0 = 1.
     if (val & 1) return true;
-    // CST node pointer: must be 4-byte aligned.
-    if ((val & 3) !== 0) return false;
+    // Pointer child word: strip low 2 bits (edge metadata) to get the real pointer.
+    // The pointer itself must be 4-byte aligned.
+    const ptr = val & ~3;
+    if (ptr === 0) return false;
     // Read the CST node header and sanity-check.
-    const matchLength = view.getInt32(val, true);
-    const count = view.getInt32(val + 8, true);
+    const matchLength = view.getInt32(ptr, true);
+    const count = view.getInt32(ptr + 8, true);
     return matchLength >= 0 && count >= 0;
   }
 
@@ -2001,4 +2003,108 @@ test('parameterized rules: growing parameters should not blow the stack', t => {
     },
     {message: /Excessively deep specialization/}
   );
+});
+
+test('leadingSpaces in a lexical context', async t => {
+  const wasmGrammar = await compileAndLoad(`
+    G {
+      Start = ">" "a" digit
+            | ">" #(" a" letter)
+    }
+  `);
+  t.is(matchWithInput(wasmGrammar, '> ab'), 1);
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'Start');
+  const [_, a, letter] = root.children;
+  t.falsy(a.leadingSpaces);
+  t.falsy(letter.leadingSpaces);
+});
+
+// --- Regression tests for child word encoding ---
+
+// Same memoized rule reused at the same position under different parent spacing
+// contexts. The first alt tries thing "+" in syntactic context (parentSpacesAllowed=true),
+// fails, and memoizes thing. The second alt tries #(thing "-") in lexical context,
+// reusing the memoized thing with parentSpacesAllowed=false.
+test('child words: memoized node reused in syntactic and lexical contexts', async t => {
+  const wasmGrammar = await compileAndLoad(`
+    G {
+      Start = "x" thing "+"    -- plus
+            | "x" #(thing "-") -- minus
+      thing = letter+
+    }
+  `);
+  // Input "xab-": "x" then "ab-". No spaces, so lex context is not an issue.
+  // Plus alt: "x" ok, thing matches "ab" at pos 1, memoized. "+" fails.
+  // Minus alt: "x" ok, #(thing "-"): thing at pos 1 — memo hit with
+  //   parentSpacesAllowed=false. "-" matches. Success.
+  t.is(matchWithInput(wasmGrammar, 'xab-'), 1);
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'Start');
+  t.is(root.sourceString, 'xab-');
+  // Verify the CST is well-formed.
+  t.is(unparse(wasmGrammar), 'xab-');
+});
+
+// Left recursion path: memoized result is re-encoded with parentSpacesAllowed
+// when pushed to bindings.
+test('child words: left recursion with spacing', async t => {
+  const wasmGrammar = await compileAndLoad(`
+    G {
+      Expr = Expr "+" digit -- plus
+           | digit
+    }
+  `);
+  t.is(matchWithInput(wasmGrammar, '1 + 2 + 3'), 1);
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'Expr');
+  t.is(root.sourceString, '1 + 2 + 3');
+  t.is(unparse(wasmGrammar), '1 + 2 + 3');
+});
+
+// Preallocated empty iter/opt nodes in both lexical and syntactic contexts.
+// Empty star in a syntactic rule should have childrenAreSyntactic set;
+// empty star inside lex (#) should not.
+test('child words: empty iter in syntactic vs lexical context', async t => {
+  const wasmGrammar = await compileAndLoad(`
+    G {
+      Start = letter* "!" #(letter* "?")
+    }
+  `);
+  // Both star expressions match 0 letters.
+  t.is(matchWithInput(wasmGrammar, '!?'), 1);
+  const root = wasmGrammar._getCstRoot();
+  const {children} = root;
+  // First child: empty syntactic star (letter*)
+  const synStar = children[0];
+  t.is(synStar.children.length, 0);
+  // Second child: "!"
+  const bang = children[1];
+  t.is(bang.sourceString, '!');
+  // Third child: empty lexical star (letter* inside #(...))
+  // The lex wrapper makes it a single child; dig into it.
+  const lexStar = children[2];
+  t.is(lexStar.children.length, 0);
+});
+
+// Non-empty iter/opt in both lexical and syntactic contexts.
+test('child words: non-empty iter in syntactic vs lexical context', async t => {
+  const wasmGrammar = await compileAndLoad(`
+    G {
+      Start = letter+ "!" #(letter+ "?")
+    }
+  `);
+  t.is(matchWithInput(wasmGrammar, 'a b !ab?'), 1);
+  const root = wasmGrammar._getCstRoot();
+  const {children} = root;
+  // Syntactic star: "a b" — children should have leadingSpaces on "b"
+  const synPlus = children[0];
+  t.is(synPlus.children.length, 2);
+  t.falsy(synPlus.children[0].leadingSpaces); // "a" — first, no spaces
+  t.truthy(synPlus.children[1].leadingSpaces); // "b" — has leading space
+  // Lexical star inside #(...): "ab" — children should NOT have leadingSpaces
+  const lexPlus = children[2];
+  t.is(lexPlus.children.length, 2);
+  t.falsy(lexPlus.children[0].leadingSpaces); // "a" — no spaces (lexical)
+  t.falsy(lexPlus.children[1].leadingSpaces); // "b" — no spaces (lexical)
 });

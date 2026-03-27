@@ -272,3 +272,71 @@ test('childCount is 0 for tagged terminals', async t => {
     t.is(reader.childCount(termChild), 0);
   });
 });
+
+// --- lex (#) flattening ---
+
+test('lex node is flattened: children appear directly in parent', async t => {
+  // #(letter digit) creates a LEX wrapper in the CST, but the reader should
+  // flatten it so the children ("a" and "1") appear directly under Start.
+  const g = await compileAndLoad('G { Start = #(letter digit) }');
+  g.match('a1').use(mr => {
+    const reader = createReader(mr);
+    const children = [];
+    reader.forEachChild(reader.root, (child, leadingSpaces, startIdx, index) => {
+      children.push({child, leadingSpaces, startIdx, index});
+    });
+    // The LEX wrapper should be flattened: we see letter and digit directly.
+    t.is(children.length, 2);
+    t.is(reader.sourceString(children[0].child), 'a');
+    t.is(reader.sourceString(children[1].child), '1');
+  });
+});
+
+test('lex node suppresses leading spaces in reader', async t => {
+  // In a syntactic rule, #(...) suppresses space skipping. Even if the memo
+  // table has stale space entries, the reader should NOT attach leadingSpaces
+  // to children inside a lex context.
+  const g = await compileAndLoad(`
+    G {
+      Start = ">" "a" digit
+            | ">" #(" a" letter)
+    }
+  `);
+  g.match('> ab').use(mr => {
+    const reader = createReader(mr);
+    const children = [];
+    reader.forEachChild(reader.root, (child, leadingSpaces, startIdx, index) => {
+      children.push({child, leadingSpaces, startIdx, index});
+    });
+    // ">" then " a" then letter — the lex children should have no leadingSpaces
+    const lexChildren = children.slice(1); // skip ">"
+    for (const c of lexChildren) {
+      t.is(
+        c.leadingSpaces,
+        NULL_HANDLE,
+        `child at index ${c.index} should have no leadingSpaces`
+      );
+    }
+  });
+});
+
+test('lex failure propagates (does not turn failure into success)', async t => {
+  // #("ab") should fail on "a" — the lex wrapper must not mask the failure.
+  const g = await compileAndLoad('G { Start = #("ab") | "x" }');
+  t.is(matchWithInput(g, 'x'), 1, '"x" should match via second alt');
+  t.is(matchWithInput(g, 'a'), 0, '"a" should fail — #("ab") requires full match');
+});
+
+test('childCount is consistent with forEachChild after lex flattening', async t => {
+  const g = await compileAndLoad('G { Start = #(letter digit) }');
+  g.match('a1').use(mr => {
+    const reader = createReader(mr);
+    // childCount should equal the number of children forEachChild visits.
+    let visited = 0;
+    reader.forEachChild(reader.root, () => {
+      visited++;
+    });
+    t.is(reader.childCount(reader.root), visited);
+    t.is(visited, 2, 'LEX children should be flattened');
+  });
+});
