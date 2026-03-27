@@ -2002,3 +2002,18 @@ test('parameterized rules: growing parameters should not blow the stack', t => {
     {message: /Excessively deep specialization/}
   );
 });
+
+test.failing('leadingSpaces in a lexical context', async t => {
+  const wasmGrammar = await compileAndLoad(`
+    G {
+      Start = ">" "a" digit
+            | ">" #(" a" letter)
+    }
+  `);
+  t.is(matchWithInput(wasmGrammar, '> ab'), 1);
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'Start');
+  const [_, a, letter] = root.children; // eslint-disable-line no-unused-vars
+  t.falsy(a.leadingSpaces);
+  t.falsy(letter.leadingSpaces);
+});
