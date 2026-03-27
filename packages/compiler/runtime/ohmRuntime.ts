@@ -41,11 +41,20 @@
  *    16+    children: i32[]    (encoded child words)
  *
  * Children are encoded as "child words" with per-edge metadata in low bits:
- *   Terminal child word:  (matchLength << 2) | (parentSpacesAllowed << 1) | 1
- *   Pointer child word:   ptr | (parentSpacesAllowed << 1)
+ *   Terminal child word:  (matchLength << 2) | (leadingSpacesAllowed << 1) | 1
+ *   Pointer child word:   ptr | (leadingSpacesAllowed << 1)
  *
  * bit 0 = terminal tag (1) vs pointer (0)
- * bit 1 = parentSpacesAllowed (edge flag for implicit space skipping)
+ * bit 1 = leadingSpacesAllowed (edge flag for implicit leading spaces)
+ *
+ * `childrenAreSyntactic` and `leadingSpacesAllowed` are intentionally different:
+ * the node header bit is a parent-level gate for whether children participate
+ * in implicit-space handling at all, while the child-word bit is a per-edge
+ * gate for whether a specific child may receive implicit leading spaces.
+ * Example: in `Start = (#(letter) ",")*`, the iteration node's children are in
+ * a syntactic context (`childrenAreSyntactic = true`), so spaces may appear
+ * between repeated elements, but the child inside `#(letter)` is lexical, so
+ * its edge has `leadingSpacesAllowed = false` and must not get `leadingSpaces`.
  */
 
 type ApplyResult = bool;
@@ -121,20 +130,20 @@ type RuleEvalResult = i32;
 //
 // Terminal child word:
 //   bit 0 = 1 (terminal tag)
-//   bit 1 = parentSpacesAllowed
+//   bit 1 = leadingSpacesAllowed
 //   bits [31:2] = matchLength
 //
 // Pointer child word:
 //   bit 0 = 0 (pointer — heap pointers are always word-aligned)
-//   bit 1 = parentSpacesAllowed
+//   bit 1 = leadingSpacesAllowed
 //   bits [31:2] = pointer (upper bits)
 
-@inline function childWordFromPtr(ptr: i32, parentSpacesAllowed: bool): i32 {
-  return ptr | (parentSpacesAllowed ? 0b10 : 0);
+@inline function childWordFromPtr(ptr: i32, leadingSpacesAllowed: bool): i32 {
+  return ptr | (leadingSpacesAllowed ? 0b10 : 0);
 }
 
-@inline function childWordFromTerminal(matchLength: i32, parentSpacesAllowed: bool): i32 {
-  return (matchLength << 2) | (parentSpacesAllowed ? 0b10 : 0) | 0b01;
+@inline function childWordFromTerminal(matchLength: i32, leadingSpacesAllowed: bool): i32 {
+  return (matchLength << 2) | (leadingSpacesAllowed ? 0b10 : 0) | 0b01;
 }
 
 @inline function childWordIsTerminal(word: i32): bool {
@@ -333,7 +342,7 @@ export function bindingsAdvanceChunk(): void {
   store<i32>(<usize>ptr, offset, 12);
 }
 
-function useMemoizedResult(ruleId: i32, result: MemoEntry, parentSpacesAllowed: bool): ApplyResult {
+function useMemoizedResult(ruleId: i32, result: MemoEntry, leadingSpacesAllowed: bool): ApplyResult {
   if (result & MEMO_FAILURE_FLAG) {
     if (result === UNUSED_LR_BOMB) {
       memoTableSet(pos, ruleId, USED_LR_BOMB);
@@ -345,7 +354,7 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry, parentSpacesAllowed: 
   // Read failureOffset before advancing pos, since pos is the node's startIdx.
   rightmostFailurePos = max(rightmostFailurePos, <i32>pos + cstGetFailureOffset(result));
   pos += cstGetMatchLength(result);
-  bindingsPush(childWordFromPtr(result, parentSpacesAllowed));
+  bindingsPush(childWordFromPtr(result, leadingSpacesAllowed));
   return true;
 }
 
@@ -484,7 +493,7 @@ export function matchSetup(inputLength: i32): void {
 
 export function matchEval(startRuleId: i32): ApplyResult {
   maybeSkipSpaces(startRuleId);
-  // The root node has no parent, so parentSpacesAllowed = false.
+  // The root node has no parent, so leadingSpacesAllowed = false.
   const succeeded = evalApply0(startRuleId, false) !== 0;
   if (succeeded) {
     maybeSkipSpaces(startRuleId);
@@ -520,7 +529,7 @@ export function memoizeToken(memoPos: i32, matchLength: i32, ruleId: i32): void 
   cstSetMatchLength(ptr, matchLength);
   cstSetTypeAndDetails(ptr, makeTypeAndDetails(ruleId, NODE_TYPE_NONTERMINAL, ruleSyntactic));
   cstSetFailureOffset(ptr, 0);
-  // The terminal child's parentSpacesAllowed matches whether the rule is syntactic.
+  // The terminal child's leadingSpacesAllowed matches whether the rule is syntactic.
   store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), childWordFromTerminal(matchLength, ruleSyntactic));
   memoTableSet(<usize>memoPos, ruleId, ptr);
 }
@@ -549,7 +558,7 @@ export function recordFailures(inputLength: i32, startRuleId: i32): void {
 
 // Evaluates a generalized rule. Identical to evalApplyNoMemo0, but includes
 // the caseIdx.
-export function evalApplyGeneralized(ruleId: i32, caseIdx: i32, parentSpacesAllowed: bool): ApplyResult {
+export function evalApplyGeneralized(ruleId: i32, caseIdx: i32, leadingSpacesAllowed: bool): ApplyResult {
   const origPos = pos;
   const origChunk = bindingsChunk;
   const origIdx = bindingsIdx;
@@ -557,13 +566,13 @@ export function evalApplyGeneralized(ruleId: i32, caseIdx: i32, parentSpacesAllo
   const failurePos = maybeUpdateRightmostFailurePos(result);
   if (result & RULE_EVAL_SUCCESS_FLAG) {
     const failureOffset = failurePos - <i32>origPos;
-    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, parentSpacesAllowed);
+    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, leadingSpacesAllowed);
     return true;
   }
   return false;
 }
 
-export function evalApplyNoMemo0(ruleId: i32, parentSpacesAllowed: bool): ApplyResult {
+export function evalApplyNoMemo0(ruleId: i32, leadingSpacesAllowed: bool): ApplyResult {
   const origPos = pos;
   const origChunk = bindingsChunk;
   const origIdx = bindingsIdx;
@@ -571,7 +580,7 @@ export function evalApplyNoMemo0(ruleId: i32, parentSpacesAllowed: bool): ApplyR
   const failurePos = maybeUpdateRightmostFailurePos(result);
   if (result & RULE_EVAL_SUCCESS_FLAG) {
     const failureOffset = failurePos - <i32>origPos;
-    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, parentSpacesAllowed);
+    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, leadingSpacesAllowed);
     return true;
   }
   return false;
@@ -582,7 +591,7 @@ export function evalApplyNoMemo0(ruleId: i32, parentSpacesAllowed: bool): ApplyR
 // Falls back to dynamic allocation if matchLength != 1 (e.g. surrogate pair).
 // innerPreallocIdx: -1 for direct rules (child = tagged terminal), >= 0 for
 // transitive rules (child = inner preallocated nonterminal at that index).
-export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32, parentSpacesAllowed: bool): ApplyResult {
+export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32, leadingSpacesAllowed: bool): ApplyResult {
   const origPos = pos;
   const origChunk = bindingsChunk;
   const origIdx = bindingsIdx;
@@ -600,7 +609,7 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32, parentSpac
         cstSetMatchLength(ptr, 1);
         cstSetTypeAndDetails(ptr, makeTypeAndDetails(ruleId, NODE_TYPE_NONTERMINAL, ruleSyntactic));
         cstSetFailureOffset(ptr, 0);
-        // The child's parentSpacesAllowed depends on whether this rule is syntactic.
+        // The child's leadingSpacesAllowed depends on whether this rule is syntactic.
         const childPtr = innerPreallocIdx < 0
           ? childWordFromTerminal(1, ruleSyntactic)
           : childWordFromPtr(preallocNtBase + innerPreallocIdx * NODE_WITH_1_CHILD, ruleSyntactic);
@@ -609,12 +618,12 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32, parentSpac
       // Reset bindings to orig position and push the node — the body may
       // have advanced to the next chunk if origIdx was at the boundary.
       restoreBindings(origChunk, origIdx);
-      bindingsPush(childWordFromPtr(ptr, parentSpacesAllowed));
+      bindingsPush(childWordFromPtr(ptr, leadingSpacesAllowed));
       return true;
     }
     // Slow path: non-BMP character (surrogate pair, matchLength=2).
     const failureOffset = failurePos - <i32>origPos;
-    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, parentSpacesAllowed);
+    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, leadingSpacesAllowed);
     return true;
   }
   return false;
@@ -627,10 +636,10 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32, parentSpac
   return errorMessagePos >= 0 && <i32>memoPos + memoGetFailureOffset(entry) === errorMessagePos;
 }
 
-export function evalApply0(ruleId: i32, parentSpacesAllowed: bool): ApplyResult {
+export function evalApply0(ruleId: i32, leadingSpacesAllowed: bool): ApplyResult {
   const memo = memoTableGet(pos, ruleId);
   if (memo !== 0 && !isInvolvedInError(memo, pos)) {
-    return useMemoizedResult(ruleId, memo, parentSpacesAllowed);
+    return useMemoizedResult(ruleId, memo, leadingSpacesAllowed);
   }
   const origPos = pos;
   const origChunk = bindingsChunk;
@@ -648,15 +657,15 @@ export function evalApply0(ruleId: i32, parentSpacesAllowed: bool): ApplyResult 
   }
 
   if (memoTableGet(origPos, ruleId) === USED_LR_BOMB) {
-    return handleLeftRecursion(origPos, ruleId, origChunk, origIdx, failurePos, parentSpacesAllowed);
+    return handleLeftRecursion(origPos, ruleId, origChunk, origIdx, failurePos, leadingSpacesAllowed);
   }
   // No left recursion — memoize and return.
-  const node = newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, parentSpacesAllowed);
+  const node = newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, leadingSpacesAllowed);
   memoTableSet(origPos, ruleId, node);
   return true;
 }
 
-export function handleLeftRecursion(origPos: u32, ruleId: i32, origChunk: i32, origIdx: i32, failurePos: i32, parentSpacesAllowed: bool): ApplyResult {
+export function handleLeftRecursion(origPos: u32, ruleId: i32, origChunk: i32, origIdx: i32, failurePos: i32, leadingSpacesAllowed: bool): ApplyResult {
   let maxPos: u32;
   let node: i32;
   let succeeded: bool;
@@ -665,9 +674,9 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origChunk: i32, o
     maxPos = pos;
     rightmostFailurePos = max(rightmostFailurePos, failurePos);
     const failureOffset = failurePos - <i32>origPos;
-    // Use parentSpacesAllowed=false here because the node goes into memo,
+    // Use leadingSpacesAllowed=false here because the node goes into memo,
     // not directly into the parent's bindings. The final push below encodes
-    // the real parentSpacesAllowed.
+    // the real leadingSpacesAllowed.
     node = newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, false);
     memoTableSet(origPos, ruleId, node);
 
@@ -683,19 +692,19 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origChunk: i32, o
 
   // Set bindings to [node] at the orig position.
   restoreBindings(origChunk, origIdx);
-  bindingsPush(childWordFromPtr(<i32>node, parentSpacesAllowed));
+  bindingsPush(childWordFromPtr(<i32>node, leadingSpacesAllowed));
   return succeeded;
 }
 
-export function newTerminalNode(startIdx: i32, endIdx: i32, parentSpacesAllowed: bool): i32 {
-  const word = childWordFromTerminal(endIdx - startIdx, parentSpacesAllowed);
+export function newTerminalNode(startIdx: i32, endIdx: i32, leadingSpacesAllowed: bool): i32 {
+  const word = childWordFromTerminal(endIdx - startIdx, leadingSpacesAllowed);
   bindingsPush(word);
   return word;
 }
 
 // Create an internal (non-leaf) node (IterationNode or NonterminalNode).
-// parentSpacesAllowed is the edge flag for this node's entry in its parent's bindings.
-@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origChunk: i32, origIdx: i32, failureOffset: i32, parentSpacesAllowed: bool): i32 {
+// leadingSpacesAllowed is the edge flag for this node's entry in its parent's bindings.
+@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origChunk: i32, origIdx: i32, failureOffset: i32, leadingSpacesAllowed: bool): i32 {
   // Count children from (origChunk, origIdx) to (bindingsChunk, bindingsIdx).
   let numChildren: i32 = 0;
   if (origChunk === bindingsChunk) {
@@ -730,13 +739,13 @@ export function newTerminalNode(startIdx: i32, endIdx: i32, parentSpacesAllowed:
 
   // Reset bindings to orig position, then push this node as a child word.
   restoreBindings(origChunk, origIdx);
-  bindingsPush(childWordFromPtr(<i32>ptr, parentSpacesAllowed));
+  bindingsPush(childWordFromPtr(<i32>ptr, leadingSpacesAllowed));
   return ptr;
 }
 
-export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origChunk: i32, origIdx: i32, failureOffset: i32, parentSpacesAllowed: bool): i32 {
+export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origChunk: i32, origIdx: i32, failureOffset: i32, leadingSpacesAllowed: bool): i32 {
   const typeAndDetails = makeTypeAndDetails(ruleId, NODE_TYPE_NONTERMINAL, isRuleSyntactic(ruleId));
-  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, failureOffset, parentSpacesAllowed);
+  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, failureOffset, leadingSpacesAllowed);
 }
 
 export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, origIdx: i32, arity: i32, isOpt: bool, childrenAreSyntactic: bool): i32 {
@@ -754,12 +763,12 @@ export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, ori
       cstSetTypeAndDetails(ptr, typeAndDetails);
       cstSetFailureOffset(ptr, -1);
     }
-    // Iter/opt nodes always have parentSpacesAllowed = false.
+    // Iter/opt nodes always have leadingSpacesAllowed = false.
     bindingsPush(childWordFromPtr(ptr, false));
     return ptr;
   }
 
-  // Iter/opt nodes always have parentSpacesAllowed = false.
+  // Iter/opt nodes always have leadingSpacesAllowed = false.
   return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, -1, false);
 }
 

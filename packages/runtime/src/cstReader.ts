@@ -186,8 +186,8 @@ export class CstReader {
     for (let i = 0; i < count; i++) {
       const childWord = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
 
-      // Extract per-edge parentSpacesAllowed flag from child word.
-      const parentSpacesAllowed = (childWord & 0b10) !== 0;
+      // Extract per-edge leadingSpacesAllowed flag from child word.
+      const leadingSpacesAllowed = (childWord & 0b10) !== 0;
 
       // Decode child word to raw handle.
       let rawChild: number;
@@ -202,9 +202,10 @@ export class CstReader {
         len = this._ctx.view.getUint32(rawChild + CST_MATCH_LENGTH_OFFSET, true);
       }
 
-      // Look up spaces only if both node bit and edge flag are set.
+      // Both gates must be true: the parent's children must be in a syntactic
+      // context, and this specific parent->child edge must allow leading spaces.
       const rawSpacesLen =
-        getSpacesLenAt && childrenAreSyntactic && parentSpacesAllowed
+        getSpacesLenAt && childrenAreSyntactic && leadingSpacesAllowed
           ? Math.max(0, getSpacesLenAt(childStart))
           : 0;
       // Pack the spaces handle with startIdx so sourceString() works.

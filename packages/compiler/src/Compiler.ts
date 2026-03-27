@@ -840,7 +840,7 @@ class Assembler {
   newNonterminalNode(
     saved: SavedBacktrackPoint,
     ruleId: number,
-    parentSpacesAllowed: boolean
+    leadingSpacesAllowed: boolean
   ): void {
     if (this.posOnlyMode) {
       this.i32Const(1);
@@ -852,19 +852,19 @@ class Assembler {
     saved.bindings.getChunk();
     saved.bindings.getIdx();
     this.i32Const(-1);
-    this.i32Const(parentSpacesAllowed ? 1 : 0);
+    this.i32Const(leadingSpacesAllowed ? 1 : 0);
     this.callPrebuiltFunc('newNonterminalNode');
   }
 
   // [startIdx: i32] -> [tagged: i32]
-  newTerminalNode(parentSpacesAllowed: boolean): void {
+  newTerminalNode(leadingSpacesAllowed: boolean): void {
     if (this.posOnlyMode) {
       this.i32Const(1);
       return;
     }
     this.localGet('postSpacesPos');
     this.globalGet('pos');
-    this.i32Const(parentSpacesAllowed ? 1 : 0);
+    this.i32Const(leadingSpacesAllowed ? 1 : 0);
     this.callPrebuiltFunc('newTerminalNode');
   }
 
@@ -2062,7 +2062,7 @@ export class Compiler {
     }
 
     const ruleId = this.ruleId(exp.ruleName);
-    const parentSpacesAllowed = !this.inLexicalContext();
+    const leadingSpacesAllowed = !this.inLexicalContext();
     asm.i32Const(ruleId);
 
     const preallocInner = this._preallocRules.get(exp.ruleName);
@@ -2070,13 +2070,13 @@ export class Compiler {
       const innerPreallocIdx =
         preallocInner !== '$term' ? this.ruleId(preallocInner) - this._maxMemoizedRuleId : -1;
       asm.i32Const(innerPreallocIdx);
-      asm.i32Const(parentSpacesAllowed ? 1 : 0);
+      asm.i32Const(leadingSpacesAllowed ? 1 : 0);
       asm.callPrebuiltFunc('evalApplyPrealloc');
     } else if (ruleId >= this._maxMemoizedRuleId) {
-      asm.i32Const(parentSpacesAllowed ? 1 : 0);
+      asm.i32Const(leadingSpacesAllowed ? 1 : 0);
       asm.callPrebuiltFunc('evalApplyNoMemo0');
     } else {
-      asm.i32Const(parentSpacesAllowed ? 1 : 0);
+      asm.i32Const(leadingSpacesAllowed ? 1 : 0);
       asm.callPrebuiltFunc('evalApply0');
     }
     // The application may have updated rightmostFailurePos; if so, we may
@@ -2092,8 +2092,8 @@ export class Compiler {
     const {asm} = this;
     const ruleId = this.ruleId(exp.ruleName);
     const ruleInfo = getNotNull(this.rules!, exp.ruleName);
-    // parentSpacesAllowed is from the OUTER context (before pushing lex context).
-    const parentSpacesAllowed = !this.inLexicalContext();
+    // leadingSpacesAllowed is from the OUTER context (before pushing lex context).
+    const leadingSpacesAllowed = !this.inLexicalContext();
 
     asm.pushDepth();
     const saved = asm.saveBacktrackPoint();
@@ -2106,7 +2106,7 @@ export class Compiler {
     // On success, wrap the body's bindings in a nonterminal node.
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
-      asm.newNonterminalNode(saved, ruleId, parentSpacesAllowed);
+      asm.newNonterminalNode(saved, ruleId, leadingSpacesAllowed);
       asm.localSet('ret');
     });
 

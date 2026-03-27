@@ -712,8 +712,8 @@ class CstNodeImpl implements CstNodeBase {
       const childWord = this._ctx.view.getUint32(slotOffset, true);
 
       // Extract per-edge metadata from the child word.
-      const parentSpacesAllowed = (childWord & 0b10) !== 0;
-      const doSpaceLookup = childrenAreSyntactic && parentSpacesAllowed && !!getSpacesLenAt;
+      const leadingSpacesAllowed = (childWord & 0b10) !== 0;
+      const doSpaceLookup = childrenAreSyntactic && leadingSpacesAllowed && !!getSpacesLenAt;
 
       if (childWord & 1) {
         // Terminal child word: (matchLength << 2) | flags

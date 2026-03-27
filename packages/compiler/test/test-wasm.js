@@ -2023,9 +2023,9 @@ test('leadingSpaces in a lexical context', async t => {
 // --- Regression tests for child word encoding ---
 
 // Same memoized rule reused at the same position under different parent spacing
-// contexts. The first alt tries thing "+" in syntactic context (parentSpacesAllowed=true),
+// contexts. The first alt tries thing "+" in syntactic context (leadingSpacesAllowed=true),
 // fails, and memoizes thing. The second alt tries #(thing "-") in lexical context,
-// reusing the memoized thing with parentSpacesAllowed=false.
+// reusing the memoized thing with leadingSpacesAllowed=false.
 test('child words: memoized node reused in syntactic and lexical contexts', async t => {
   const wasmGrammar = await compileAndLoad(`
     G {
@@ -2037,7 +2037,7 @@ test('child words: memoized node reused in syntactic and lexical contexts', asyn
   // Input "xab-": "x" then "ab-". No spaces, so lex context is not an issue.
   // Plus alt: "x" ok, thing matches "ab" at pos 1, memoized. "+" fails.
   // Minus alt: "x" ok, #(thing "-"): thing at pos 1 — memo hit with
-  //   parentSpacesAllowed=false. "-" matches. Success.
+  //   leadingSpacesAllowed=false. "-" matches. Success.
   t.is(matchWithInput(wasmGrammar, 'xab-'), 1);
   const root = wasmGrammar._getCstRoot();
   t.is(root.ctorName, 'Start');
@@ -2046,7 +2046,7 @@ test('child words: memoized node reused in syntactic and lexical contexts', asyn
   t.is(unparse(wasmGrammar), 'xab-');
 });
 
-// Left recursion path: memoized result is re-encoded with parentSpacesAllowed
+// Left recursion path: memoized result is re-encoded with leadingSpacesAllowed
 // when pushed to bindings.
 test('child words: left recursion with spacing', async t => {
   const wasmGrammar = await compileAndLoad(`
@@ -2085,6 +2085,28 @@ test('child words: empty iter in syntactic vs lexical context', async t => {
   // The lex wrapper makes it a single child; dig into it.
   const lexStar = children[2];
   t.is(lexStar.children.length, 0);
+});
+
+// childrenAreSyntactic vs leadingSpacesAllowed distinction:
+// Both children of Start are in a syntactic context (childrenAreSyntactic=true),
+// but #(letter) wraps the first child in a lex context, so its edge has
+// leadingSpacesAllowed=false and must not get leadingSpaces, while the bare
+// `letter` child's edge has leadingSpacesAllowed=true and gets leadingSpaces.
+test('child words: childrenAreSyntactic vs leadingSpacesAllowed', async t => {
+  const wasmGrammar = await compileAndLoad(`
+    G {
+      Start = #(letter) letter
+    }
+  `);
+  t.is(matchWithInput(wasmGrammar, 'a b'), 1);
+  const root = wasmGrammar._getCstRoot();
+  const children = root.children;
+  // First child: #(letter) — lexical edge, no leadingSpaces.
+  t.falsy(children[0].leadingSpaces);
+  t.is(children[0].sourceString, 'a');
+  // Second child: bare letter — syntactic edge, gets leadingSpaces for the space.
+  t.truthy(children[1].leadingSpaces);
+  t.is(children[1].sourceString, 'b');
 });
 
 // Non-empty iter/opt in both lexical and syntactic contexts.
