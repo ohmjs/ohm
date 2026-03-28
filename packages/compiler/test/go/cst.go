@@ -35,8 +35,10 @@ type cstContext struct {
 // Its API mirrors the ohm-js CstNode interface.
 //
 // Child slot values in the CST use a tagged encoding:
-//   - If bit 0 is set: tagged terminal, matchLength = value >> 1
-//   - Otherwise: pointer to a CST node in Wasm memory
+//   - Bit 0: terminal flag (1 = tagged terminal, 0 = heap pointer)
+//   - Bit 1: NO_LEADING_SPACES edge flag (suppress implicit space lookup)
+//   - Tagged terminal matchLength = value >> 2
+//   - Heap pointer = value & ^2 (strip edge flag)
 type CstNode struct {
 	ctx      *cstContext
 	base     uint32
@@ -115,7 +117,7 @@ func (n *CstNode) CtorName() string {
 // MatchLength returns the number of UTF-16 code units consumed by this node.
 func (n *CstNode) MatchLength() int {
 	if isTerminal(n.base) {
-		return int(n.base >> 1)
+		return int(n.base >> 2)
 	}
 	data, ok := n.ctx.memory.Read(n.base, 4)
 	if !ok {
@@ -211,12 +213,17 @@ func (n *CstNode) Children() []*CstNode {
 		if !ok {
 			return children[:i]
 		}
-		raw := readUint32(data, 0)
+		slot := readUint32(data, 0)
+
+		// Bit 1 is the NO_LEADING_SPACES edge flag.
+		suppressSpaces := slot&2 != 0
+		// Strip the edge flag to get the actual value.
+		raw := slot & ^uint32(2)
 
 		// Account for implicit leading spaces.
 		// Only apply if spaces were actually recorded at this position
 		// and the result stays within the parent's span.
-		if n.ctx.getSpacesLenAt != nil && n.hasParentSpaces(raw) {
+		if !suppressSpaces && n.ctx.getSpacesLenAt != nil && n.hasParentSpaces(raw) {
 			spacesLen := n.ctx.getSpacesLenAt(startIdx)
 			if spacesLen > 0 && startIdx+spacesLen <= endIdx {
 				startIdx += spacesLen

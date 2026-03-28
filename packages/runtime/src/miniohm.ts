@@ -9,7 +9,8 @@ export const CST_TYPE_AND_DETAILS_OFFSET = 4;
 export const CST_CHILD_COUNT_OFFSET = 8;
 export const CST_CHILDREN_OFFSET = 16;
 
-// Tagged terminal: (matchLength << 1) | 1. Bit 0 distinguishes from real pointers.
+// Tagged terminal: (matchLength << 2) | 1. Bit 0 distinguishes from real pointers.
+// Bit 1 is the NO_LEADING_SPACES edge flag (set on child slots, not on root handles).
 export function isTaggedTerminal(handle: number): boolean {
   return (handle & 1) !== 0;
 }
@@ -21,11 +22,8 @@ export function rawMatchRecordType(view: DataView, ptr: number): MatchRecordType
 }
 
 // A MatchRecord is the representation of a CstNode in Wasm linear memory.
-// WRAPPED (1) reuses the TERMINAL slot — heap-allocated terminals don't exist
-// (they use tagged integers), so value 1 is safe for wrapped nodes.
 export const MatchRecordType = {
   NONTERMINAL: 0,
-  WRAPPED: 1,
   TERMINAL: 1, // Only for tagged-integer detection, never in heap nodes.
   ITER_FLAG: 2,
   OPTIONAL: 3,
@@ -641,7 +639,7 @@ class CstNodeImpl implements CstNodeBase {
   }
 
   get matchLength(): number {
-    if (isTaggedTerminal(this._base)) return this._base >>> 1;
+    if (isTaggedTerminal(this._base)) return this._base >>> 2;
     return this._ctx.view.getUint32(this._base + CST_MATCH_LENGTH_OFFSET, true);
   }
 
@@ -703,14 +701,12 @@ class CstNodeImpl implements CstNodeBase {
     const doSpaceLookup = this._syntactic && !!getSpacesLenAt;
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + CST_CHILDREN_OFFSET + i * 4;
-      let ptr = this._ctx.view.getUint32(slotOffset, true);
+      const slot = this._ctx.view.getUint32(slotOffset, true);
 
-      // Unwrap WRAPPED nodes (edge metadata: suppress leading spaces).
-      let suppressSpaces = false;
-      if (!isTaggedTerminal(ptr) && rawMatchRecordType(this._ctx.view, ptr) === MatchRecordType.WRAPPED) {
-        suppressSpaces = true;
-        ptr = this._ctx.view.getUint32(ptr + CST_CHILDREN_OFFSET, true);
-      }
+      // Bit 1 of the child slot is the NO_LEADING_SPACES edge flag.
+      const suppressSpaces = (slot & 2) !== 0;
+      // Strip the edge flag to get the actual value (pointer or tagged terminal).
+      const ptr = slot & ~2;
 
       if (isTaggedTerminal(ptr)) {
         // Tagged terminals always have parent-level space skipping.
@@ -780,7 +776,7 @@ class CstNodeImpl implements CstNodeBase {
   }
 }
 
-// A terminal node decoded from a tagged integer (matchLength << 1 | 1),
+// A terminal node decoded from a tagged integer (matchLength << 2 | 1),
 // rather than read from WASM linear memory.
 class TaggedTerminalNode implements CstNodeBase {
   readonly type = CstNodeType.TERMINAL;
@@ -793,7 +789,7 @@ class TaggedTerminalNode implements CstNodeBase {
   leadingSpaces?: NonterminalNode = undefined;
 
   constructor(ctx: MatchContext, tagged: number, startIdx: number) {
-    this.matchLength = tagged >>> 1;
+    this.matchLength = tagged >>> 2;
     this.startIdx = startIdx;
     const endIdx = startIdx + this.matchLength;
     this.source = {startIdx, endIdx};

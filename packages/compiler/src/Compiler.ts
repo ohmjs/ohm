@@ -2126,7 +2126,7 @@ export class Compiler {
       asm.emit(instr.if, w.blocktype.empty);
       saved.getChunk();
       saved.getIdx();
-      asm.callPrebuiltFunc('wrapBindingsFrom');
+      asm.callPrebuiltFunc('markBindingsFrom');
       asm.emit(instr.end);
     } else {
       this.emitPExpr(child);

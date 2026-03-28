@@ -113,7 +113,7 @@ export class CstReader {
   matchLength(handle: number): number {
     const raw = handle & MASK;
     if (isSpacesHandle(raw)) return raw >>> 2;
-    if (isTaggedTerminal(raw)) return raw >>> 1;
+    if (isTaggedTerminal(raw)) return raw >>> 2;
     return this._ctx.view.getUint32(raw + CST_MATCH_LENGTH_OFFSET, true);
   }
 
@@ -171,14 +171,12 @@ export class CstReader {
     let childStart = (handle - raw) / SHIFT;
     const {getSpacesLenAt} = this._ctx;
     for (let i = 0; i < count; i++) {
-      let rawChild = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
+      const slot = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
 
-      // Unwrap WRAPPED nodes (suppress leading spaces).
-      let suppressSpaces = false;
-      if (!isTaggedTerminal(rawChild) && rawMatchRecordType(this._ctx.view, rawChild) === MatchRecordType.WRAPPED) {
-        suppressSpaces = true;
-        rawChild = this._ctx.view.getUint32(rawChild + CST_CHILDREN_OFFSET, true);
-      }
+      // Bit 1 of the child slot is the NO_LEADING_SPACES edge flag.
+      const suppressSpaces = (slot & 2) !== 0;
+      // Strip the edge flag to get the actual value.
+      const rawChild = slot & ~2;
 
       const rawSpacesLen =
         !suppressSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
@@ -191,7 +189,7 @@ export class CstReader {
       childStart += rawSpacesLen;
       const childHandle = childStart * SHIFT + rawChild;
       const len = isTaggedTerminal(rawChild)
-        ? rawChild >>> 1
+        ? rawChild >>> 2
         : this._ctx.view.getUint32(rawChild + CST_MATCH_LENGTH_OFFSET, true);
       fn(childHandle, leadingSpaces, childStart, i);
       childStart += len;
@@ -216,10 +214,16 @@ export function createReader(result: SucceededMatchResult): CstReader {
       `Wasm heap too large for CstReader: ${heapTop} bytes exceeds ${HANDLE_BITS}-bit limit (${SHIFT} bytes)`
     );
   }
+  // Two constraints on input length:
+  // 1. startIdx must fit in (53 - HANDLE_BITS) bits when packed.
+  // 2. Tagged terminals encode as (matchLength << 2) | flags, so
+  //    matchLength (≤ input.length) must fit in (HANDLE_BITS - 2) bits.
   const startIdxLimit = 2 ** (53 - HANDLE_BITS);
-  if (ctx.input.length >= startIdxLimit) {
+  const terminalLimit = 2 ** (HANDLE_BITS - 2);
+  const inputLimit = Math.min(startIdxLimit, terminalLimit);
+  if (ctx.input.length >= inputLimit) {
     throw new Error(
-      `Input too long for CstReader: ${ctx.input.length} chars exceeds ${53 - HANDLE_BITS}-bit limit (${startIdxLimit} chars)`
+      `Input too long for CstReader: ${ctx.input.length} chars exceeds limit (${inputLimit} chars)`
     );
   }
 
