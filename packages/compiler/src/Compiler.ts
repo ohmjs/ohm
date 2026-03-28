@@ -2299,7 +2299,6 @@ export class Compiler {
     }
   }
 
-
   // Shared loop skeleton for Star (and the Star part of Plus).
   // `outer` is the backtrack point from before the iteration started.
   // The callback `emitLoopBody` is responsible for emitting everything

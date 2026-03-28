@@ -231,9 +231,10 @@ test('child leadingSpaces in syntactic rule', async t => {
         index,
         hasSpaces: leadingSpacesLen > 0,
         spacesLen: leadingSpacesLen,
-        spacesStr: leadingSpacesLen > 0
-          ? reader.sourceSlice(childStartIdx - leadingSpacesLen, leadingSpacesLen)
-          : '',
+        spacesStr:
+          leadingSpacesLen > 0
+            ? reader.sourceSlice(childStartIdx - leadingSpacesLen, leadingSpacesLen)
+            : '',
       });
     });
     t.is(spacesInfo.length, 2);
