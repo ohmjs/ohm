@@ -66,7 +66,7 @@ function walkRecordTree(
   const stack: number[] = [];
   for (const ptr of rootPtrs) {
     if (ptr & 1) {
-      // Tagged terminal: (matchLength << 1) | 1. Not a heap object.
+      // Tagged terminal: (matchLength << 2) | 1. Not a heap object.
       stats.countByType.terminal++;
     } else if (!visited.has(ptr)) {
       visited.add(ptr);
@@ -103,13 +103,17 @@ function walkRecordTree(
     }
 
     for (let i = count - 1; i >= 0; i--) {
-      const childPtr = view.getUint32(ptr + 16 + i * 4, true);
-      if (childPtr & 1) {
-        // Tagged terminal: not a heap object.
+      const slot = view.getUint32(ptr + 16 + i * 4, true);
+      if (slot & 1) {
+        // Tagged terminal (bit 0 = 1). Bit 1 may be the edge flag — not a heap object either way.
         stats.countByType.terminal++;
-      } else if (!visited.has(childPtr)) {
-        visited.add(childPtr);
-        stack.push(childPtr);
+      } else {
+        // Heap pointer — strip bit 1 (NO_LEADING_SPACES edge flag).
+        const childPtr = slot & ~2;
+        if (!visited.has(childPtr)) {
+          visited.add(childPtr);
+          stack.push(childPtr);
+        }
       }
     }
   }

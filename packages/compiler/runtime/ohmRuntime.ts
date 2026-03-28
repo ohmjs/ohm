@@ -40,8 +40,13 @@
  *    16+    children: i32[]    (pointers to child nodes, or tagged terminals)
  *
  * Terminal nodes are NOT stored as CST nodes. Instead, they are tagged
- * 31-bit integers: (matchLength << 1) | 1. Bit 0 distinguishes them
- * from heap pointers (which are always word-aligned, so bit 0 = 0).
+ * integers: (matchLength << 2) | 1. Bit 0 distinguishes them from heap
+ * pointers (which are always word-aligned, so bit 0 = 0).
+ *
+ * Bit 1 of each child slot is the NO_LEADING_SPACES edge flag:
+ *   - For heap pointers: normal = ptr | 0, suppressed = ptr | 2
+ *   - For tagged terminals: normal = (len << 2) | 1, suppressed = (len << 2) | 3
+ * Readers check bit 1 to decide whether to look up leading spaces.
  */
 
 type ApplyResult = bool;
@@ -70,12 +75,16 @@ declare function fillInputBuffer(dest: i32, len: i32): i32;
 @inline const CST_NODE_OVERHEAD: i32 = 16;
 
 // Node type is given by the two least significant bits of typeAndDetails.
-// 0=nonterminal, 2=iteration, 3=optional. (Terminal nodes are not CST nodes;
-// they are tagged integers — see taggedTerminal().)
+// 0=nonterminal, 2=iteration, 3=optional.
+// (Terminal nodes are not CST nodes; they are tagged integers — see taggedTerminal().)
 // Note that an optional is also an iteration node, so bit 1 is treated as a flag.
 @inline const NODE_TYPE_NONTERMINAL: i32 = 0;
 @inline const NODE_TYPE_ITER_FLAG: i32 = 2;
 @inline const NODE_TYPE_OPTIONAL: i32 = 3;
+
+// Edge flag: bit 1 of a child slot value. When set, the reader should not
+// look up leading spaces for that child.
+@inline const NO_LEADING_SPACES_EDGE: i32 = 2;
 
 // Memo table entries
 type MemoEntry = i32;
@@ -102,10 +111,11 @@ type RuleEvalResult = i32;
 
 @inline const RULE_EVAL_SUCCESS_FLAG = 1;
 
-// Tagged terminal encoding: (matchLength << 1) | 1.
+// Tagged terminal encoding: (matchLength << 2) | 1.
 // Bit 0 = 1 distinguishes terminals from heap pointers (which are always aligned).
+// Bit 1 is reserved for the NO_LEADING_SPACES edge flag (set by markBindingsFrom).
 @inline function taggedTerminal(matchLength: i32): i32 {
-  return (matchLength << 1) | 1;
+  return (matchLength << 2) | 1;
 }
 
 @inline function isTaggedTerminal(val: i32): bool {
@@ -113,7 +123,7 @@ type RuleEvalResult = i32;
 }
 
 @inline function taggedTerminalMatchLength(val: i32): i32 {
-  return val >>> 1;
+  return val >>> 2;
 }
 
 // Base pointer for preallocated nonterminal table (bump-heap allocated).
@@ -209,6 +219,29 @@ export function bindingsAdvanceChunk(): void {
 @inline function bindingsRead(chunk: i32, idx: i32): i32 {
   if (!useChunkedBindings) return unchecked(bindingsArr[idx]);
   return load<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)));
+}
+
+// Set the NO_LEADING_SPACES edge flag (bit 1) on each binding from
+// (fromChunk, fromIdx) to the current position. Used for children
+// inside a `#()` lexical context within a syntactic rule.
+export function markBindingsFrom(fromChunk: i32, fromIdx: i32): void {
+  let chunk = fromChunk;
+  let idx = fromIdx;
+  while (chunk !== bindingsChunk || idx !== bindingsIdx) {
+    const val = bindingsRead(chunk, idx);
+    const marked = val | NO_LEADING_SPACES_EDGE;
+
+    if (!useChunkedBindings) {
+      unchecked(bindingsArr[idx] = marked);
+    } else {
+      store<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)), marked);
+    }
+    idx++;
+    if (useChunkedBindings && idx === BINDINGS_CHUNK_CAPACITY) {
+      chunk = chunkNext(chunk);
+      idx = 0;
+    }
+  }
 }
 
 @inline function memoEntryForFailure(failureOffset: i32): MemoEntry {

@@ -5,8 +5,8 @@ import {
   CST_TYPE_AND_DETAILS_OFFSET,
   CstNodeType,
   isTaggedTerminal,
-  MATCH_RECORD_TYPE_MASK,
   MatchRecordType,
+  rawMatchRecordType,
 } from './miniohm.ts';
 
 import type {MatchContext, SucceededMatchResult} from './miniohm.ts';
@@ -95,8 +95,7 @@ export class CstReader {
     const raw = handle & MASK;
     if (isSpacesHandle(raw)) return CstNodeType.NONTERMINAL;
     if (isTaggedTerminal(raw)) return CstNodeType.TERMINAL;
-    const mrType = (this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) &
-      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+    const mrType = rawMatchRecordType(this._ctx.view, raw);
     if (mrType === MatchRecordType.NONTERMINAL) return CstNodeType.NONTERMINAL;
     if (mrType === MatchRecordType.TERMINAL) return CstNodeType.TERMINAL;
     if (mrType === MatchRecordType.ITER_FLAG) return CstNodeType.LIST;
@@ -114,7 +113,7 @@ export class CstReader {
   matchLength(handle: number): number {
     const raw = handle & MASK;
     if (isSpacesHandle(raw)) return raw >>> 2;
-    if (isTaggedTerminal(raw)) return raw >>> 1;
+    if (isTaggedTerminal(raw)) return raw >>> 2;
     return this._ctx.view.getUint32(raw + CST_MATCH_LENGTH_OFFSET, true);
   }
 
@@ -126,8 +125,7 @@ export class CstReader {
     const raw = handle & MASK;
     if (isSpacesHandle(raw)) return 'spaces';
     if (isTaggedTerminal(raw)) return '_terminal';
-    const type = (this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) &
-      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+    const type = rawMatchRecordType(this._ctx.view, raw);
     if (type === MatchRecordType.NONTERMINAL) {
       const ruleId = this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
       return this._ctx.ruleNames[ruleId].split('<')[0];
@@ -173,9 +171,15 @@ export class CstReader {
     let childStart = (handle - raw) / SHIFT;
     const {getSpacesLenAt} = this._ctx;
     for (let i = 0; i < count; i++) {
-      const rawChild = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
+      const slot = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
+
+      // Bit 1 of the child slot is the NO_LEADING_SPACES edge flag.
+      const suppressSpaces = (slot & 2) !== 0;
+      // Strip the edge flag to get the actual value.
+      const rawChild = slot & ~2;
+
       const rawSpacesLen =
-        getSpacesLenAt && this._hasParentSpaces(rawChild)
+        !suppressSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
           ? Math.max(0, getSpacesLenAt(childStart))
           : 0;
       // Pack the spaces handle with startIdx so sourceString() works.
@@ -185,7 +189,7 @@ export class CstReader {
       childStart += rawSpacesLen;
       const childHandle = childStart * SHIFT + rawChild;
       const len = isTaggedTerminal(rawChild)
-        ? rawChild >>> 1
+        ? rawChild >>> 2
         : this._ctx.view.getUint32(rawChild + CST_MATCH_LENGTH_OFFSET, true);
       fn(childHandle, leadingSpaces, childStart, i);
       childStart += len;
@@ -195,8 +199,7 @@ export class CstReader {
   /** Check whether a raw child handle has parent-level space skipping. */
   private _hasParentSpaces(rawChild: number): boolean {
     if (isTaggedTerminal(rawChild)) return true;
-    const type = (this._ctx.view.getInt32(rawChild + CST_TYPE_AND_DETAILS_OFFSET, true) &
-      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+    const type = rawMatchRecordType(this._ctx.view, rawChild);
     return type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL;
   }
 }
@@ -211,10 +214,16 @@ export function createReader(result: SucceededMatchResult): CstReader {
       `Wasm heap too large for CstReader: ${heapTop} bytes exceeds ${HANDLE_BITS}-bit limit (${SHIFT} bytes)`
     );
   }
+  // Two constraints on input length:
+  // 1. startIdx must fit in (53 - HANDLE_BITS) bits when packed.
+  // 2. Tagged terminals encode as (matchLength << 2) | flags, so
+  //    matchLength (≤ input.length) must fit in (HANDLE_BITS - 2) bits.
   const startIdxLimit = 2 ** (53 - HANDLE_BITS);
-  if (ctx.input.length >= startIdxLimit) {
+  const terminalLimit = 2 ** (HANDLE_BITS - 2);
+  const inputLimit = Math.min(startIdxLimit, terminalLimit);
+  if (ctx.input.length >= inputLimit) {
     throw new Error(
-      `Input too long for CstReader: ${ctx.input.length} chars exceeds ${53 - HANDLE_BITS}-bit limit (${startIdxLimit} chars)`
+      `Input too long for CstReader: ${ctx.input.length} chars exceeds limit (${inputLimit} chars)`
     );
   }
 

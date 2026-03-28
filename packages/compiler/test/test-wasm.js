@@ -2003,7 +2003,7 @@ test('parameterized rules: growing parameters should not blow the stack', t => {
   );
 });
 
-test.failing('leadingSpaces in a lexical context', async t => {
+test('leadingSpaces in a lexical context', async t => {
   const wasmGrammar = await compileAndLoad(`
     G {
       Start = ">" "a" digit
@@ -2015,5 +2015,46 @@ test.failing('leadingSpaces in a lexical context', async t => {
   t.is(root.ctorName, 'Start');
   const [_, a, letter] = root.children; // eslint-disable-line no-unused-vars
   t.falsy(a.leadingSpaces);
+  t.falsy(letter.leadingSpaces);
+});
+
+test('leadingSpaces suppressed in nested #(letter+)', async t => {
+  // #() includes the space in the literal so the lex context starts at the space.
+  // letter+ children inside #() should have no leadingSpaces.
+  const wasmGrammar = await compileAndLoad(`
+    G {
+      Start = ">" #(" " letter+)
+    }
+  `);
+  t.is(matchWithInput(wasmGrammar, '> abc'), 1);
+  const root = wasmGrammar._getCstRoot();
+  // root.children: [">", " ", letter+]
+  const letterPlus = root.children[2];
+  t.is(letterPlus.ctorName, '_list');
+  for (const child of letterPlus.children) {
+    t.falsy(child.leadingSpaces, `child "${child.sourceString}" should have no leadingSpaces`);
+  }
+});
+
+test('edge flag: tagged terminal decoding with suppress bit', async t => {
+  // When a tagged terminal has the edge flag set (bit 1), the reader
+  // must still correctly decode its matchLength (>> 2, not >> 1).
+  // " ab" is a 3-char literal inside #(), so its tagged value is
+  // (3 << 2) | 3 = 15 (with edge flag). Decoding must yield matchLength=3.
+  const wasmGrammar = await compileAndLoad(`
+    G {
+      Start = ">" #(" ab" letter)
+    }
+  `);
+  t.is(matchWithInput(wasmGrammar, '> abc'), 1);
+  const root = wasmGrammar._getCstRoot();
+  const [gt, ab, letter] = root.children;
+  // " ab" is a tagged terminal inside #(), so it has the edge flag.
+  t.is(ab.sourceString, ' ab');
+  t.is(ab.matchLength, 3);
+  t.falsy(ab.leadingSpaces);
+  // ">" is outside #(), normal space handling.
+  t.is(gt.sourceString, '>');
+  t.is(letter.sourceString, 'c');
   t.falsy(letter.leadingSpaces);
 });
