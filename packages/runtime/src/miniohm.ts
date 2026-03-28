@@ -62,11 +62,10 @@ const UnicodeCategoryNames = [
 const utf8 = new TextDecoder('utf-8');
 const utf16le = new TextDecoder('utf-16le');
 
-function isSyntacticRuleName(ruleName: string): boolean {
-  // Match the compiler's logic: find the first Unicode letter, check if uppercase.
-  const firstLetter = ruleName.match(/\p{L}/u)?.[0];
-  if (!firstLetter) return false;
-  return /\p{Lu}/u.test(firstLetter);
+function parseSyntacticRulesSection(module: WebAssembly.Module): boolean[] | null {
+  const sections = WebAssembly.Module.customSections(module, 'syntacticRules');
+  if (sections.length === 0) return null;
+  return Array.from(new Uint8Array(sections[0]), b => b !== 0);
 }
 
 // Minimal implementation of Interval (for FailedMatchResult)
@@ -337,11 +336,17 @@ export class Grammar {
     assert(this._ruleNames.length === 0);
     assert(this._ruleIds.size === 0);
     assert(this._ruleIsSyntactic.length === 0);
-    for (const ruleName of parseStringTable(module, 'ruleNames')) {
+    const ruleNames = parseStringTable(module, 'ruleNames');
+    for (const ruleName of ruleNames) {
       this._ruleIds.set(ruleName, this._ruleIds.size);
       this._ruleNames.push(ruleName);
-      this._ruleIsSyntactic.push(isSyntacticRuleName(ruleName));
     }
+    const syntacticFlags = parseSyntacticRulesSection(module);
+    assert(
+      syntacticFlags !== null && syntacticFlags.length === ruleNames.length,
+      'syntacticRules section missing or length mismatch'
+    );
+    this._ruleIsSyntactic.push(...syntacticFlags);
     for (const str of parseStringTable(module, 'strings')) {
       this._strings.push(str);
     }

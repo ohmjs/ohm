@@ -303,3 +303,24 @@ test('isSyntactic: true for syntactic rule, false for lexical', async t => {
     t.false(reader.isSyntactic(innerHandle)); // inner is lexical
   });
 });
+
+// --- syntactic classification from Wasm section ---
+
+test('isSyntactic reads compiler-embedded classification', async t => {
+  // The compiler embeds a syntacticRules custom section; the runtime reads it
+  // directly rather than rederiving from rule names.
+  const g = await compileAndLoad('G { Start = inner\ninner = "x" }');
+  g.match('x').use(mr => {
+    const reader = createReader(mr);
+    // Walk all nonterminals and verify classification
+    function check(handle) {
+      if (reader.type(handle) === CstNodeType.NONTERMINAL) {
+        const name = reader.ctorName(handle);
+        if (name === 'Start') t.true(reader.isSyntactic(handle));
+        if (name === 'inner') t.false(reader.isSyntactic(handle));
+      }
+      reader.forEachChild(handle, child => check(child));
+    }
+    check(reader.root);
+  });
+});
