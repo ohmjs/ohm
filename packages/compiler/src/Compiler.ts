@@ -1784,7 +1784,7 @@ export class Compiler {
             () => {
               asm.localGet('__arg0');
               const brLabels = this.ruleIdByName.keys().map(name => {
-                const isSyntactic = name[0] === name[0].toUpperCase();
+                const isSyntactic = isSyntacticRule(name);
                 return w.labelidx(asm.depthOf(isSyntactic ? 'syntactic' : 'lexical'));
               });
               asm.brTable(brLabels, w.labelidx(asm.depthOf('lexical')));

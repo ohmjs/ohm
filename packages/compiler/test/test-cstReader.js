@@ -1,6 +1,6 @@
 import test from 'ava';
 
-import {createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
+import {createHandle, createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
 
 test('root node basics', async t => {
@@ -271,5 +271,35 @@ test('childCount is 0 for tagged terminals', async t => {
     });
     t.is(reader.type(termChild), CstNodeType.TERMINAL);
     t.is(reader.childCount(termChild), 0);
+  });
+});
+
+// --- createHandle bounds ---
+
+test('createHandle rejects out-of-range raw pointer', t => {
+  t.throws(() => createHandle(2 ** 27, 0), {message: /exceeds.*bit limit/});
+});
+
+test('createHandle rejects out-of-range startIdx', t => {
+  t.throws(() => createHandle(0, 2 ** 26), {message: /exceeds.*bit limit/});
+});
+
+test('createHandle accepts max valid values', t => {
+  const handle = createHandle(2 ** 27 - 1, 2 ** 26 - 1);
+  t.true(handle > 0);
+});
+
+// --- isSyntactic via CstReader ---
+
+test('isSyntactic: true for syntactic rule, false for lexical', async t => {
+  const g = await compileAndLoad('G { Start = inner\ninner = "x" }');
+  g.match('x').use(mr => {
+    const reader = createReader(mr);
+    t.true(reader.isSyntactic(reader.root)); // Start is syntactic
+    let innerHandle;
+    reader.forEachChild(reader.root, child => {
+      innerHandle = child;
+    });
+    t.false(reader.isSyntactic(innerHandle)); // inner is lexical
   });
 });

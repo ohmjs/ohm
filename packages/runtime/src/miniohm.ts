@@ -1,4 +1,5 @@
 import {assert, checkNotNull} from './assert.ts';
+import {CstReader, createHandle, createReaderFromCtx, rawHandle} from './cstReader.ts';
 import {getLineAndColumn, getLineAndColumnMessage} from './extras.ts';
 
 export const MATCH_RECORD_TYPE_MASK = 0b11;
@@ -62,17 +63,10 @@ const utf8 = new TextDecoder('utf-8');
 const utf16le = new TextDecoder('utf-16le');
 
 function isSyntacticRuleName(ruleName: string): boolean {
-  const firstChar = ruleName[0];
-  return firstChar === firstChar.toUpperCase();
-}
-
-function getRuleId(ctx: MatchContext, ptr: number): number {
-  return ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
-}
-
-// Check whether the nonterminal at `ptr` is a syntactic rule (name starts with uppercase).
-function isSyntacticRule(ctx: MatchContext, ptr: number): boolean {
-  return ctx.ruleIsSyntactic[getRuleId(ctx, ptr)];
+  // Match the compiler's logic: find the first Unicode letter, check if uppercase.
+  const firstLetter = ruleName.match(/\p{L}/u)?.[0];
+  if (!firstLetter) return false;
+  return /\p{Lu}/u.test(firstLetter);
 }
 
 // Minimal implementation of Interval (for FailedMatchResult)
@@ -450,11 +444,14 @@ export class Grammar {
       evalSpacesFull: exports.evalSpacesFull,
       memory: exports.memory,
     };
-    const spacesLen = Math.max(0, exports.getSpacesLenAt(0));
-    const rootAddr = exports.bindingsAt(0);
-    const root = new CstNodeImpl(ctx, rootAddr, spacesLen, isSyntacticRule(ctx, rootAddr));
-    if (spacesLen > 0) {
-      root.leadingSpaces = new LazySpacesNode(ctx, 0, spacesLen);
+    const reader = createReaderFromCtx(ctx, exports);
+    const root = new CstNodeImpl(
+      reader,
+      reader.root,
+      reader.isSyntactic(reader.root)
+    );
+    if (reader.rootLeadingSpacesLen > 0) {
+      root.leadingSpaces = new LazySpacesNode(reader, 0, reader.rootLeadingSpacesLen);
     }
     return root as CstNode;
   }
@@ -553,51 +550,47 @@ export interface SeqNode<TChildren extends CstNodeChildren = CstNodeChildren>
 }
 
 class CstNodeImpl implements CstNodeBase {
-  _ctx!: MatchContext;
+  _reader!: CstReader;
+  _handle: number;
   _children?: CstNodeChildren = undefined;
-  _base: number;
-  startIdx: number;
   leadingSpaces?: NonterminalNode = undefined;
   source: {startIdx: number; endIdx: number};
 
   // Whether this node's children are in a syntactic context (i.e., have
   // implicit space skipping between them). Nonterminals set this from
-  // their rule id; other node types inherit from their parent.
+  // their rule name; other node types inherit from their parent.
   _syntactic!: boolean;
 
-  constructor(ctx: MatchContext, ptr: number, startIdx: number, syntactic?: boolean) {
+  constructor(reader: CstReader, handle: number, syntactic?: boolean) {
     // Non-enumerable properties
     Object.defineProperties(this, {
-      _ctx: {value: ctx},
+      _reader: {value: reader},
       _children: {writable: true},
       _syntactic: {value: syntactic ?? false, writable: true},
     });
-    this._base = ptr;
-    this.startIdx = startIdx;
+    this._handle = handle;
+    const si = reader.startIdx(handle);
     this.source = {
-      startIdx,
-      endIdx: startIdx + this.sourceString.length,
+      startIdx: si,
+      endIdx: si + reader.matchLength(handle),
     };
-    if (this.matchRecordType === MatchRecordType.TERMINAL || this.count === 0) {
+    const type = reader.type(handle);
+    if (type === CstNodeType.TERMINAL || reader.childCount(handle) === 0) {
       this._children = EMPTY_CHILDREN;
     }
   }
 
-  get type(): CstNodeType {
-    switch (this._typeAndDetails & MATCH_RECORD_TYPE_MASK) {
-      case MatchRecordType.NONTERMINAL:
-        return CstNodeType.NONTERMINAL;
-      case MatchRecordType.TERMINAL:
-        return CstNodeType.TERMINAL;
-      case MatchRecordType.ITER_FLAG:
-        return CstNodeType.LIST;
-      default:
-        throw new Error('unreachable');
-    }
+  get startIdx(): number {
+    return this._reader.startIdx(this._handle);
   }
 
-  private get matchRecordType(): MatchRecordType {
-    return (this._typeAndDetails & MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+  /** @internal Raw CST pointer (for debug/test use). */
+  get _base(): number {
+    return rawHandle(this._handle);
+  }
+
+  get type(): CstNodeType {
+    return this._reader.type(this._handle);
   }
 
   isNonterminal(): this is NonterminalNode {
@@ -621,142 +614,76 @@ class CstNodeImpl implements CstNodeBase {
   }
 
   get ctorName(): string {
-    switch (this.type) {
-      case CstNodeType.NONTERMINAL: {
-        const {ruleNames, view} = this._ctx;
-        const ruleId = view.getInt32(this._base + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
-        return ruleNames[ruleId].split('<')[0];
-      }
-      case CstNodeType.TERMINAL:
-        return '_terminal';
-      case CstNodeType.LIST:
-        return '_list';
-      case CstNodeType.OPT:
-        return '_opt';
-      case CstNodeType.SEQ:
-        return '_seq';
-    }
+    return this._reader.ctorName(this._handle);
   }
 
   get matchLength(): number {
-    if (isTaggedTerminal(this._base)) return this._base >>> 2;
-    return this._ctx.view.getUint32(this._base + CST_MATCH_LENGTH_OFFSET, true);
+    return this._reader.matchLength(this._handle);
   }
 
-  get _typeAndDetails(): number {
-    if (isTaggedTerminal(this._base)) return MatchRecordType.TERMINAL;
-    return this._ctx.view.getInt32(this._base + CST_TYPE_AND_DETAILS_OFFSET, true);
-  }
-
-  get count(): number {
-    if (isTaggedTerminal(this._base)) return 0;
-    return this._ctx.view.getUint32(this._base + CST_CHILD_COUNT_OFFSET, true);
-  }
-
-  get arity(): number {
-    return this._typeAndDetails >>> 2;
+  get value(): string {
+    return this.sourceString;
   }
 
   get children(): CstNodeChildren {
     if (!this._children) {
       this._children = this._computeChildren().map((n): CstNode => {
-        if (n instanceof TaggedTerminalNode) {
-          return n as CstNode;
-        }
-        const {matchRecordType} = n;
-        if (matchRecordType === MatchRecordType.OPTIONAL) {
+        const type = n._reader.type(n._handle);
+        if (type === CstNodeType.OPT) {
           const child: CstNode | undefined =
             n.children.length <= 1
               ? n.children[0]
               : new SeqNodeImpl(n.children, n.source, n.sourceString);
           return new OptNodeImpl(child, n.source, n.sourceString);
-        } else if (matchRecordType === MatchRecordType.ITER_FLAG) {
-          if (n.arity <= 1) {
+        } else if (type === CstNodeType.LIST) {
+          const arity = n._reader.details(n._handle);
+          if (arity <= 1) {
             return new ListNodeImpl(n.children, n.source, n.sourceString);
           }
           const arr: CstNode[] = [];
           let startIdx = n.startIdx;
-          for (let i = 0; i < n.children.length; i += n.arity) {
+          for (let i = 0; i < n.children.length; i += arity) {
             // FIXME: We don't need any of this nonsense if we actually build the SeqNodes at parse time.
-            const seqChildren = n.children.slice(i, i + n.arity);
+            const seqChildren = n.children.slice(i, i + arity);
             const endIdx = checkNotNull(seqChildren.at(-1)).source.endIdx;
-            const sourceString = n._ctx.input.slice(startIdx, endIdx);
+            const sourceString = n._reader.sourceSlice(startIdx, endIdx - startIdx);
             arr.push(new SeqNodeImpl(seqChildren, {startIdx, endIdx}, sourceString));
             startIdx = endIdx;
           }
           assert(startIdx === n.source.endIdx);
           return new ListNodeImpl(arr, n.source, n.sourceString);
         }
-        return n as CstNode; // FIXME
+        return n as CstNode;
       });
     }
     return this._children;
   }
 
-  _computeChildren(): (CstNodeImpl | TaggedTerminalNode)[] {
-    const children: (CstNodeImpl | TaggedTerminalNode)[] = [];
-    let {startIdx} = this;
-    const {getSpacesLenAt} = this._ctx;
-    // Only look up implicit spaces when we're in a syntactic context.
-    const doSpaceLookup = this._syntactic && !!getSpacesLenAt;
-    for (let i = 0; i < this.count; i++) {
-      const slotOffset = this._base + CST_CHILDREN_OFFSET + i * 4;
-      const slot = this._ctx.view.getUint32(slotOffset, true);
-
-      // Bit 1 of the child slot is the NO_LEADING_SPACES edge flag.
-      const suppressSpaces = (slot & 2) !== 0;
-      // Strip the edge flag to get the actual value (pointer or tagged terminal).
-      const ptr = slot & ~2;
-
-      if (isTaggedTerminal(ptr)) {
-        // Tagged terminals always have parent-level space skipping.
-        let spacesLen = 0;
-        if (doSpaceLookup && !suppressSpaces) {
-          spacesLen = Math.max(0, getSpacesLenAt!(startIdx));
-          if (spacesLen > 0) startIdx += spacesLen;
-        }
-        const node = new TaggedTerminalNode(this._ctx, ptr, startIdx);
-        if (spacesLen > 0) {
-          node.leadingSpaces = new LazySpacesNode(this._ctx, startIdx - spacesLen, spacesLen);
-        }
-        children.push(node);
-        startIdx += node.matchLength;
-        continue;
-      }
-
-      // Only query spaces for terminals and nonterminals — not for
-      // iteration (ITER_FLAG) or optional nodes, which handle space
-      // skipping internally.
-      const typeAndDetails = this._ctx.view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true);
-      const type = rawMatchRecordType(this._ctx.view, ptr);
-      let spacesLen = 0;
-      if (
-        doSpaceLookup &&
-        !suppressSpaces &&
-        (type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL)
-      ) {
-        spacesLen = Math.max(0, getSpacesLenAt!(startIdx));
-        if (spacesLen > 0) startIdx += spacesLen;
-      }
-
-      // Nonterminals determine syntactic context from their name;
-      // other node types (iter, opt) inherit from the parent.
+  _computeChildren(): CstNodeImpl[] {
+    const children: CstNodeImpl[] = [];
+    const reader = this._reader;
+    const skipSpaces = !this._syntactic;
+    reader.forEachChild(this._handle, (childHandle, leadingSpacesLen, childStartIdx, _i) => {
+      const childType = reader.type(childHandle);
       const childSyntactic =
-        type === MatchRecordType.NONTERMINAL
-          ? this._ctx.ruleIsSyntactic[typeAndDetails >>> 2]
+        childType === CstNodeType.NONTERMINAL
+          ? reader.isSyntactic(childHandle)
           : this._syntactic;
-      const node = new CstNodeImpl(this._ctx, ptr, startIdx, childSyntactic);
-      if (spacesLen > 0) {
-        node.leadingSpaces = new LazySpacesNode(this._ctx, startIdx - spacesLen, spacesLen);
+      const node = new CstNodeImpl(reader, childHandle, childSyntactic);
+      if (leadingSpacesLen > 0) {
+        node.leadingSpaces = new LazySpacesNode(
+          reader,
+          childStartIdx - leadingSpacesLen,
+          leadingSpacesLen
+        );
       }
       children.push(node);
-      startIdx += node.matchLength;
-    }
+    }, skipSpaces);
     return children;
   }
 
   get sourceString(): string {
-    return this._ctx.input.slice(this.startIdx, this.startIdx + this.matchLength);
+    return this._reader.sourceString(this._handle);
   }
 
   isSyntactic(): boolean {
@@ -776,66 +703,20 @@ class CstNodeImpl implements CstNodeBase {
   }
 }
 
-// A terminal node decoded from a tagged integer (matchLength << 2 | 1),
-// rather than read from WASM linear memory.
-class TaggedTerminalNode implements CstNodeBase {
-  readonly type = CstNodeType.TERMINAL;
-  readonly ctorName = '_terminal';
-  readonly matchLength: number;
-  readonly startIdx: number;
-  readonly source: {startIdx: number; endIdx: number};
-  readonly sourceString: string;
-  readonly children: readonly [] = EMPTY_CHILDREN as readonly [];
-  leadingSpaces?: NonterminalNode = undefined;
-
-  constructor(ctx: MatchContext, tagged: number, startIdx: number) {
-    this.matchLength = tagged >>> 2;
-    this.startIdx = startIdx;
-    const endIdx = startIdx + this.matchLength;
-    this.source = {startIdx, endIdx};
-    this.sourceString = ctx.input.slice(startIdx, endIdx);
-  }
-
-  get value(): string {
-    return this.sourceString;
-  }
-
-  isNonterminal(): this is NonterminalNode {
-    return false;
-  }
-  isTerminal(): this is TerminalNode {
-    return true;
-  }
-  isList(): this is ListNode {
-    return false;
-  }
-  isOptional(): this is OptNode {
-    return false;
-  }
-  isSeq(): this is SeqNode {
-    return false;
-  }
-
-  toString(): string {
-    return `CstNode {ctorName: _terminal, sourceString: ${this.sourceString}, startIdx: ${this.startIdx} }`;
-  }
-}
-
 class LazySpacesNode implements NonterminalNode {
   readonly type = CstNodeType.NONTERMINAL;
   readonly ctorName = 'spaces';
   readonly leadingSpaces = undefined;
   readonly source: {startIdx: number; endIdx: number};
 
-  /** @internal */
-  _ctx: MatchContext;
+  private _reader: CstReader;
   private _startIdx: number;
   private _matchLength: number;
   private _children?: CstNodeChildren;
   private _sourceString?: string;
 
-  constructor(ctx: MatchContext, startIdx: number, matchLength: number) {
-    this._ctx = ctx;
+  constructor(reader: CstReader, startIdx: number, matchLength: number) {
+    this._reader = reader;
     this._startIdx = startIdx;
     this._matchLength = matchLength;
     this.source = {startIdx, endIdx: startIdx + matchLength};
@@ -847,10 +728,7 @@ class LazySpacesNode implements NonterminalNode {
 
   get sourceString(): string {
     if (this._sourceString === undefined) {
-      this._sourceString = this._ctx.input.slice(
-        this._startIdx,
-        this._startIdx + this._matchLength
-      );
+      this._sourceString = this._reader.sourceSlice(this._startIdx, this._matchLength);
     }
     return this._sourceString;
   }
@@ -863,16 +741,11 @@ class LazySpacesNode implements NonterminalNode {
   }
 
   private _parseChildren(): CstNodeChildren {
-    const {evalSpacesFull, memory} = this._ctx;
-    assert(evalSpacesFull !== undefined, 'evalSpacesFull not available');
-    const ptr = evalSpacesFull(this._startIdx);
+    const ptr = this._reader.evalSpacesFull(this._startIdx);
     if (ptr === 0) return EMPTY_CHILDREN;
-    // Refresh the DataView in case evalSpacesFull triggered memory.grow().
-    if (memory && this._ctx.view.buffer !== memory.buffer) {
-      this._ctx.view = new DataView(memory.buffer);
-    }
     // The spaces rule is lexical, so pass syntactic=false.
-    const fullNode = new CstNodeImpl(this._ctx, ptr, this._startIdx, false);
+    const handle = createHandle(ptr, this._startIdx);
+    const fullNode = new CstNodeImpl(this._reader, handle, false);
     return fullNode.children;
   }
 
