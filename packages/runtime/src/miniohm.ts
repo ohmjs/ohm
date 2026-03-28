@@ -450,11 +450,7 @@ export class Grammar {
       memory: exports.memory,
     };
     const reader = createReaderFromCtx(ctx, exports);
-    const root = new CstNodeImpl(reader, reader.root);
-    if (reader.rootLeadingSpacesLen > 0) {
-      root.leadingSpaces = new LazySpacesNode(reader, 0, reader.rootLeadingSpacesLen);
-    }
-    return root as CstNode;
+    return new CstNodeImpl(reader, reader.root, reader.rootLeadingSpacesLen) as CstNode;
   }
 
   /** @internal */
@@ -557,7 +553,7 @@ class CstNodeImpl implements CstNodeBase {
   leadingSpaces?: NonterminalNode = undefined;
   source: {startIdx: number; endIdx: number};
 
-  constructor(reader: CstReader, handle: number) {
+  constructor(reader: CstReader, handle: number, leadingSpacesLen = 0) {
     // Non-enumerable properties
     Object.defineProperties(this, {
       _reader: {value: reader},
@@ -569,6 +565,9 @@ class CstNodeImpl implements CstNodeBase {
       startIdx: si,
       endIdx: si + reader.matchLength(handle),
     };
+    if (leadingSpacesLen > 0) {
+      this.leadingSpaces = new LazySpacesNode(reader, si - leadingSpacesLen, leadingSpacesLen);
+    }
     const type = reader.type(handle);
     if (type === CstNodeType.TERMINAL || reader.childCount(handle) === 0) {
       this._children = EMPTY_CHILDREN;
@@ -657,16 +656,8 @@ class CstNodeImpl implements CstNodeBase {
   _computeChildren(): CstNodeImpl[] {
     const children: CstNodeImpl[] = [];
     const reader = this._reader;
-    reader.forEachChild(this._handle, (childHandle, leadingSpacesLen, childStartIdx, _i) => {
-      const node = new CstNodeImpl(reader, childHandle);
-      if (leadingSpacesLen > 0) {
-        node.leadingSpaces = new LazySpacesNode(
-          reader,
-          childStartIdx - leadingSpacesLen,
-          leadingSpacesLen
-        );
-      }
-      children.push(node);
+    reader.forEachChild(this._handle, (childHandle, leadingSpacesLen) => {
+      children.push(new CstNodeImpl(reader, childHandle, leadingSpacesLen));
     });
     return children;
   }
@@ -732,7 +723,6 @@ class LazySpacesNode implements NonterminalNode {
   private _parseChildren(): CstNodeChildren {
     const ptr = this._reader.evalSpacesFull(this._startIdx);
     if (ptr === 0) return EMPTY_CHILDREN;
-    // The spaces rule is lexical, so pass syntactic=false.
     const handle = createHandle(ptr, this._startIdx);
     const fullNode = new CstNodeImpl(this._reader, handle);
     return fullNode.children;
