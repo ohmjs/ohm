@@ -450,11 +450,7 @@ export class Grammar {
       memory: exports.memory,
     };
     const reader = createReaderFromCtx(ctx, exports);
-    const root = new CstNodeImpl(
-      reader,
-      reader.root,
-      reader.isSyntactic(reader.root)
-    );
+    const root = new CstNodeImpl(reader, reader.root, reader.isSyntactic(reader.root));
     if (reader.rootLeadingSpacesLen > 0) {
       root.leadingSpaces = new LazySpacesNode(reader, 0, reader.rootLeadingSpacesLen);
     }
@@ -668,22 +664,26 @@ class CstNodeImpl implements CstNodeBase {
     const children: CstNodeImpl[] = [];
     const reader = this._reader;
     const skipSpaces = !this._syntactic;
-    reader.forEachChild(this._handle, (childHandle, leadingSpacesLen, childStartIdx, _i) => {
-      const childType = reader.type(childHandle);
-      const childSyntactic =
-        childType === CstNodeType.NONTERMINAL
-          ? reader.isSyntactic(childHandle)
-          : this._syntactic;
-      const node = new CstNodeImpl(reader, childHandle, childSyntactic);
-      if (leadingSpacesLen > 0) {
-        node.leadingSpaces = new LazySpacesNode(
-          reader,
-          childStartIdx - leadingSpacesLen,
-          leadingSpacesLen
-        );
-      }
-      children.push(node);
-    }, skipSpaces);
+    reader.forEachChild(
+      this._handle,
+      (childHandle, leadingSpacesLen, childStartIdx, _i) => {
+        const childType = reader.type(childHandle);
+        const childSyntactic =
+          childType === CstNodeType.NONTERMINAL
+            ? reader.isSyntactic(childHandle)
+            : this._syntactic;
+        const node = new CstNodeImpl(reader, childHandle, childSyntactic);
+        if (leadingSpacesLen > 0) {
+          node.leadingSpaces = new LazySpacesNode(
+            reader,
+            childStartIdx - leadingSpacesLen,
+            leadingSpacesLen
+          );
+        }
+        children.push(node);
+      },
+      skipSpaces
+    );
     return children;
   }
 

@@ -201,7 +201,7 @@ export class CstReader {
           : 0;
 
       const childStartIdx = edgeStartIdx + leadingSpacesLen;
-      const childHandle = pack(rawChild, childStartIdx);
+      const childHandle = createHandle(rawChild, childStartIdx);
 
       fn(childHandle, leadingSpacesLen, childStartIdx, i);
 
@@ -280,7 +280,7 @@ export function createReaderFromCtx(ctx: MatchContext, exports: any): CstReader 
 
   const rootLeadingSpacesLen = Math.max(0, exports.getSpacesLenAt(0));
   const rootPtr = exports.bindingsAt(0);
-  return new CstReader(ctx, pack(rootPtr, rootLeadingSpacesLen), rootLeadingSpacesLen);
+  return new CstReader(ctx, createHandle(rootPtr, rootLeadingSpacesLen), rootLeadingSpacesLen);
 }
 
 export function createReader(result: SucceededMatchResult): CstReader {
