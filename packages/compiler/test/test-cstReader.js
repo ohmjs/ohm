@@ -1,6 +1,6 @@
 import test from 'ava';
 
-import {createReader, CstNodeType, NULL_HANDLE} from '../../runtime/src/cstReader.ts';
+import {createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
 
 test('root node basics', async t => {
@@ -34,7 +34,7 @@ test('terminal children', async t => {
     t.is(reader.matchLength(children[0].child), 2);
     t.is(reader.ctorName(children[0].child), '_terminal');
     t.is(reader.sourceString(children[0].child), 'ab');
-    t.is(children[0].leadingSpaces, NULL_HANDLE);
+    t.is(children[0].leadingSpaces, 0);
     t.is(children[0].index, 0);
 
     // Second child: "cd"
@@ -203,23 +203,21 @@ test('unparse: unicode', async t => {
 
 // --- leading spaces ---
 
-test('rootLeadingSpaces: present', async t => {
+test('rootLeadingSpacesLen: present', async t => {
   const g = await compileAndLoad('G { Start = "x" }');
   g.match('  x').use(mr => {
     const reader = createReader(mr);
-    t.not(reader.rootLeadingSpaces, NULL_HANDLE);
-    t.is(reader.matchLength(reader.rootLeadingSpaces), 2);
-    t.is(reader.ctorName(reader.rootLeadingSpaces), 'spaces');
-    t.is(reader.type(reader.rootLeadingSpaces), CstNodeType.NONTERMINAL);
-    t.is(reader.sourceString(reader.rootLeadingSpaces), '  ');
+    t.is(reader.rootLeadingSpacesLen, 2);
+    t.is(reader.sourceSlice(0, reader.rootLeadingSpacesLen), '  ');
+    t.is(reader.startIdx(reader.root), 2);
   });
 });
 
-test('rootLeadingSpaces: absent', async t => {
+test('rootLeadingSpacesLen: absent', async t => {
   const g = await compileAndLoad('G { Start = "x" }');
   g.match('x').use(mr => {
     const reader = createReader(mr);
-    t.is(reader.rootLeadingSpaces, NULL_HANDLE);
+    t.is(reader.rootLeadingSpacesLen, 0);
   });
 });
 
@@ -228,12 +226,15 @@ test('child leadingSpaces in syntactic rule', async t => {
   g.match('a b').use(mr => {
     const reader = createReader(mr);
     const spacesInfo = [];
-    reader.forEachChild(reader.root, (child, leadingSpaces, startIdx, index) => {
+    reader.forEachChild(reader.root, (child, leadingSpacesLen, childStartIdx, index) => {
       spacesInfo.push({
         index,
-        hasSpaces: leadingSpaces !== NULL_HANDLE,
-        spacesLen: leadingSpaces !== NULL_HANDLE ? reader.matchLength(leadingSpaces) : 0,
-        spacesStr: leadingSpaces !== NULL_HANDLE ? reader.sourceString(leadingSpaces) : '',
+        hasSpaces: leadingSpacesLen > 0,
+        spacesLen: leadingSpacesLen,
+        spacesStr:
+          leadingSpacesLen > 0
+            ? reader.sourceSlice(childStartIdx - leadingSpacesLen, leadingSpacesLen)
+            : '',
       });
     });
     t.is(spacesInfo.length, 2);
