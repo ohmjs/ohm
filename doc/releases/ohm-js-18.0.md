@@ -151,7 +151,7 @@ if (result.failed()) {
 
 ### Syntactic vs. lexical rule classification
 
-The `isSyntactic()` check now uses Unicode letter properties (`\p{Lu}`) to determine whether a rule name begins with an uppercase letter. In v17, it compared `firstChar === firstChar.toUpperCase()`, which incorrectly classified rule names starting with non-letter characters (e.g. `_`, digits) as syntactic. Rule names starting with `_` or a digit are now treated as lexical.
+`isSyntactic()` now looks at the first _letter_ in the rule name — if it's an upper case letter, the rule is syntactic, otherwise it's lexical. In v17, we compared `firstChar === firstChar.toUpperCase()`, which incorrectly classified rule names starting with non-letter characters (e.g. `_`, digits) as syntactic. This now means that a rule named `_ident` is now treated as lexical, not syntactic.
 
 ## Removed APIs
 
