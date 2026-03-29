@@ -661,7 +661,7 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
 }
 
 // Create an internal (non-leaf) node (IterationNode or NonterminalNode).
-@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origChunk: i32, origIdx: i32, failureOffset: i32): i32 {
+@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origChunk: i32, origIdx: i32, failureOffset: i32, noLeadingSpaces: bool = false): i32 {
   // Count children from (origChunk, origIdx) to (bindingsChunk, bindingsIdx).
   let numChildren: i32 = 0;
   if (origChunk === bindingsChunk) {
@@ -683,10 +683,12 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
   cstSetFailureOffset(ptr, failureOffset);
 
   // Copy children from (origChunk, origIdx) to the node.
+  // If noLeadingSpaces, set the NO_LEADING_SPACES_EDGE flag on each child slot.
+  const edgeMask: i32 = noLeadingSpaces ? NO_LEADING_SPACES_EDGE : 0;
   let chunk = origChunk;
   let idx = origIdx;
   for (let i = 0; i < numChildren; i++) {
-    store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindingsRead(chunk, idx));
+    store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindingsRead(chunk, idx) | edgeMask);
     idx++;
     if (useChunkedBindings && idx === BINDINGS_CHUNK_CAPACITY) {
       chunk = chunkNext(chunk);
@@ -702,10 +704,10 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
 
 export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origChunk: i32, origIdx: i32, failureOffset: i32): i32 {
   const typeAndDetails = (ruleId << 2) | NODE_TYPE_NONTERMINAL;
-  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, failureOffset);
+  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, failureOffset, !isRuleSyntactic(ruleId));
 }
 
-export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, origIdx: i32, arity: i32, isOpt: bool): i32 {
+export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, origIdx: i32, arity: i32, isOpt: bool, isLexical: bool): i32 {
   const typeAndDetails = isOpt
     ? (arity << 2) | NODE_TYPE_OPTIONAL
     : (arity << 2) | NODE_TYPE_ITER_FLAG;
@@ -725,7 +727,7 @@ export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, ori
     return ptr;
   }
 
-  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, -1);
+  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, -1, isLexical);
 }
 
 export function getBindingsLength(): i32 {

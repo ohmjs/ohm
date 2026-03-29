@@ -815,7 +815,7 @@ class Assembler {
     this.emit(instr.call, this.prebuiltFuncidx(name));
   }
 
-  newIterNode(saved: SavedBacktrackPoint, arity: number, isOpt = false): void {
+  newIterNode(saved: SavedBacktrackPoint, arity: number, isOpt = false, isLexical = false): void {
     if (this.posOnlyMode) {
       this.i32Const(1);
       return;
@@ -826,6 +826,7 @@ class Assembler {
     saved.bindings.getIdx();
     this.i32Const(arity);
     this.i32Const(isOpt ? 1 : 0);
+    this.i32Const(isLexical ? 1 : 0);
     this.callPrebuiltFunc('newIterationNode');
   }
 
@@ -2230,7 +2231,7 @@ export class Compiler {
       saved.pos.restore();
       saved.bindings.restore();
     });
-    asm.newIterNode(saved, ir.outArity(exp.child), true);
+    asm.newIterNode(saved, ir.outArity(exp.child), true, this.inLexicalContext());
     // Opt always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
@@ -2340,7 +2341,7 @@ export class Compiler {
     loop!.pos.restore();
     loop!.bindings.restore();
     asm.popDepth();
-    asm.newIterNode(outer, ir.outArity(child));
+    asm.newIterNode(outer, ir.outArity(child), false, this.inLexicalContext());
     // Star always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
