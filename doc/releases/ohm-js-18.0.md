@@ -147,6 +147,12 @@ if (result.failed()) {
 }
 ```
 
+## Breaking changes
+
+### Syntactic vs. lexical rule classification
+
+`isSyntactic()` now looks at the first _letter_ in the rule name — if it's an upper case letter, the rule is syntactic, otherwise it's lexical. In v17, we compared `firstChar === firstChar.toUpperCase()`, which incorrectly classified rule names starting with non-letter characters (e.g. `_`, digits) as syntactic. This now means that a rule named `_ident` is now treated as lexical, not syntactic.
+
 ## Removed APIs
 
 The following v17 APIs do not exist in v18 (yet):
