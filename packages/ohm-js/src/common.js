@@ -101,9 +101,13 @@ export function copyWithoutDuplicates(array) {
   return noDuplicates;
 }
 
+// Changed in v18 to use Unicode letter properties, matching the compiler.
+// Previously, this compared `firstChar === firstChar.toUpperCase()`, which
+// incorrectly returned true for non-letter characters (e.g. '_', digits).
 export function isSyntactic(ruleName) {
-  const firstChar = ruleName[0];
-  return firstChar === firstChar.toUpperCase();
+  const firstLetter = ruleName.match(/\p{L}/u)?.[0];
+  if (!firstLetter) return false;
+  return /\p{Lu}/u.test(firstLetter);
 }
 
 export function isLexical(ruleName) {
