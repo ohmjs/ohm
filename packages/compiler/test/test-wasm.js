@@ -254,6 +254,43 @@ test('cst: leadingSpaces with custom spaces rule', async t => {
   });
 });
 
+// Regression: inside a lexical rule (like $spaces), forEachChild must not
+// look for leading spaces. The memo table may have cached getSpacesLenAt()
+// results from the syntactic-level parse at the same positions, which would
+// produce spurious offsets.
+test('cst: leadingSpaces children are not corrupted by cached spaces', async t => {
+  const g = await compileAndLoad('G { Start = "a" "b" "c" }');
+  g.match('a  b   c').use(r => {
+    t.true(r.succeeded());
+    const root = r.getCstRoot();
+
+    // "b" has 2 leading spaces, "c" has 3 leading spaces.
+    const [a, b, c] = root.children;
+    t.is(a.sourceString, 'a');
+    t.is(b.sourceString, 'b');
+    t.is(c.sourceString, 'c');
+
+    // Access the leadingSpaces children for "c" (3 spaces at positions 4,5,6).
+    // During the original syntactic parse, getSpacesLenAt(4) was evaluated
+    // (returning 3). Without the isLexical fix, forEachChild would find that
+    // cached value and add spurious offsets to the $spaces children.
+    const spaces = c.leadingSpaces;
+    t.truthy(spaces);
+    t.is(spaces.sourceString, '   ');
+    t.is(spaces.matchLength, 3);
+
+    // Drill into the children: should be a list of 'space' nonterminals.
+    const starList = spaces.children[0];
+    t.true(starList.isList());
+    t.is(starList.children.length, 3);
+    for (const child of starList.children) {
+      t.is(child.ctorName, 'space');
+      t.is(child.sourceString, ' ');
+      t.is(child.matchLength, 1);
+    }
+  });
+});
+
 test('cst: lazy parsing survives memory.grow()', async t => {
   const g = await compileAndLoad('G { Start = "x" }');
   g.match('  x').use(r => {

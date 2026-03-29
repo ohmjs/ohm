@@ -3,6 +3,12 @@ import test from 'ava';
 import {createHandle, createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
 
+const childrenOf = (reader, handle, i) => {
+  const arr = [];
+  reader.forEachChild(handle, c => arr.push(c));
+  return arr;
+};
+
 test('root node basics', async t => {
   const g = await compileAndLoad('G { start = "ab" "cd" }');
   t.is(matchWithInput(g, 'abcd'), 1);
@@ -246,6 +252,42 @@ test('child leadingSpaces in syntactic rule', async t => {
     t.is(spacesInfo[1].spacesStr, ' ');
   });
 });
+
+const spaceMemoIgnored = test.macro(async (t, twoBody, input = '> xx') => {
+  // The first alt causes getSpacesLenAt to be cached at position 1 (after ">").
+  // The second alt (`two`) is a lexical rule whose children pass through that
+  // same position. forEachChild must not use the cached value.
+  const g = await compileAndLoad(`
+    G {
+      Start = ">" x digit -- one
+            | two
+      two = ${twoBody}
+      x = "x"
+      spx = " x"
+    }
+  `);
+  g.match(input).use(mr => {
+    t.true(mr.succeeded());
+    const reader = createReader(mr);
+    const [two] = childrenOf(reader, reader.root);
+    const children = [];
+    reader.forEachChild(two, (child, leadingSpacesLen, childStartIdx) => {
+      children.push({child, leadingSpacesLen, childStartIdx});
+    });
+    t.deepEqual(
+      children.map(({leadingSpacesLen}) => leadingSpacesLen),
+      Array(children.length).fill(0)
+    );
+  });
+});
+
+test('spaces memo ignored in lexical rule', spaceMemoIgnored, '">" " x" x');
+test('spaces memo ignored in lexical rule: plus', spaceMemoIgnored, '">" (" x")+ x');
+test('spaces memo ignored in lexical rule: star', spaceMemoIgnored, '">" (" x")* x');
+test('spaces memo ignored in lexical rule: opt', spaceMemoIgnored, '">" (" x")? x');
+test('spaces memo ignored in lexical rule: nonterminal plus', spaceMemoIgnored, '">" spx+', '> x');
+test('spaces memo ignored in lexical rule: nonterminal star', spaceMemoIgnored, '">" spx*', '> x');
+test('spaces memo ignored in lexical rule: nonterminal opt', spaceMemoIgnored, '">" spx?', '> x');
 
 // --- details ---
 
