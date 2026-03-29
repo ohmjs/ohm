@@ -1,7 +1,13 @@
 import test from 'ava';
 
-import {createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
+import {createHandle, createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
+
+const childrenOf = (reader, handle, i) => {
+  const arr = [];
+  reader.forEachChild(handle, c => arr.push(c));
+  return arr;
+};
 
 test('root node basics', async t => {
   const g = await compileAndLoad('G { start = "ab" "cd" }');
@@ -247,6 +253,57 @@ test('child leadingSpaces in syntactic rule', async t => {
   });
 });
 
+const spaceMemoIgnored = test.macro(async (t, twoBody, input = '> xx') => {
+  // The first alt causes getSpacesLenAt to be cached at position 1 (after ">").
+  // The second alt (`two`) is a lexical rule whose children pass through that
+  // same position. forEachChild must not use the cached value.
+  const g = await compileAndLoad(`
+    G {
+      Start = ">" x digit -- one
+            | two
+      two = ${twoBody}
+      x = "x"
+      spx = " x"
+    }
+  `);
+  g.match(input).use(mr => {
+    t.true(mr.succeeded());
+    const reader = createReader(mr);
+    const [two] = childrenOf(reader, reader.root);
+    const children = [];
+    reader.forEachChild(two, (child, leadingSpacesLen, childStartIdx) => {
+      children.push({child, leadingSpacesLen, childStartIdx});
+    });
+    t.deepEqual(
+      children.map(({leadingSpacesLen}) => leadingSpacesLen),
+      Array(children.length).fill(0)
+    );
+  });
+});
+
+test.failing('spaces memo ignored in lexical rule', spaceMemoIgnored, '">" " x" x');
+test('spaces memo ignored in lexical rule: plus', spaceMemoIgnored, '">" (" x")+ x');
+test('spaces memo ignored in lexical rule: star', spaceMemoIgnored, '">" (" x")* x');
+test('spaces memo ignored in lexical rule: opt', spaceMemoIgnored, '">" (" x")? x');
+test(
+  'spaces memo ignored in lexical rule: nonterminal plus',
+  spaceMemoIgnored,
+  '">" spx+',
+  '> x'
+);
+test(
+  'spaces memo ignored in lexical rule: nonterminal star',
+  spaceMemoIgnored,
+  '">" spx*',
+  '> x'
+);
+test(
+  'spaces memo ignored in lexical rule: nonterminal opt',
+  spaceMemoIgnored,
+  '">" spx?',
+  '> x'
+);
+
 // --- details ---
 
 test('details returns ruleId for nonterminals', async t => {
@@ -271,5 +328,56 @@ test('childCount is 0 for tagged terminals', async t => {
     });
     t.is(reader.type(termChild), CstNodeType.TERMINAL);
     t.is(reader.childCount(termChild), 0);
+  });
+});
+
+// --- createHandle bounds ---
+
+test('createHandle rejects out-of-range raw pointer', t => {
+  t.throws(() => createHandle(2 ** 27, 0), {message: /exceeds.*bit limit/});
+});
+
+test('createHandle rejects out-of-range startIdx', t => {
+  t.throws(() => createHandle(0, 2 ** 26), {message: /exceeds.*bit limit/});
+});
+
+test('createHandle accepts max valid values', t => {
+  const handle = createHandle(2 ** 27 - 1, 2 ** 26 - 1);
+  t.true(handle > 0);
+});
+
+// --- isSyntactic via CstReader ---
+
+test('isSyntactic: true for syntactic rule, false for lexical', async t => {
+  const g = await compileAndLoad('G { Start = inner\ninner = "x" }');
+  g.match('x').use(mr => {
+    const reader = createReader(mr);
+    t.true(reader.isSyntactic(reader.root)); // Start is syntactic
+    let innerHandle;
+    reader.forEachChild(reader.root, child => {
+      innerHandle = child;
+    });
+    t.false(reader.isSyntactic(innerHandle)); // inner is lexical
+  });
+});
+
+// --- syntactic classification from Wasm section ---
+
+test('isSyntactic reads compiler-embedded classification', async t => {
+  // The compiler embeds a syntacticRules custom section; the runtime reads it
+  // directly rather than rederiving from rule names.
+  const g = await compileAndLoad('G { Start = inner\ninner = "x" }');
+  g.match('x').use(mr => {
+    const reader = createReader(mr);
+    // Walk all nonterminals and verify classification
+    function check(handle) {
+      if (reader.type(handle) === CstNodeType.NONTERMINAL) {
+        const name = reader.ctorName(handle);
+        if (name === 'Start') t.true(reader.isSyntactic(handle));
+        if (name === 'inner') t.false(reader.isSyntactic(handle));
+      }
+      reader.forEachChild(handle, child => check(child));
+    }
+    check(reader.root);
   });
 });

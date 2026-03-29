@@ -74,10 +74,10 @@ function uniqueName(names: Set<string>, str: string): string {
   return name;
 }
 
+// Classification is embedded in the Wasm module via the syntacticRules custom
+// section, so the runtime reads it directly rather than rederiving from names.
 function isSyntacticRule(ruleName: string): boolean {
   assert(ruleName[0] !== '$', ruleName);
-  // Slightly different behaviour compared to Ohm v17:
-  // Find first letter, check if it is uppercase.
   const firstLetter = ruleName.match(/\p{L}/u)?.[0];
   if (!firstLetter) return false;
   return /\p{Lu}/u.test(firstLetter);
@@ -1680,6 +1680,12 @@ export class Compiler {
       mergeSections(w.SECTION_ID_CODE, adjustedCodesec, codes),
       w.customsec(this.buildStringTable('ruleNames', ruleNames)),
       w.customsec(this.buildStringTable('strings', this._strings)),
+      w.customsec(
+        w.custom(
+          w.name('syntacticRules'),
+          ruleNames.map(n => (n[0] !== '$' && isSyntacticRule(n) ? 1 : 0))
+        )
+      ),
       this.buildNameSec(functionDecls, compilerFuncOffset),
     ]);
     const bytes = Uint8Array.from((mod as unknown[]).flat(Infinity) as number[]);
@@ -1784,7 +1790,8 @@ export class Compiler {
             () => {
               asm.localGet('__arg0');
               const brLabels = this.ruleIdByName.keys().map(name => {
-                const isSyntactic = name[0] === name[0].toUpperCase();
+                // $-prefixed names are compiler-generated internal rules (always lexical).
+                const isSyntactic = name[0] !== '$' && isSyntacticRule(name);
                 return w.labelidx(asm.depthOf(isSyntactic ? 'syntactic' : 'lexical'));
               });
               asm.brTable(brLabels, w.labelidx(asm.depthOf('lexical')));

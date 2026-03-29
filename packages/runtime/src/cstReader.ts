@@ -32,6 +32,30 @@ function unpackStartIdx(handle: number): number {
   return (handle - raw) / SHIFT;
 }
 
+/** Extract the raw CST pointer from a packed handle. */
+export function rawHandle(handle: number): number {
+  return handle & MASK;
+}
+
+/**
+ * Create a packed handle from a raw pointer and startIdx.
+ * Validates that both values fit in the packed representation.
+ */
+export function createHandle(rawPtr: number, startIdx: number): number {
+  if (rawPtr >= SHIFT) {
+    throw new Error(
+      `Raw CST pointer ${rawPtr} exceeds ${HANDLE_BITS}-bit limit (max ${SHIFT - 1})`
+    );
+  }
+  const startIdxLimit = 2 ** (53 - HANDLE_BITS);
+  if (startIdx >= startIdxLimit) {
+    throw new Error(
+      `startIdx ${startIdx} exceeds ${53 - HANDLE_BITS}-bit limit (max ${startIdxLimit - 1})`
+    );
+  }
+  return pack(rawPtr, startIdx);
+}
+
 /**
  * Zero-allocation access to the CST stored in Wasm linear memory.
  *
@@ -177,7 +201,7 @@ export class CstReader {
           : 0;
 
       const childStartIdx = edgeStartIdx + leadingSpacesLen;
-      const childHandle = pack(rawChild, childStartIdx);
+      const childHandle = createHandle(rawChild, childStartIdx);
 
       fn(childHandle, leadingSpacesLen, childStartIdx, i);
 
@@ -187,6 +211,35 @@ export class CstReader {
 
       edgeStartIdx = childStartIdx + len;
     }
+  }
+
+  /**
+   * Whether the nonterminal at `handle` is a syntactic rule.
+   * Uses cached metadata (ruleIsSyntactic), not string formatting.
+   */
+  isSyntactic(handle: number): boolean {
+    const raw = handle & MASK;
+    if (isTaggedTerminal(raw)) return false;
+    const mrType = rawMatchRecordType(this._ctx.view, raw);
+    if (mrType !== MatchRecordType.NONTERMINAL) return false;
+    const ruleId = this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
+    return this._ctx.ruleIsSyntactic[ruleId];
+  }
+
+  /**
+   * Evaluate the full spaces rule at `startIdx`, returning the children.
+   * Handles memory.grow() refresh internally.
+   * @internal
+   */
+  evalSpacesFull(startIdx: number): number {
+    const {evalSpacesFull, memory} = this._ctx;
+    if (!evalSpacesFull) return 0;
+    const ptr = evalSpacesFull(startIdx);
+    // Refresh the DataView in case evalSpacesFull triggered memory.grow().
+    if (memory && this._ctx.view.buffer !== memory.buffer) {
+      this._ctx.view = new DataView(memory.buffer);
+    }
+    return ptr;
   }
 
   /**
@@ -200,10 +253,12 @@ export class CstReader {
   }
 }
 
-export function createReader(result: SucceededMatchResult): CstReader {
-  const exports = (result.grammar as any)._instance.exports;
-  const ctx = result._ctx;
-
+/**
+ * Create a CstReader from a MatchContext and Wasm exports.
+ * Validates packed-handle limits (heap size and input length).
+ * @internal
+ */
+export function createReaderFromCtx(ctx: MatchContext, exports: any): CstReader {
   const heapTop = exports.__offset.value;
   if (heapTop >= SHIFT) {
     throw new Error(
@@ -225,5 +280,10 @@ export function createReader(result: SucceededMatchResult): CstReader {
 
   const rootLeadingSpacesLen = Math.max(0, exports.getSpacesLenAt(0));
   const rootPtr = exports.bindingsAt(0);
-  return new CstReader(ctx, pack(rootPtr, rootLeadingSpacesLen), rootLeadingSpacesLen);
+  return new CstReader(ctx, createHandle(rootPtr, rootLeadingSpacesLen), rootLeadingSpacesLen);
+}
+
+export function createReader(result: SucceededMatchResult): CstReader {
+  const exports = (result.grammar as any)._instance.exports;
+  return createReaderFromCtx(result._ctx, exports);
 }
