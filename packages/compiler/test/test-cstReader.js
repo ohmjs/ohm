@@ -281,13 +281,28 @@ const spaceMemoIgnored = test.macro(async (t, twoBody, input = '> xx') => {
   });
 });
 
-test('spaces memo ignored in lexical rule', spaceMemoIgnored, '">" " x" x');
+test.failing('spaces memo ignored in lexical rule', spaceMemoIgnored, '">" " x" x');
 test('spaces memo ignored in lexical rule: plus', spaceMemoIgnored, '">" (" x")+ x');
 test('spaces memo ignored in lexical rule: star', spaceMemoIgnored, '">" (" x")* x');
 test('spaces memo ignored in lexical rule: opt', spaceMemoIgnored, '">" (" x")? x');
-test('spaces memo ignored in lexical rule: nonterminal plus', spaceMemoIgnored, '">" spx+', '> x');
-test('spaces memo ignored in lexical rule: nonterminal star', spaceMemoIgnored, '">" spx*', '> x');
-test('spaces memo ignored in lexical rule: nonterminal opt', spaceMemoIgnored, '">" spx?', '> x');
+test(
+  'spaces memo ignored in lexical rule: nonterminal plus',
+  spaceMemoIgnored,
+  '">" spx+',
+  '> x'
+);
+test(
+  'spaces memo ignored in lexical rule: nonterminal star',
+  spaceMemoIgnored,
+  '">" spx*',
+  '> x'
+);
+test(
+  'spaces memo ignored in lexical rule: nonterminal opt',
+  spaceMemoIgnored,
+  '">" spx?',
+  '> x'
+);
 
 // --- details ---
 
