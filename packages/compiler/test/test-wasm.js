@@ -14,14 +14,14 @@ function checkNotNull(x, msg = 'unexpected null value') {
   return x;
 }
 
-const MEMO_BLOCK_ENTRIES = 64;
+const MEMO_BLOCK_ENTRIES = 16;
 
 function getMemoEntry(m, pos, ruleId) {
   const {buffer} = m._instance.exports.memory;
   const view = new DataView(buffer);
   const memoIndexBase = m._instance.exports.memoIndexBase.value;
   const numMemoBlocks = m._instance.exports.numMemoBlocks.value;
-  const blockIdx = ruleId >>> 6; // ruleId / 64
+  const blockIdx = ruleId >>> 4; // ruleId / 16
   const idxPtr = memoIndexBase + (pos * numMemoBlocks + blockIdx) * SIZEOF_UINT32;
   const blockPtr = view.getUint32(idxPtr, true);
   if (blockPtr === 0) return 0; // EMPTY
@@ -288,6 +288,36 @@ test('cst: leadingSpaces children are not corrupted by cached spaces', async t =
       t.is(child.sourceString, ' ');
       t.is(child.matchLength, 1);
     }
+  });
+});
+
+test('cst: leadingSpaces suppressed in prealloc lexical rule', async t => {
+  // Regression: evalApplyPrealloc was not setting NO_LEADING_SPACES_EDGE
+  // on the child slot of preallocated lexical nonterminal nodes.
+  // `two` is a lexical rule whose child `x` is also lexical (single-char),
+  // so `x` hits the prealloc fast path. The syntactic Start rule caches
+  // spaces at position 1; then `x` at position 1 must not pick those up.
+  const g = await compileAndLoad(`G {
+    Start = "a" two
+    two = x x
+    x = letter
+  }`);
+  g.match('a bc').use(r => {
+    t.true(r.succeeded());
+    const root = r.getCstRoot();
+    // Start > two > x x
+    const two = root.children[1];
+    t.is(two.ctorName, 'two');
+    const [x1, x2] = two.children;
+    t.is(x1.ctorName, 'x');
+    t.is(x1.sourceString, 'b');
+    t.is(x1.matchLength, 1);
+    // The child of x1 (the letter terminal) should not have leading spaces.
+    const x1Child = x1.children[0];
+    t.is(x1Child.sourceString, 'b');
+    t.is(x1Child.matchLength, 1);
+    t.is(x2.ctorName, 'x');
+    t.is(x2.sourceString, 'c');
   });
 });
 

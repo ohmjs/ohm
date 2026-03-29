@@ -574,7 +574,8 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResu
         const childPtr = innerPreallocIdx < 0
           ? taggedTerminal(1)
           : preallocNtBase + innerPreallocIdx * NODE_WITH_1_CHILD;
-        store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), childPtr);
+        const edgeFlag: i32 = isRuleSyntactic(ruleId) ? 0 : NO_LEADING_SPACES_EDGE;
+        store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), childPtr | edgeFlag);
       }
       // Reset bindings to orig position and push the node — the body may
       // have advanced to the next chunk if origIdx was at the boundary.

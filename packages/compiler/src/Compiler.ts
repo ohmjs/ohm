@@ -815,7 +815,12 @@ class Assembler {
     this.emit(instr.call, this.prebuiltFuncidx(name));
   }
 
-  newIterNode(saved: SavedBacktrackPoint, arity: number, isOpt = false, isLexical = false): void {
+  newIterNode(
+    saved: SavedBacktrackPoint,
+    arity: number,
+    isOpt = false,
+    isLexical = false
+  ): void {
     if (this.posOnlyMode) {
       this.i32Const(1);
       return;
