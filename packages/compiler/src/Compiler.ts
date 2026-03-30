@@ -32,6 +32,9 @@ const INLINE_SINGLE_USE_RULES = true;
 // This could be anything > 0xffff, really.
 const CHAR_CODE_END = 0xffffffff;
 
+// Must match NO_LEADING_SPACES_EDGE in ohmRuntime.ts.
+const NO_LEADING_SPACES_EDGE = 2;
+
 import type {CompileOptions} from './api.ts';
 
 interface CompilerInternalOptions extends CompileOptions {
@@ -818,8 +821,8 @@ class Assembler {
   newIterNode(
     saved: SavedBacktrackPoint,
     arity: number,
-    isOpt = false,
-    isLexical = false
+    isOpt: boolean,
+    edgeMask: number
   ): void {
     if (this.posOnlyMode) {
       this.i32Const(1);
@@ -831,13 +834,13 @@ class Assembler {
     saved.bindings.getIdx();
     this.i32Const(arity);
     this.i32Const(isOpt ? 1 : 0);
-    this.i32Const(isLexical ? 1 : 0);
+    this.i32Const(edgeMask);
     this.callPrebuiltFunc('newIterationNode');
   }
 
   // Wrap the bindings accumulated since the last pushDepth() in a
-  // nonterminal node.
-  newNonterminalNode(saved: SavedBacktrackPoint, ruleId: number): void {
+  // nonterminal node. Only used for inlined rule bodies (emitInlinedApply).
+  newNonterminalNode(saved: SavedBacktrackPoint, ruleId: number, edgeMask: number): void {
     if (this.posOnlyMode) {
       this.i32Const(1);
       return;
@@ -848,17 +851,19 @@ class Assembler {
     saved.bindings.getChunk();
     saved.bindings.getIdx();
     this.i32Const(-1);
+    this.i32Const(edgeMask);
     this.callPrebuiltFunc('newNonterminalNode');
   }
 
   // [startIdx: i32] -> [tagged: i32]
-  newTerminalNode(): void {
+  newTerminalNode(edgeMask: number): void {
     if (this.posOnlyMode) {
       this.i32Const(1);
       return;
     }
     this.localGet('postSpacesPos');
     this.globalGet('pos');
+    this.i32Const(edgeMask);
     this.callPrebuiltFunc('newTerminalNode');
   }
 
@@ -1112,6 +1117,13 @@ export class Compiler {
 
   inLexicalContext(): boolean {
     return checkNotNull(this._lexContextStack.at(-1));
+  }
+
+  // Returns the edge mask for the current context. When in a lexical context,
+  // nodes should be pushed with NO_LEADING_SPACES_EDGE so the reader won't
+  // look up cached spaces for them.
+  lexEdgeMask(): number {
+    return this.inLexicalContext() ? NO_LEADING_SPACES_EDGE : 0;
   }
 
   // Return a funcidx corresponding to the eval function for the given rule.
@@ -2045,6 +2057,7 @@ export class Compiler {
     const {asm} = this;
     asm.i32Const(this.ruleId(exp.ruleName));
     asm.i32Const(exp.caseIdx);
+    asm.i32Const(this.lexEdgeMask());
     asm.callPrebuiltFunc('evalApplyGeneralized');
     asm.localSet('ret');
   }
@@ -2064,15 +2077,19 @@ export class Compiler {
     const ruleId = this.ruleId(exp.ruleName);
     asm.i32Const(ruleId);
 
+    const edgeMask = this.lexEdgeMask();
     const preallocInner = this._preallocRules.get(exp.ruleName);
     if (preallocInner !== undefined) {
       const innerPreallocIdx =
         preallocInner !== '$term' ? this.ruleId(preallocInner) - this._maxMemoizedRuleId : -1;
       asm.i32Const(innerPreallocIdx);
+      asm.i32Const(edgeMask);
       asm.callPrebuiltFunc('evalApplyPrealloc');
     } else if (ruleId >= this._maxMemoizedRuleId) {
+      asm.i32Const(edgeMask);
       asm.callPrebuiltFunc('evalApplyNoMemo0');
     } else {
+      asm.i32Const(edgeMask);
       asm.callPrebuiltFunc('evalApply0');
     }
     // The application may have updated rightmostFailurePos; if so, we may
@@ -2100,7 +2117,7 @@ export class Compiler {
     // On success, wrap the body's bindings in a nonterminal node.
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
-      asm.newNonterminalNode(saved, ruleId);
+      asm.newNonterminalNode(saved, ruleId, this.lexEdgeMask());
       asm.localSet('ret');
     });
 
@@ -2127,24 +2144,8 @@ export class Compiler {
   }
 
   emitLex({child}: ir.Lex): void {
-    const {asm} = this;
-    const wasLexical = this.inLexicalContext();
     this._lexContextStack.push(true);
-
-    if (!wasLexical && !asm.posOnlyMode) {
-      const saved = asm.saveNumBindings();
-      this.emitPExpr(child);
-      // On success, wrap all bindings produced inside the lex.
-      asm.localGet('ret');
-      asm.emit(instr.if, w.blocktype.empty);
-      saved.getChunk();
-      saved.getIdx();
-      asm.callPrebuiltFunc('markBindingsFrom');
-      asm.emit(instr.end);
-    } else {
-      this.emitPExpr(child);
-    }
-
+    this.emitPExpr(child);
     this._lexContextStack.pop();
   }
 
@@ -2236,7 +2237,7 @@ export class Compiler {
       saved.pos.restore();
       saved.bindings.restore();
     });
-    asm.newIterNode(saved, ir.outArity(exp.child), true, this.inLexicalContext());
+    asm.newIterNode(saved, ir.outArity(exp.child), true, this.lexEdgeMask());
     // Opt always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
@@ -2346,7 +2347,7 @@ export class Compiler {
     loop!.pos.restore();
     loop!.bindings.restore();
     asm.popDepth();
-    asm.newIterNode(outer, ir.outArity(child), false, this.inLexicalContext());
+    asm.newIterNode(outer, ir.outArity(child), false, this.lexEdgeMask());
     // Star always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
@@ -2367,7 +2368,7 @@ export class Compiler {
     asm.emit(instr.i32.add);
     asm.globalSet('pos');
 
-    asm.newTerminalNode();
+    asm.newTerminalNode(this.lexEdgeMask());
     asm.localSet('ret'); // consume the return value
   }
 
@@ -2477,7 +2478,7 @@ export class Compiler {
           w.blocktype.empty,
           () => {
             thunk();
-            asm.newTerminalNode();
+            asm.newTerminalNode(this.lexEdgeMask());
             asm.localSet('ret');
             asm.break(asm.depthOf('_done'));
           },
