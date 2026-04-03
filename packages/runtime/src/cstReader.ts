@@ -190,13 +190,13 @@ export class CstReader {
     for (let i = 0; i < count; i++) {
       const slot = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
 
-      // Bit 1 of the child slot is the NO_LEADING_SPACES edge flag.
-      const suppressSpaces = (slot & 2) !== 0;
+      // Bit 1 of the child slot is the HAS_LEADING_SPACES edge flag.
+      const hasLeadingSpaces = (slot & 2) !== 0;
       // Strip the edge flag to get the actual value.
       const rawChild = slot & ~2;
 
       const leadingSpacesLen =
-        !suppressSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
+        hasLeadingSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
           ? Math.max(0, getSpacesLenAt(edgeStartIdx))
           : 0;
 

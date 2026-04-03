@@ -36,7 +36,7 @@ type cstContext struct {
 //
 // Child slot values in the CST use a tagged encoding:
 //   - Bit 0: terminal flag (1 = tagged terminal, 0 = heap pointer)
-//   - Bit 1: NO_LEADING_SPACES edge flag (suppress implicit space lookup)
+//   - Bit 1: HAS_LEADING_SPACES edge flag (enable implicit space lookup)
 //   - Tagged terminal matchLength = value >> 2
 //   - Heap pointer = value & ^2 (strip edge flag)
 type CstNode struct {
@@ -215,15 +215,15 @@ func (n *CstNode) Children() []*CstNode {
 		}
 		slot := readUint32(data, 0)
 
-		// Bit 1 is the NO_LEADING_SPACES edge flag.
-		suppressSpaces := slot&2 != 0
+		// Bit 1 is the HAS_LEADING_SPACES edge flag.
+		hasLeadingSpaces := slot&2 != 0
 		// Strip the edge flag to get the actual value.
 		raw := slot & ^uint32(2)
 
 		// Account for implicit leading spaces.
 		// Only apply if spaces were actually recorded at this position
 		// and the result stays within the parent's span.
-		if !suppressSpaces && n.ctx.getSpacesLenAt != nil && n.hasParentSpaces(raw) {
+		if hasLeadingSpaces && n.ctx.getSpacesLenAt != nil && n.hasParentSpaces(raw) {
 			spacesLen := n.ctx.getSpacesLenAt(startIdx)
 			if spacesLen > 0 && startIdx+spacesLen <= endIdx {
 				startIdx += spacesLen

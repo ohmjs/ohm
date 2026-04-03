@@ -82,9 +82,9 @@ declare function fillInputBuffer(dest: i32, len: i32): i32;
 @inline const NODE_TYPE_ITER_FLAG: i32 = 2;
 @inline const NODE_TYPE_OPTIONAL: i32 = 3;
 
-// Edge flag: bit 1 of a child slot value. When set, the reader should not
+// Edge flag: bit 1 of a child slot value. When set, the reader will
 // look up leading spaces for that child.
-@inline const NO_LEADING_SPACES_EDGE: i32 = 2;
+@inline const HAS_LEADING_SPACES_EDGE: i32 = 2;
 
 // Memo table entries
 type MemoEntry = i32;
@@ -553,7 +553,7 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32, edgeMask: 
           : preallocNtBase + innerPreallocIdx * NODE_WITH_1_CHILD;
         // The child was produced inside this rule's body. Lexical rules
         // never have space-skipping, so mark accordingly.
-        const childEdge: i32 = isRuleSyntactic(ruleId) ? 0 : NO_LEADING_SPACES_EDGE;
+        const childEdge: i32 = isRuleSyntactic(ruleId) ? HAS_LEADING_SPACES_EDGE : 0;
         store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), childPtr | childEdge);
       }
       // Reset bindings to orig position and push the node — the body may

@@ -32,8 +32,8 @@ const INLINE_SINGLE_USE_RULES = true;
 // This could be anything > 0xffff, really.
 const CHAR_CODE_END = 0xffffffff;
 
-// Must match NO_LEADING_SPACES_EDGE in ohmRuntime.ts.
-const NO_LEADING_SPACES_EDGE = 2;
+// Must match HAS_LEADING_SPACES_EDGE in ohmRuntime.ts.
+const HAS_LEADING_SPACES_EDGE = 2;
 
 import type {CompileOptions} from './api.ts';
 
@@ -1119,11 +1119,11 @@ export class Compiler {
     return checkNotNull(this._lexContextStack.at(-1));
   }
 
-  // Returns the edge mask for the current context. When in a lexical context,
-  // nodes should be pushed with NO_LEADING_SPACES_EDGE so the reader won't
-  // look up cached spaces for them.
+  // Returns the edge mask for the current context. In a syntactic context,
+  // nodes are pushed with HAS_LEADING_SPACES_EDGE so the reader will look
+  // up spaces for them.
   lexEdgeMask(): number {
-    return this.inLexicalContext() ? NO_LEADING_SPACES_EDGE : 0;
+    return this.inLexicalContext() ? 0 : HAS_LEADING_SPACES_EDGE;
   }
 
   // Return a funcidx corresponding to the eval function for the given rule.

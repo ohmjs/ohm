@@ -292,8 +292,8 @@ test('cst: leadingSpaces children are not corrupted by cached spaces', async t =
 });
 
 test('cst: leadingSpaces suppressed in prealloc lexical rule', async t => {
-  // Regression: evalApplyPrealloc was not setting NO_LEADING_SPACES_EDGE
-  // on the child slot of preallocated lexical nonterminal nodes.
+  // Regression: evalApplyPrealloc was not omitting HAS_LEADING_SPACES_EDGE
+  // from the child slot of preallocated lexical nonterminal nodes.
   // `two` is a lexical rule whose child `x` is also lexical (single-char),
   // so `x` hits the prealloc fast path. The syntactic Start rule caches
   // spaces at position 1; then `x` at position 1 must not pick those up.
@@ -1964,13 +1964,15 @@ test('bindings chunks contain valid CST nodes and tagged terminals', async t => 
 
   // Checks that a value is a valid CST node pointer or tagged terminal.
   function isValidBinding(val) {
-    // Tagged terminal: bit 0 = 1.
+    // Tagged terminal: bit 0 = 1 (bit 1 may also be set as edge flag).
     if (val & 1) return true;
+    // Strip HAS_LEADING_SPACES edge flag (bit 1) before checking alignment.
+    const ptr = val & ~2;
     // CST node pointer: must be 4-byte aligned.
-    if ((val & 3) !== 0) return false;
+    if ((ptr & 3) !== 0) return false;
     // Read the CST node header and sanity-check.
-    const matchLength = view.getInt32(val, true);
-    const count = view.getInt32(val + 8, true);
+    const matchLength = view.getInt32(ptr, true);
+    const count = view.getInt32(ptr + 8, true);
     return matchLength >= 0 && count >= 0;
   }
 
@@ -2103,11 +2105,11 @@ test('leadingSpaces suppressed in nested #(letter+)', async t => {
   }
 });
 
-test('edge flag: tagged terminal decoding with suppress bit', async t => {
+test('edge flag: tagged terminal decoding with HAS_LEADING_SPACES bit', async t => {
   // When a tagged terminal has the edge flag set (bit 1), the reader
   // must still correctly decode its matchLength (>> 2, not >> 1).
-  // " ab" is a 3-char literal inside #(), so its tagged value is
-  // (3 << 2) | 3 = 15 (with edge flag). Decoding must yield matchLength=3.
+  // ">" is a 1-char literal outside #(), so its tagged value is
+  // (1 << 2) | 3 = 7 (with HAS_LEADING_SPACES edge flag).
   const wasmGrammar = await compileAndLoad(`
     G {
       Start = ">" #(" ab" letter)
@@ -2116,11 +2118,11 @@ test('edge flag: tagged terminal decoding with suppress bit', async t => {
   t.is(matchWithInput(wasmGrammar, '> abc'), 1);
   const root = wasmGrammar._getCstRoot();
   const [gt, ab, letter] = root.children;
-  // " ab" is a tagged terminal inside #(), so it has the edge flag.
+  // " ab" is a tagged terminal inside #(), so it does NOT have the edge flag.
   t.is(ab.sourceString, ' ab');
   t.is(ab.matchLength, 3);
   t.falsy(ab.leadingSpaces);
-  // ">" is outside #(), normal space handling.
+  // ">" is outside #(), so it has HAS_LEADING_SPACES_EDGE.
   t.is(gt.sourceString, '>');
   t.is(letter.sourceString, 'c');
   t.falsy(letter.leadingSpaces);

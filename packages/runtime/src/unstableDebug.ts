@@ -108,7 +108,7 @@ function walkRecordTree(
         // Tagged terminal (bit 0 = 1). Bit 1 may be the edge flag — not a heap object either way.
         stats.countByType.terminal++;
       } else {
-        // Heap pointer — strip bit 1 (NO_LEADING_SPACES edge flag).
+        // Heap pointer — strip bit 1 (HAS_LEADING_SPACES edge flag).
         const childPtr = slot & ~2;
         if (!visited.has(childPtr)) {
           visited.add(childPtr);
