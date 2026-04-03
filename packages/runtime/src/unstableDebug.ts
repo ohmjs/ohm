@@ -1,4 +1,4 @@
-import {CST_NO_LEADING_SPACES_FLAG} from './miniohm.ts';
+import {CST_HAS_LEADING_SPACES_FLAG} from './miniohm.ts';
 import type {SucceededMatchResult} from './miniohm.ts';
 
 const MATCH_RECORD_TYPE_MASK = 0b11;
@@ -109,7 +109,7 @@ function walkRecordTree(
         // Tagged terminal (bit 0 = 1). Bit 1 may be the edge flag — not a heap object either way.
         stats.countByType.terminal++;
       } else {
-        const childPtr = slot & ~CST_NO_LEADING_SPACES_FLAG;
+        const childPtr = slot & ~CST_HAS_LEADING_SPACES_FLAG;
         if (!visited.has(childPtr)) {
           visited.add(childPtr);
           stack.push(childPtr);

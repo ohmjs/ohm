@@ -82,9 +82,9 @@ declare function fillInputBuffer(dest: i32, len: i32): i32;
 @inline const NODE_TYPE_ITER_FLAG: i32 = 2;
 @inline const NODE_TYPE_OPTIONAL: i32 = 3;
 
-// Edge flag: bit 1 of a child slot value. When set, the reader should not
+// Edge flag: bit 1 of a child slot value. When set, the reader will
 // look up leading spaces for that child.
-@inline const NO_LEADING_SPACES_EDGE: i32 = 2;
+@inline const HAS_LEADING_SPACES_EDGE: i32 = 2;
 
 // Memo table entries
 type MemoEntry = i32;
@@ -221,29 +221,6 @@ export function bindingsAdvanceChunk(): void {
   return load<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)));
 }
 
-// Set the NO_LEADING_SPACES edge flag (bit 1) on each binding from
-// (fromChunk, fromIdx) to the current position. Used for children
-// inside a `#()` lexical context within a syntactic rule.
-export function markBindingsFrom(fromChunk: i32, fromIdx: i32): void {
-  let chunk = fromChunk;
-  let idx = fromIdx;
-  while (chunk !== bindingsChunk || idx !== bindingsIdx) {
-    const val = bindingsRead(chunk, idx);
-    const marked = val | NO_LEADING_SPACES_EDGE;
-
-    if (!useChunkedBindings) {
-      unchecked(bindingsArr[idx] = marked);
-    } else {
-      store<i32>(<usize>(chunk + BINDINGS_CHUNK_HEADER + (idx << 2)), marked);
-    }
-    idx++;
-    if (useChunkedBindings && idx === BINDINGS_CHUNK_CAPACITY) {
-      chunk = chunkNext(chunk);
-      idx = 0;
-    }
-  }
-}
-
 @inline function memoEntryForFailure(failureOffset: i32): MemoEntry {
   return (failureOffset << 1) | MEMO_FAILURE_FLAG;
 }
@@ -308,7 +285,7 @@ export function markBindingsFrom(fromChunk: i32, fromIdx: i32): void {
   store<i32>(<usize>ptr, offset, 12);
 }
 
-function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
+function useMemoizedResult(ruleId: i32, result: MemoEntry, edgeMask: i32): ApplyResult {
   if (result & MEMO_FAILURE_FLAG) {
     if (result === UNUSED_LR_BOMB) {
       memoTableSet(pos, ruleId, USED_LR_BOMB);
@@ -320,7 +297,7 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
   // Read failureOffset before advancing pos, since pos is the node's startIdx.
   rightmostFailurePos = max(rightmostFailurePos, <i32>pos + cstGetFailureOffset(result));
   pos += cstGetMatchLength(result);
-  bindingsPush(result);
+  bindingsPush(result | edgeMask);
   return true;
 }
 
@@ -371,7 +348,7 @@ export function evalSpacesFull(targetPos: i32): i32 {
 
   let nodePtr: i32 = 0;
   if (result & RULE_EVAL_SUCCESS_FLAG) {
-    nodePtr = newNonterminalNode(<i32>(<usize>targetPos), <i32>pos, IMPLICIT_SPACES_RULE_ID, origChunk, origIdx, 0);
+    nodePtr = newNonterminalNode(<i32>(<usize>targetPos), <i32>pos, IMPLICIT_SPACES_RULE_ID, origChunk, origIdx, 0, 0);
     // newNonterminalNode pushes the node to bindings; discard it.
     restoreBindings(origChunk, origIdx);
   } else {
@@ -459,7 +436,7 @@ export function matchSetup(inputLength: i32): void {
 
 export function matchEval(startRuleId: i32): ApplyResult {
   maybeSkipSpaces(startRuleId);
-  const succeeded = evalApply0(startRuleId) !== 0;
+  const succeeded = evalApply0(startRuleId, 0) !== 0;
   if (succeeded) {
     maybeSkipSpaces(startRuleId);
     assert(pos <= endPos);
@@ -521,7 +498,7 @@ export function recordFailures(inputLength: i32, startRuleId: i32): void {
 
 // Evaluates a generalized rule. Identical to evalApplyNoMemo0, but includes
 // the caseIdx.
-export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): ApplyResult {
+export function evalApplyGeneralized(ruleId: i32, caseIdx: i32, edgeMask: i32): ApplyResult {
   const origPos = pos;
   const origChunk = bindingsChunk;
   const origIdx = bindingsIdx;
@@ -529,13 +506,13 @@ export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): ApplyResult {
   const failurePos = maybeUpdateRightmostFailurePos(result);
   if (result & RULE_EVAL_SUCCESS_FLAG) {
     const failureOffset = failurePos - <i32>origPos;
-    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset);
+    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, edgeMask);
     return true;
   }
   return false;
 }
 
-export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
+export function evalApplyNoMemo0(ruleId: i32, edgeMask: i32): ApplyResult {
   const origPos = pos;
   const origChunk = bindingsChunk;
   const origIdx = bindingsIdx;
@@ -543,7 +520,7 @@ export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
   const failurePos = maybeUpdateRightmostFailurePos(result);
   if (result & RULE_EVAL_SUCCESS_FLAG) {
     const failureOffset = failurePos - <i32>origPos;
-    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset);
+    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, edgeMask);
     return true;
   }
   return false;
@@ -554,7 +531,7 @@ export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
 // Falls back to dynamic allocation if matchLength != 1 (e.g. surrogate pair).
 // innerPreallocIdx: -1 for direct rules (child = tagged terminal), >= 0 for
 // transitive rules (child = inner preallocated nonterminal at that index).
-export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResult {
+export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32, edgeMask: i32): ApplyResult {
   const origPos = pos;
   const origChunk = bindingsChunk;
   const origIdx = bindingsIdx;
@@ -574,17 +551,20 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResu
         const childPtr = innerPreallocIdx < 0
           ? taggedTerminal(1)
           : preallocNtBase + innerPreallocIdx * NODE_WITH_1_CHILD;
-        store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), childPtr);
+        // The child was produced inside this rule's body. Lexical rules
+        // never have space-skipping, so mark accordingly.
+        const childEdge: i32 = isRuleSyntactic(ruleId) ? HAS_LEADING_SPACES_EDGE : 0;
+        store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), childPtr | childEdge);
       }
       // Reset bindings to orig position and push the node — the body may
       // have advanced to the next chunk if origIdx was at the boundary.
       restoreBindings(origChunk, origIdx);
-      bindingsPush(ptr);
+      bindingsPush(ptr | edgeMask);
       return true;
     }
     // Slow path: non-BMP character (surrogate pair, matchLength=2).
     const failureOffset = failurePos - <i32>origPos;
-    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset);
+    newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, edgeMask);
     return true;
   }
   return false;
@@ -597,10 +577,10 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResu
   return errorMessagePos >= 0 && <i32>memoPos + memoGetFailureOffset(entry) === errorMessagePos;
 }
 
-export function evalApply0(ruleId: i32): ApplyResult {
+export function evalApply0(ruleId: i32, edgeMask: i32): ApplyResult {
   const memo = memoTableGet(pos, ruleId);
   if (memo !== 0 && !isInvolvedInError(memo, pos)) {
-    return useMemoizedResult(ruleId, memo);
+    return useMemoizedResult(ruleId, memo, edgeMask);
   }
   const origPos = pos;
   const origChunk = bindingsChunk;
@@ -618,15 +598,15 @@ export function evalApply0(ruleId: i32): ApplyResult {
   }
 
   if (memoTableGet(origPos, ruleId) === USED_LR_BOMB) {
-    return handleLeftRecursion(origPos, ruleId, origChunk, origIdx, failurePos);
+    return handleLeftRecursion(origPos, ruleId, origChunk, origIdx, failurePos, edgeMask);
   }
   // No left recursion — memoize and return.
-  const node = newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset);
+  const node = newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, edgeMask);
   memoTableSet(origPos, ruleId, node);
   return true;
 }
 
-export function handleLeftRecursion(origPos: u32, ruleId: i32, origChunk: i32, origIdx: i32, failurePos: i32): ApplyResult {
+export function handleLeftRecursion(origPos: u32, ruleId: i32, origChunk: i32, origIdx: i32, failurePos: i32, edgeMask: i32): ApplyResult {
   let maxPos: u32;
   let node: i32;
   let succeeded: bool;
@@ -635,7 +615,9 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origChunk: i32, o
     maxPos = pos;
     rightmostFailurePos = max(rightmostFailurePos, failurePos);
     const failureOffset = failurePos - <i32>origPos;
-    node = newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset);
+    // Intermediate nodes — the push will be overwritten by restoreBindings,
+    // so edgeMask=0 (only the final push below matters).
+    node = newNonterminalNode(origPos, pos, ruleId, origChunk, origIdx, failureOffset, 0);
     memoTableSet(origPos, ruleId, node);
 
     // Reset and try to improve on the current best.
@@ -650,18 +632,20 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origChunk: i32, o
 
   // Set bindings to [node] at the orig position.
   restoreBindings(origChunk, origIdx);
-  bindingsPush(<i32>node);
+  bindingsPush(<i32>node | edgeMask);
   return succeeded;
 }
 
-export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
+export function newTerminalNode(startIdx: i32, endIdx: i32, edgeMask: i32): i32 {
   const tagged = taggedTerminal(endIdx - startIdx);
-  bindingsPush(tagged);
+  bindingsPush(tagged | edgeMask);
   return tagged;
 }
 
 // Create an internal (non-leaf) node (IterationNode or NonterminalNode).
-@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origChunk: i32, origIdx: i32, failureOffset: i32): i32 {
+// edgeMask is OR'd onto the value pushed into bindings (for the parent to pick up).
+// Children are copied as-is — their edge flags were set when they were created.
+@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origChunk: i32, origIdx: i32, failureOffset: i32, edgeMask: i32 = 0): i32 {
   // Count children from (origChunk, origIdx) to (bindingsChunk, bindingsIdx).
   let numChildren: i32 = 0;
   if (origChunk === bindingsChunk) {
@@ -683,6 +667,7 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
   cstSetFailureOffset(ptr, failureOffset);
 
   // Copy children from (origChunk, origIdx) to the node.
+  // Edge flags are already embedded in the bindings by the child creators.
   let chunk = origChunk;
   let idx = origIdx;
   for (let i = 0; i < numChildren; i++) {
@@ -696,16 +681,16 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
 
   // Reset bindings to orig position, then push the new node.
   restoreBindings(origChunk, origIdx);
-  bindingsPush(<i32>ptr);
+  bindingsPush(ptr | edgeMask);
   return ptr;
 }
 
-export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origChunk: i32, origIdx: i32, failureOffset: i32): i32 {
+export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origChunk: i32, origIdx: i32, failureOffset: i32, edgeMask: i32): i32 {
   const typeAndDetails = (ruleId << 2) | NODE_TYPE_NONTERMINAL;
-  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, failureOffset);
+  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, failureOffset, edgeMask);
 }
 
-export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, origIdx: i32, arity: i32, isOpt: bool): i32 {
+export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, origIdx: i32, arity: i32, isOpt: bool, edgeMask: i32): i32 {
   const typeAndDetails = isOpt
     ? (arity << 2) | NODE_TYPE_OPTIONAL
     : (arity << 2) | NODE_TYPE_ITER_FLAG;
@@ -721,11 +706,11 @@ export function newIterationNode(startIdx: i32, endIdx: i32, origChunk: i32, ori
       cstSetTypeAndDetails(ptr, typeAndDetails);
       cstSetFailureOffset(ptr, -1);
     }
-    bindingsPush(ptr);
+    bindingsPush(ptr | edgeMask);
     return ptr;
   }
 
-  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, -1);
+  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origChunk, origIdx, -1, edgeMask);
 }
 
 export function getBindingsLength(): i32 {

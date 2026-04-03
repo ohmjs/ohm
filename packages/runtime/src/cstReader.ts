@@ -2,7 +2,7 @@ import {
   CST_CHILD_COUNT_OFFSET,
   CST_CHILDREN_OFFSET,
   CST_MATCH_LENGTH_OFFSET,
-  CST_NO_LEADING_SPACES_FLAG,
+  CST_HAS_LEADING_SPACES_FLAG,
   CST_TYPE_AND_DETAILS_OFFSET,
   CstNodeType,
   isTaggedTerminal,
@@ -168,11 +168,11 @@ export class CstReader {
     for (let i = 0; i < count; i++) {
       const slot = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
 
-      const suppressSpaces = (slot & CST_NO_LEADING_SPACES_FLAG) !== 0;
-      const rawChild = slot & ~CST_NO_LEADING_SPACES_FLAG;
+      const hasLeadingSpaces = (slot & CST_HAS_LEADING_SPACES_FLAG) !== 0;
+      const rawChild = slot & ~CST_HAS_LEADING_SPACES_FLAG;
 
       const leadingSpacesLen =
-        !suppressSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
+        hasLeadingSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
           ? Math.max(0, getSpacesLenAt(edgeStartIdx))
           : 0;
 
@@ -199,12 +199,12 @@ export class CstReader {
   childAt(handle: number, index: number, edgeStartIdx: number): number {
     const raw = rawHandle(handle);
     const slot = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + index * 4, true);
-    const suppressSpaces = (slot & CST_NO_LEADING_SPACES_FLAG) !== 0;
-    const rawChild = slot & ~CST_NO_LEADING_SPACES_FLAG;
+    const hasLeadingSpaces = (slot & CST_HAS_LEADING_SPACES_FLAG) !== 0;
+    const rawChild = slot & ~CST_HAS_LEADING_SPACES_FLAG;
 
     const {getSpacesLenAt} = this._ctx;
     const leadingSpacesLen =
-      !suppressSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
+      hasLeadingSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
         ? Math.max(0, getSpacesLenAt(edgeStartIdx))
         : 0;
 

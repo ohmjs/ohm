@@ -12,11 +12,11 @@ export const CST_TYPE_AND_DETAILS_OFFSET = 4;
 export const CST_CHILD_COUNT_OFFSET = 8;
 export const CST_CHILDREN_OFFSET = 16;
 
-/** Bit 1 of a child slot is the NO_LEADING_SPACES edge flag. */
-export const CST_NO_LEADING_SPACES_FLAG = 2;
+/** Bit 1 of a child slot is the HAS_LEADING_SPACES edge flag. */
+export const CST_HAS_LEADING_SPACES_FLAG = 2;
 
 // Tagged terminal: (matchLength << 2) | 1. Bit 0 distinguishes from real pointers.
-// Bit 1 is the NO_LEADING_SPACES edge flag (set on child slots, not on root handles).
+// Bit 1 is the HAS_LEADING_SPACES edge flag (set on child slots, not on root handles).
 export function isTaggedTerminal(handle: number): boolean {
   return (handle & 1) !== 0;
 }
