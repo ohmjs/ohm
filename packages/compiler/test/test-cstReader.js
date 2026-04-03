@@ -1,9 +1,10 @@
 import test from 'ava';
 
-import {createHandle, createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
+import {createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
+import {createHandle} from '../../runtime/src/cstReaderShared.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
 
-const childrenOf = (reader, handle, i) => {
+const childrenOf = (reader, handle) => {
   const arr = [];
   reader.forEachChild(handle, c => arr.push(c));
   return arr;
@@ -30,8 +31,8 @@ test('terminal children', async t => {
   g.match('abcd').use(mr => {
     const reader = createReader(mr);
     const children = [];
-    reader.forEachChild(reader.root, (child, leadingSpaces, startIdx, index) => {
-      children.push({child, leadingSpaces, startIdx, index});
+    reader.forEachChild(reader.root, (child, leadingSpaces, index) => {
+      children.push({child, leadingSpaces, startIdx: reader.startIdx(child), index});
     });
     t.is(children.length, 2);
 
@@ -56,8 +57,8 @@ test('nonterminal children', async t => {
   g.match('xy').use(mr => {
     const reader = createReader(mr);
     const children = [];
-    reader.forEachChild(reader.root, (child, ls, startIdx, i) => {
-      children.push({child, ls, startIdx, i});
+    reader.forEachChild(reader.root, (child, ls, i) => {
+      children.push({child, ls, startIdx: reader.startIdx(child), i});
     });
     t.is(children.length, 2);
     t.is(reader.ctorName(children[0].child), 'a');
@@ -279,7 +280,7 @@ test('rootLeadingSpacesLen: present', async t => {
   g.match('  x').use(mr => {
     const reader = createReader(mr);
     t.is(reader.rootLeadingSpacesLen, 2);
-    t.is(reader.sourceSlice(0, reader.rootLeadingSpacesLen), '  ');
+    t.is(reader.input.slice(0, reader.rootLeadingSpacesLen), '  ');
     t.is(reader.startIdx(reader.root), 2);
   });
 });
@@ -297,14 +298,15 @@ test('child leadingSpaces in syntactic rule', async t => {
   g.match('a b').use(mr => {
     const reader = createReader(mr);
     const spacesInfo = [];
-    reader.forEachChild(reader.root, (child, leadingSpacesLen, childStartIdx, index) => {
+    reader.forEachChild(reader.root, (child, leadingSpacesLen, index) => {
+      const childStartIdx = reader.startIdx(child);
       spacesInfo.push({
         index,
         hasSpaces: leadingSpacesLen > 0,
         spacesLen: leadingSpacesLen,
         spacesStr:
           leadingSpacesLen > 0
-            ? reader.sourceSlice(childStartIdx - leadingSpacesLen, leadingSpacesLen)
+            ? reader.input.slice(childStartIdx - leadingSpacesLen, childStartIdx)
             : '',
       });
     });
@@ -336,8 +338,8 @@ const spaceMemoIgnored = test.macro(async (t, twoBody, input = '> xx') => {
     const reader = createReader(mr);
     const [two] = childrenOf(reader, reader.root);
     const children = [];
-    reader.forEachChild(two, (child, leadingSpacesLen, childStartIdx) => {
-      children.push({child, leadingSpacesLen, childStartIdx});
+    reader.forEachChild(two, (child, leadingSpacesLen) => {
+      children.push({child, leadingSpacesLen, childStartIdx: reader.startIdx(child)});
     });
     t.deepEqual(
       children.map(({leadingSpacesLen}) => leadingSpacesLen),
@@ -369,15 +371,13 @@ test(
   '> x'
 );
 
-// --- details ---
+// --- rule metadata ---
 
-test('details returns ruleId for nonterminals', async t => {
+test('ruleId returns a stable rule index for nonterminals', async t => {
   const g = await compileAndLoad('G { start = a\na = "x" }');
   g.match('x').use(mr => {
     const reader = createReader(mr);
-    // Root is 'start', details should be its ruleId (>= 0).
-    const d = reader.details(reader.root);
-    t.true(d >= 0);
+    t.true(reader.ruleId(reader.root) >= 0);
   });
 });
 

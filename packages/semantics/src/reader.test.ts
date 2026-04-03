@@ -6,7 +6,7 @@ import test from 'ava';
 import {readFileSync} from 'node:fs';
 
 import type {ReaderOperation} from './reader.ts';
-import {collect, createReaderOperation, ifPresent} from './reader.ts';
+import {createReaderOperation} from './reader.ts';
 
 const scriptRel = (relPath: string) => new URL(relPath, import.meta.url);
 
@@ -54,30 +54,35 @@ test('reader-based: list and opt', t => {
 
     const reversed: ReaderOperation<string> = createReaderOperation<string>('reversed', {
       Start(h, a, list, opt) {
-        return (
-          ifPresent(
-            rd,
-            opt,
-            p => reversed(rd, p),
-            () => ''
-          ) +
-          collect(rd, list, (b, optLetter) => {
-            return (
-              ifPresent(
-                rd,
-                optLetter,
-                l => reversed(rd, l),
-                () => ''
-              ) + collect(rd, b, b => reversed(rd, b)).join('')
-            );
-          })
-            .reverse()
-            .join('') +
-          reversed(rd, a)
-        );
+        const parts: string[] = [];
+        rd.forEachTuple(list, (b, optLetter) => {
+          parts.push(reversed(rd, optLetter) + reversed(rd, b));
+        });
+        return reversed(rd, opt) + parts.reverse().join('') + reversed(rd, a);
       },
       punc(h, list) {
-        return collect(rd, list, (c, opt) => reversed(rd, c)).join('');
+        return reversed(rd, list);
+      },
+      _list(h) {
+        const parts: string[] = [];
+        rd.forEachTuple(h, (...children) => {
+          let text = '';
+          for (const child of children) {
+            text += reversed(rd, child);
+          }
+          parts.push(text);
+        });
+        return parts.join('');
+      },
+      _opt(h) {
+        if (!rd.isPresent(h)) return '';
+        return rd.withChildren(h, (_handle, ...children) => {
+          let text = '';
+          for (const child of children) {
+            text += reversed(rd, child);
+          }
+          return text;
+        });
       },
       _terminal(h) {
         return rd.sourceString(h);

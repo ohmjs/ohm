@@ -2,7 +2,9 @@ import type {CstReader} from 'ohm-js/cstReader';
 import {CstNodeType} from 'ohm-js/cstReader';
 
 export type ReaderActionDict<R> = {
+  _list?: (handle: number) => R;
   _nonterminal?: (handle: number) => R;
+  _opt?: (handle: number) => R;
   _terminal?: (handle: number) => R;
   _default?: (handle: number) => R;
   [ruleName: string]: ((handle: number, ...children: number[]) => R) | undefined;
@@ -25,8 +27,10 @@ export function createReaderOperation<R>(
   // function or a sentinel (NO_ACTION / USE_NONTERMINAL / USE_DEFAULT).
   let actionTable: (ActionFn<R> | number)[] | undefined;
   let cachedRuleNames: readonly string[] | undefined;
+  const listAction = actions._list;
   const terminalAction = actions._terminal;
   const nonterminalAction = actions._nonterminal;
+  const optAction = actions._opt;
   const defaultAction = actions._default;
 
   function fail(reader: CstReader, handle: number): never {
@@ -69,8 +73,14 @@ export function createReaderOperation<R>(
       return fail(reader, handle);
     }
 
-    // List or Opt — use _default.
-    if (nodeType === CstNodeType.LIST || nodeType === CstNodeType.OPT) {
+    if (nodeType === CstNodeType.LIST) {
+      if (listAction) return listAction(handle);
+      if (defaultAction) return defaultAction(handle);
+      return fail(reader, handle);
+    }
+
+    if (nodeType === CstNodeType.OPT) {
+      if (optAction) return optAction(handle);
       if (defaultAction) return defaultAction(handle);
       return fail(reader, handle);
     }
@@ -90,48 +100,10 @@ export function createReaderOperation<R>(
       return defaultAction!(handle);
     }
     if (reader.childCount(handle) === 1) {
-      const child = reader.childAt(handle, 0, reader.startIdx(handle));
-      return doIt(reader, child);
+      return reader.withChildren(handle, (_handle, child) => doIt(reader, child));
     }
     return fail(reader, handle);
   };
 
   return doIt;
-}
-
-export function collect<R>(
-  reader: CstReader,
-  handle: number,
-  cb: (...items: number[]) => R
-): R[] {
-  const results: R[] = [];
-  reader.forEachTuple(handle, (...items) => {
-    results.push(cb(...items));
-  });
-  return results;
-}
-
-export function ifPresent<R>(
-  reader: CstReader,
-  handle: number,
-  consume: (...children: number[]) => R
-): R | undefined;
-
-export function ifPresent<R>(
-  reader: CstReader,
-  handle: number,
-  consume: (...children: number[]) => R,
-  orElse: () => R
-): R;
-
-export function ifPresent<R>(
-  reader: CstReader,
-  handle: number,
-  consume: (...children: number[]) => R,
-  orElse?: () => R
-): R | undefined {
-  if (!reader.isPresent(handle)) {
-    return orElse ? orElse() : undefined;
-  }
-  return reader.withChildren(handle, (_handle, ...children) => consume(...children));
 }

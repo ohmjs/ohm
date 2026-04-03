@@ -2,6 +2,7 @@ import {
   CST_CHILD_COUNT_OFFSET,
   CST_CHILDREN_OFFSET,
   CST_MATCH_LENGTH_OFFSET,
+  CST_NO_LEADING_SPACES_FLAG,
   CST_TYPE_AND_DETAILS_OFFSET,
   CstNodeType,
   isTaggedTerminal,
@@ -9,78 +10,35 @@ import {
   rawMatchRecordType,
 } from './miniohm.ts';
 import {assert} from './assert.ts';
+import {createReaderFromCtx} from './cstReaderFactory.ts';
+import {createHandle, rawHandle, unpackStartIdx} from './cstReaderShared.ts';
 
 import type {MatchContext, SucceededMatchResult} from './miniohm.ts';
 
 export {CstNodeType};
 
-const HANDLE_BITS = 27;
-const SHIFT = 2 ** HANDLE_BITS; // 134217728
-const MASK = SHIFT - 1; // 0x7FFFFFF
-
-/**
- * Pack a raw CST handle and startIdx into a single Number handle.
- * Uses 53 of the available integer-precision bits in an IEEE 754 double
- * (27 bits for the pointer, 26 bits for startIdx). Accessor methods
- * (isTerminal, matchLength, etc.) extract the low 27 bits via `& MASK`.
- */
-function pack(rawHandle: number, startIdx: number): number {
-  return startIdx * SHIFT + rawHandle;
-}
-
-function unpackStartIdx(handle: number): number {
-  const raw = handle & MASK;
-  return (handle - raw) / SHIFT;
-}
-
 function nextEdgePos(reader: CstReader, child: number): number {
   return reader.startIdx(child) + reader.matchLength(child);
-}
-
-/** Extract the raw CST pointer from a packed handle. */
-export function rawHandle(handle: number): number {
-  return handle & MASK;
-}
-
-/**
- * Create a packed handle from a raw pointer and startIdx.
- * Validates that both values fit in the packed representation.
- */
-export function createHandle(rawPtr: number, startIdx: number): number {
-  if (rawPtr >= SHIFT) {
-    throw new Error(
-      `Raw CST pointer ${rawPtr} exceeds ${HANDLE_BITS}-bit limit (max ${SHIFT - 1})`
-    );
-  }
-  const startIdxLimit = 2 ** (53 - HANDLE_BITS);
-  if (startIdx >= startIdxLimit) {
-    throw new Error(
-      `startIdx ${startIdx} exceeds ${53 - HANDLE_BITS}-bit limit (max ${startIdxLimit - 1})`
-    );
-  }
-  return pack(rawPtr, startIdx);
 }
 
 /**
  * Zero-allocation access to the CST stored in Wasm linear memory.
  *
- * Handles have startIdx packed in the upper bits. Accessor methods
- * (isTerminal, matchLength, childCount, ctorName, details) extract
- * the raw pointer via `& MASK`.
+ * Handles have startIdx packed in the upper bits.
  *
  * forEachChild(handle, fn) iterates visible children. The callback receives
- * (childHandle, leadingSpacesLen, childStartIdx, index).
+ * (childHandle, leadingSpacesLen, index).
  *
  * Leading spaces are edge data (they belong to the parent→child relationship),
  * not node data. For each child edge:
- * - childStartIdx === startIdx(childHandle)
+ * - startIdx(childHandle) is the child's start position
  * - leadingSpacesLen >= 0
- * - leading spaces span: start = childStartIdx - leadingSpacesLen, length = leadingSpacesLen
- * - child source span: start = childStartIdx, length = matchLength(childHandle)
+ * - leading spaces span: start = startIdx(childHandle) - leadingSpacesLen, length = leadingSpacesLen
+ * - child source span: start = startIdx(childHandle), length = matchLength(childHandle)
  *
  * For root:
  * - startIdx(root) === rootLeadingSpacesLen
- * - leading spaces before root are sourceSlice(0, rootLeadingSpacesLen)
+ * - leading spaces before root are input.slice(0, rootLeadingSpacesLen)
  */
 export class CstReader {
   /** @internal */
@@ -105,7 +63,7 @@ export class CstReader {
 
   /** Node type: NONTERMINAL, TERMINAL, LIST, or OPT. */
   type(handle: number): CstNodeType {
-    const raw = handle & MASK;
+    const raw = rawHandle(handle);
     if (isTaggedTerminal(raw)) return CstNodeType.TERMINAL;
     const mrType = rawMatchRecordType(this._ctx.view, raw);
     if (mrType === MatchRecordType.NONTERMINAL) return CstNodeType.NONTERMINAL;
@@ -116,14 +74,14 @@ export class CstReader {
 
   /** Number of raw children stored in this match record. */
   childCount(handle: number): number {
-    const raw = handle & MASK;
+    const raw = rawHandle(handle);
     if (isTaggedTerminal(raw)) return 0;
     return this._ctx.view.getUint32(raw + CST_CHILD_COUNT_OFFSET, true);
   }
 
   /** Length of matched input (in UTF-16 code units). */
   matchLength(handle: number): number {
-    const raw = handle & MASK;
+    const raw = rawHandle(handle);
     if (isTaggedTerminal(raw)) return raw >>> 2;
     return this._ctx.view.getUint32(raw + CST_MATCH_LENGTH_OFFSET, true);
   }
@@ -133,7 +91,7 @@ export class CstReader {
    * For other types: '_terminal', '_list', '_opt'.
    */
   ctorName(handle: number): string {
-    const raw = handle & MASK;
+    const raw = rawHandle(handle);
     if (isTaggedTerminal(raw)) return '_terminal';
     const type = rawMatchRecordType(this._ctx.view, raw);
     if (type === MatchRecordType.NONTERMINAL) {
@@ -145,12 +103,9 @@ export class CstReader {
     return '_opt';
   }
 
-  /**
-   * Upper bits of typeAndDetails. For NONTERMINAL: the ruleId.
-   * For ITER_FLAG: the arity (children per iteration).
-   */
-  details(handle: number): number {
-    const raw = handle & MASK;
+  /** @internal */
+  private _details(handle: number): number {
+    const raw = rawHandle(handle);
     if (isTaggedTerminal(raw)) return 0;
     return this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
   }
@@ -158,13 +113,13 @@ export class CstReader {
   /** Rule ID for a nonterminal node. */
   ruleId(handle: number): number {
     assert(this.type(handle) === CstNodeType.NONTERMINAL, 'Not a nonterminal');
-    return this.details(handle);
+    return this._details(handle);
   }
 
   /** Children per tuple for a list node. */
   tupleArity(handle: number): number {
     assert(this.type(handle) === CstNodeType.LIST, 'Not a list');
-    return this.details(handle);
+    return this._details(handle);
   }
 
   /** Whether an optional node has a child. */
@@ -179,11 +134,6 @@ export class CstReader {
     return this._ctx.input.slice(si, si + this.matchLength(handle));
   }
 
-  /** Extract a substring from the input. */
-  sourceSlice(startIdx: number, len: number): string {
-    return this._ctx.input.slice(startIdx, startIdx + len);
-  }
-
   /** The full input string that was parsed. */
   get input(): string {
     return this._ctx.input;
@@ -196,19 +146,19 @@ export class CstReader {
 
   /**
    * Iterate over children. The callback receives (childHandle, leadingSpacesLen,
-   * childStartIdx, index).
+   * index).
    *
-   * Leading spaces belong to the parent→child edge. Use sourceSlice() to
-   * extract the spaces text: sourceSlice(childStartIdx - leadingSpacesLen, leadingSpacesLen).
+   * Leading spaces belong to the parent→child edge. Use `startIdx(child)` and
+   * `input.slice()` to recover the spaces text.
    *
    * Only NONTERMINAL and TERMINAL children may have leading spaces;
    * LIST and OPT children always have leadingSpacesLen === 0.
    */
   forEachChild(
     handle: number,
-    fn: (child: number, leadingSpacesLen: number, childStartIdx: number, index: number) => void
+    fn: (child: number, leadingSpacesLen: number, index: number) => void
   ): void {
-    const raw = handle & MASK;
+    const raw = rawHandle(handle);
     if (isTaggedTerminal(raw)) return;
 
     const count = this._ctx.view.getUint32(raw + CST_CHILD_COUNT_OFFSET, true);
@@ -218,10 +168,8 @@ export class CstReader {
     for (let i = 0; i < count; i++) {
       const slot = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + i * 4, true);
 
-      // Bit 1 of the child slot is the NO_LEADING_SPACES edge flag.
-      const suppressSpaces = (slot & 2) !== 0;
-      // Strip the edge flag to get the actual value.
-      const rawChild = slot & ~2;
+      const suppressSpaces = (slot & CST_NO_LEADING_SPACES_FLAG) !== 0;
+      const rawChild = slot & ~CST_NO_LEADING_SPACES_FLAG;
 
       const leadingSpacesLen =
         !suppressSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
@@ -231,7 +179,7 @@ export class CstReader {
       const childStartIdx = edgeStartIdx + leadingSpacesLen;
       const childHandle = createHandle(rawChild, childStartIdx);
 
-      fn(childHandle, leadingSpacesLen, childStartIdx, i);
+      fn(childHandle, leadingSpacesLen, i);
 
       const len = isTaggedTerminal(rawChild)
         ? rawChild >>> 2
@@ -246,12 +194,13 @@ export class CstReader {
    * The caller must track `edgeStartIdx`: for the first child, it's
    * `startIdx(parentHandle)`; for subsequent children, it's
    * `startIdx(prevChild) + matchLength(prevChild)`.
+   * @internal
    */
   childAt(handle: number, index: number, edgeStartIdx: number): number {
-    const raw = handle & MASK;
+    const raw = rawHandle(handle);
     const slot = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + index * 4, true);
-    const suppressSpaces = (slot & 2) !== 0;
-    const rawChild = slot & ~2;
+    const suppressSpaces = (slot & CST_NO_LEADING_SPACES_FLAG) !== 0;
+    const rawChild = slot & ~CST_NO_LEADING_SPACES_FLAG;
 
     const {getSpacesLenAt} = this._ctx;
     const leadingSpacesLen =
@@ -364,7 +313,7 @@ export class CstReader {
    * Uses cached metadata (ruleIsSyntactic), not string formatting.
    */
   isSyntactic(handle: number): boolean {
-    const raw = handle & MASK;
+    const raw = rawHandle(handle);
     if (isTaggedTerminal(raw)) return false;
     const mrType = rawMatchRecordType(this._ctx.view, raw);
     if (mrType !== MatchRecordType.NONTERMINAL) return false;
@@ -397,36 +346,6 @@ export class CstReader {
     const type = rawMatchRecordType(this._ctx.view, rawChild);
     return type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL;
   }
-}
-
-/**
- * Create a CstReader from a MatchContext and Wasm exports.
- * Validates packed-handle limits (heap size and input length).
- * @internal
- */
-export function createReaderFromCtx(ctx: MatchContext, exports: any): CstReader {
-  const heapTop = exports.__offset.value;
-  if (heapTop >= SHIFT) {
-    throw new Error(
-      `Wasm heap too large for CstReader: ${heapTop} bytes exceeds ${HANDLE_BITS}-bit limit (${SHIFT} bytes)`
-    );
-  }
-  // Two constraints on input length:
-  // 1. startIdx must fit in (53 - HANDLE_BITS) bits when packed.
-  // 2. Tagged terminals encode as (matchLength << 2) | flags, so
-  //    matchLength (≤ input.length) must fit in (HANDLE_BITS - 2) bits.
-  const startIdxLimit = 2 ** (53 - HANDLE_BITS);
-  const terminalLimit = 2 ** (HANDLE_BITS - 2);
-  const inputLimit = Math.min(startIdxLimit, terminalLimit);
-  if (ctx.input.length >= inputLimit) {
-    throw new Error(
-      `Input too long for CstReader: ${ctx.input.length} chars exceeds limit (${inputLimit} chars)`
-    );
-  }
-
-  const rootLeadingSpacesLen = Math.max(0, exports.getSpacesLenAt(0));
-  const rootPtr = exports.bindingsAt(0);
-  return new CstReader(ctx, createHandle(rootPtr, rootLeadingSpacesLen), rootLeadingSpacesLen);
 }
 
 export function createReader(result: SucceededMatchResult): CstReader {

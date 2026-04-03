@@ -1,5 +1,7 @@
 import {assert, checkNotNull} from './assert.ts';
-import {CstReader, createHandle, createReaderFromCtx, rawHandle} from './cstReader.ts';
+import {CstReader} from './cstReader.ts';
+import {createReaderFromCtx} from './cstReaderFactory.ts';
+import {createHandle, rawHandle} from './cstReaderShared.ts';
 import {getLineAndColumn, getLineAndColumnMessage} from './extras.ts';
 
 export const MATCH_RECORD_TYPE_MASK = 0b11;
@@ -9,6 +11,9 @@ export const CST_MATCH_LENGTH_OFFSET = 0;
 export const CST_TYPE_AND_DETAILS_OFFSET = 4;
 export const CST_CHILD_COUNT_OFFSET = 8;
 export const CST_CHILDREN_OFFSET = 16;
+
+/** Bit 1 of a child slot is the NO_LEADING_SPACES edge flag. */
+export const CST_NO_LEADING_SPACES_FLAG = 2;
 
 // Tagged terminal: (matchLength << 2) | 1. Bit 0 distinguishes from real pointers.
 // Bit 1 is the NO_LEADING_SPACES edge flag (set on child slots, not on root handles).
@@ -630,7 +635,7 @@ class CstNodeImpl implements CstNodeBase {
               : new SeqNodeImpl(n.children, n.source, n.sourceString);
           return new OptNodeImpl(child, n.source, n.sourceString);
         } else if (type === CstNodeType.LIST) {
-          const arity = n._reader.details(n._handle);
+          const arity = n._reader.tupleArity(n._handle);
           if (arity <= 1) {
             return new ListNodeImpl(n.children, n.source, n.sourceString);
           }
@@ -640,7 +645,7 @@ class CstNodeImpl implements CstNodeBase {
             // FIXME: We don't need any of this nonsense if we actually build the SeqNodes at parse time.
             const seqChildren = n.children.slice(i, i + arity);
             const endIdx = checkNotNull(seqChildren.at(-1)).source.endIdx;
-            const sourceString = n._reader.sourceSlice(startIdx, endIdx - startIdx);
+            const sourceString = n._reader.input.slice(startIdx, endIdx);
             arr.push(new SeqNodeImpl(seqChildren, {startIdx, endIdx}, sourceString));
             startIdx = endIdx;
           }
@@ -708,7 +713,7 @@ class LazySpacesNode implements NonterminalNode {
 
   get sourceString(): string {
     if (this._sourceString === undefined) {
-      this._sourceString = this._reader.sourceSlice(this._startIdx, this._matchLength);
+      this._sourceString = this._reader.input.slice(this._startIdx, this._startIdx + this._matchLength);
     }
     return this._sourceString;
   }
