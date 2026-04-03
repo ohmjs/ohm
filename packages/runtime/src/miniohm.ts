@@ -713,7 +713,10 @@ class LazySpacesNode implements NonterminalNode {
 
   get sourceString(): string {
     if (this._sourceString === undefined) {
-      this._sourceString = this._reader.input.slice(this._startIdx, this._startIdx + this._matchLength);
+      this._sourceString = this._reader.input.slice(
+        this._startIdx,
+        this._startIdx + this._matchLength
+      );
     }
     return this._sourceString;
   }
