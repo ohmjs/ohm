@@ -32,6 +32,10 @@ function unpackStartIdx(handle: number): number {
   return (handle - raw) / SHIFT;
 }
 
+function nextEdgePos(reader: CstReader, child: number): number {
+  return reader.startIdx(child) + reader.matchLength(child);
+}
+
 /** Extract the raw CST pointer from a packed handle. */
 export function rawHandle(handle: number): number {
   return handle & MASK;
@@ -150,6 +154,21 @@ export class CstReader {
     return this._ctx.view.getInt32(raw + CST_TYPE_AND_DETAILS_OFFSET, true) >>> 2;
   }
 
+  /** Rule ID for a nonterminal node. */
+  ruleId(handle: number): number {
+    return this.details(handle);
+  }
+
+  /** Children per tuple for a list node. */
+  tupleArity(handle: number): number {
+    return this.details(handle);
+  }
+
+  /** Whether an optional node has a child. */
+  isPresent(handle: number): boolean {
+    return this.childCount(handle) > 0;
+  }
+
   /** Source string for a node (startIdx is extracted from the handle). */
   sourceString(handle: number): string {
     const si = unpackStartIdx(handle);
@@ -237,6 +256,106 @@ export class CstReader {
         : 0;
 
     return createHandle(rawChild, edgeStartIdx + leadingSpacesLen);
+  }
+
+  /**
+   * Call `fn` with the node handle followed by its children.
+   * Avoids allocation for nodes with up to 7 children.
+   */
+  withChildren<R>(
+    handle: number,
+    fn: (handle: number, ...children: number[]) => R
+  ): R {
+    const count = this.childCount(handle);
+    let edgeStartIdx = this.startIdx(handle);
+
+    if (count < 8) {
+      if (count === 0) return fn(handle);
+
+      const c0 = this.childAt(handle, 0, edgeStartIdx);
+      if (count === 1) return fn(handle, c0);
+
+      edgeStartIdx = nextEdgePos(this, c0);
+      const c1 = this.childAt(handle, 1, edgeStartIdx);
+      if (count === 2) return fn(handle, c0, c1);
+
+      edgeStartIdx = nextEdgePos(this, c1);
+      const c2 = this.childAt(handle, 2, edgeStartIdx);
+      if (count === 3) return fn(handle, c0, c1, c2);
+
+      edgeStartIdx = nextEdgePos(this, c2);
+      const c3 = this.childAt(handle, 3, edgeStartIdx);
+      if (count === 4) return fn(handle, c0, c1, c2, c3);
+
+      edgeStartIdx = nextEdgePos(this, c3);
+      const c4 = this.childAt(handle, 4, edgeStartIdx);
+      if (count === 5) return fn(handle, c0, c1, c2, c3, c4);
+
+      edgeStartIdx = nextEdgePos(this, c4);
+      const c5 = this.childAt(handle, 5, edgeStartIdx);
+      if (count === 6) return fn(handle, c0, c1, c2, c3, c4, c5);
+
+      edgeStartIdx = nextEdgePos(this, c5);
+      const c6 = this.childAt(handle, 6, edgeStartIdx);
+      return fn(handle, c0, c1, c2, c3, c4, c5, c6);
+    }
+
+    const children: number[] = [];
+    for (let i = 0; i < count; i++) {
+      const child = this.childAt(handle, i, edgeStartIdx);
+      children.push(child);
+      edgeStartIdx = nextEdgePos(this, child);
+    }
+    return fn(handle, ...children);
+  }
+
+  /**
+   * Iterate over a list node in tuple-sized groups.
+   * Avoids allocation for arities up to 3.
+   */
+  forEachTuple(handle: number, fn: (...children: number[]) => void): void {
+    const arity = this.tupleArity(handle);
+    if (arity <= 1) {
+      this.forEachChild(handle, child => fn(child));
+      return;
+    }
+
+    const count = this.childCount(handle);
+    let edgeStartIdx = this.startIdx(handle);
+
+    if (arity === 2) {
+      for (let i = 0; i < count; i += 2) {
+        const c0 = this.childAt(handle, i, edgeStartIdx);
+        edgeStartIdx = nextEdgePos(this, c0);
+        const c1 = this.childAt(handle, i + 1, edgeStartIdx);
+        edgeStartIdx = nextEdgePos(this, c1);
+        fn(c0, c1);
+      }
+      return;
+    }
+
+    if (arity === 3) {
+      for (let i = 0; i < count; i += 3) {
+        const c0 = this.childAt(handle, i, edgeStartIdx);
+        edgeStartIdx = nextEdgePos(this, c0);
+        const c1 = this.childAt(handle, i + 1, edgeStartIdx);
+        edgeStartIdx = nextEdgePos(this, c1);
+        const c2 = this.childAt(handle, i + 2, edgeStartIdx);
+        edgeStartIdx = nextEdgePos(this, c2);
+        fn(c0, c1, c2);
+      }
+      return;
+    }
+
+    const tuple = new Array<number>(arity);
+    for (let i = 0; i < count; ) {
+      for (let j = 0; j < arity; j++, i++) {
+        const child = this.childAt(handle, i, edgeStartIdx);
+        tuple[j] = child;
+        edgeStartIdx = nextEdgePos(this, child);
+      }
+      fn(...tuple);
+    }
   }
 
   /**

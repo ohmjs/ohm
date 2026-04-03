@@ -10,59 +10,6 @@ export type ReaderActionDict<R> = {
 
 export type ReaderOperation<R> = (reader: CstReader, handle: number) => R;
 
-function nextEdgePos(reader: CstReader, child: number): number {
-  return reader.startIdx(child) + reader.matchLength(child);
-}
-
-function callWithChildren<R>(
-  reader: CstReader,
-  handle: number,
-  action: (handle: number, ...children: number[]) => R
-): R {
-  const count = reader.childCount(handle);
-  let ep = reader.startIdx(handle);
-
-  if (count < 8) {
-    if (count === 0) return action(handle);
-
-    const c0 = reader.childAt(handle, 0, ep);
-    if (count === 1) return action(handle, c0);
-
-    ep = nextEdgePos(reader, c0);
-    const c1 = reader.childAt(handle, 1, ep);
-    if (count === 2) return action(handle, c0, c1);
-
-    ep = nextEdgePos(reader, c1);
-    const c2 = reader.childAt(handle, 2, ep);
-    if (count === 3) return action(handle, c0, c1, c2);
-
-    ep = nextEdgePos(reader, c2);
-    const c3 = reader.childAt(handle, 3, ep);
-    if (count === 4) return action(handle, c0, c1, c2, c3);
-
-    ep = nextEdgePos(reader, c3);
-    const c4 = reader.childAt(handle, 4, ep);
-    if (count === 5) return action(handle, c0, c1, c2, c3, c4);
-
-    ep = nextEdgePos(reader, c4);
-    const c5 = reader.childAt(handle, 5, ep);
-    if (count === 6) return action(handle, c0, c1, c2, c3, c4, c5);
-
-    ep = nextEdgePos(reader, c5);
-    const c6 = reader.childAt(handle, 6, ep);
-    return action(handle, c0, c1, c2, c3, c4, c5, c6);
-  }
-
-  // Fallback for >=8 children.
-  const children: number[] = [];
-  for (let i = 0; i < count; i++) {
-    const child = reader.childAt(handle, i, ep);
-    children.push(child);
-    ep = nextEdgePos(reader, child);
-  }
-  return action(handle, ...children);
-}
-
 type ActionFn<R> = (handle: number, ...children: number[]) => R;
 
 // Sentinel values used in the dispatch table for fallback actions.
@@ -78,6 +25,13 @@ export function createReaderOperation<R>(
   // function or a sentinel (NO_ACTION / USE_NONTERMINAL / USE_DEFAULT).
   let actionTable: (ActionFn<R> | number)[] | undefined;
   let cachedRuleNames: readonly string[] | undefined;
+  const terminalAction = actions._terminal;
+  const nonterminalAction = actions._nonterminal;
+  const defaultAction = actions._default;
+
+  function fail(reader: CstReader, handle: number): never {
+    throw new Error(`missing semantic action for '${reader.ctorName(handle)}' in '${name}'`);
+  }
 
   function buildTable(ruleNames: readonly string[]): (ActionFn<R> | number)[] {
     const table: (ActionFn<R> | number)[] = new Array(ruleNames.length);
@@ -86,9 +40,9 @@ export function createReaderOperation<R>(
       const action = actions[ctorName];
       if (action) {
         table[i] = action;
-      } else if (actions._nonterminal) {
+      } else if (nonterminalAction) {
         table[i] = USE_NONTERMINAL;
-      } else if (actions._default) {
+      } else if (defaultAction) {
         table[i] = USE_DEFAULT;
       } else {
         table[i] = NO_ACTION;
@@ -105,50 +59,44 @@ export function createReaderOperation<R>(
     return actionTable;
   }
 
-  return (reader: CstReader, handle: number): R => {
+  const doIt: ReaderOperation<R> = (reader: CstReader, handle: number): R => {
     const nodeType = reader.type(handle);
 
     // Terminal — no children, no table lookup needed.
     if (nodeType === CstNodeType.TERMINAL) {
-      if (actions._terminal) return actions._terminal(handle);
-      if (actions._default) return actions._default(handle);
-      throw new Error(`missing semantic action for '_terminal'`);
+      if (terminalAction) return terminalAction(handle);
+      if (defaultAction) return defaultAction(handle);
+      return fail(reader, handle);
     }
 
     // List or Opt — use _default.
     if (nodeType === CstNodeType.LIST || nodeType === CstNodeType.OPT) {
-      if (actions._default) return actions._default(handle);
-      throw new Error(`missing semantic action for '${reader.ctorName(handle)}'`);
+      if (defaultAction) return defaultAction(handle);
+      return fail(reader, handle);
     }
 
     // Nonterminal — use dispatch table indexed by ruleId.
     const table = getTable(reader);
-    const ruleId = reader.details(handle);
+    const ruleId = reader.ruleId(handle);
     const entry = table[ruleId];
 
     if (typeof entry === 'function') {
-      return callWithChildren(reader, handle, entry);
+      return reader.withChildren(handle, entry);
     }
     if (entry === USE_NONTERMINAL) {
-      return actions._nonterminal!(handle);
+      return nonterminalAction!(handle);
     }
     if (entry === USE_DEFAULT) {
-      return actions._default!(handle);
+      return defaultAction!(handle);
     }
-    throw new Error(`missing semantic action for '${reader.ctorName(handle)}'`);
+    if (reader.childCount(handle) === 1) {
+      const child = reader.childAt(handle, 0, reader.startIdx(handle));
+      return doIt(reader, child);
+    }
+    return fail(reader, handle);
   };
-}
 
-function getChildren(reader: CstReader, handle: number): number[] {
-  const count = reader.childCount(handle);
-  const children: number[] = [];
-  let ep = reader.startIdx(handle);
-  for (let i = 0; i < count; i++) {
-    const child = reader.childAt(handle, i, ep);
-    children.push(child);
-    ep = nextEdgePos(reader, child);
-  }
-  return children;
+  return doIt;
 }
 
 export function collect<R>(
@@ -156,21 +104,25 @@ export function collect<R>(
   handle: number,
   cb: (...items: number[]) => R
 ): R[] {
-  const arity = reader.details(handle);
-  const children = getChildren(reader, handle);
-
   const results: R[] = [];
-  if (arity <= 1) {
-    for (const child of children) {
-      results.push(cb(child));
-    }
-  } else {
-    for (let i = 0; i < children.length; i += arity) {
-      results.push(cb(...children.slice(i, i + arity)));
-    }
-  }
+  reader.forEachTuple(handle, (...items) => {
+    results.push(cb(...items));
+  });
   return results;
 }
+
+export function ifPresent<R>(
+  reader: CstReader,
+  handle: number,
+  consume: (...children: number[]) => R
+): R | undefined;
+
+export function ifPresent<R>(
+  reader: CstReader,
+  handle: number,
+  consume: (...children: number[]) => R,
+  orElse: () => R
+): R;
 
 export function ifPresent<R>(
   reader: CstReader,
@@ -178,10 +130,8 @@ export function ifPresent<R>(
   consume: (...children: number[]) => R,
   orElse?: () => R
 ): R | undefined {
-  const count = reader.childCount(handle);
-  if (count === 0) {
+  if (!reader.isPresent(handle)) {
     return orElse ? orElse() : undefined;
   }
-  const children = getChildren(reader, handle);
-  return consume(...children);
+  return reader.withChildren(handle, (_handle, ...children) => consume(...children));
 }

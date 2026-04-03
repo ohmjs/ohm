@@ -35,13 +35,6 @@ test('reader-based: arithmetic', t => {
       number(h, _) {
         return parseInt(rd.sourceString(h), 10);
       },
-      _default(h) {
-        let result = 0;
-        rd.forEachChild(h, child => {
-          result = evalIt(rd, child);
-        });
-        return result;
-      },
     });
     t.is(evalIt(rd, rd.root), 7);
   });
@@ -67,7 +60,7 @@ test('reader-based: list and opt', t => {
             opt,
             p => reversed(rd, p),
             () => ''
-          )! +
+          ) +
           collect(rd, list, (b, optLetter) => {
             return (
               ifPresent(
@@ -75,7 +68,7 @@ test('reader-based: list and opt', t => {
                 optLetter,
                 l => reversed(rd, l),
                 () => ''
-              )! + collect(rd, b, b => reversed(rd, b)).join('')
+              ) + collect(rd, b, b => reversed(rd, b)).join('')
             );
           })
             .reverse()

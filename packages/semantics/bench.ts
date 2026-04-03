@@ -14,7 +14,9 @@ const scriptRel = (relPath: string) => new URL(relPath, import.meta.url);
 const es5Source = readFileSync(scriptRel('../../examples/ecmascript/src/es5.ohm'), 'utf8');
 const g = ohm.grammars(es5Source).ES5;
 
-const input = smallSize ? 'var x = 1 + 2;' : readFileSync(scriptRel('../compiler/test/data/_underscore-1.8.3.js'), 'utf8');
+const input = smallSize
+  ? 'var x = 1 + 2;'
+  : readFileSync(scriptRel('../compiler/test/data/_underscore-1.8.3.js'), 'utf8');
 
 // --- CstNode-based (createOperation) ---
 

@@ -136,6 +136,44 @@ test('optional node: absent', async t => {
   });
 });
 
+test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
+  const g = await compileAndLoad('G { start = ("a" "b"?)* }');
+  g.match('abab').use(mr => {
+    const reader = createReader(mr);
+    let list;
+    reader.forEachChild(reader.root, child => {
+      list = child;
+    });
+
+    t.is(reader.tupleArity(list), 2);
+
+    const tuples = [];
+    reader.forEachTuple(list, (a, b) => {
+      tuples.push(
+        reader.sourceString(a) +
+          reader.withChildren(b, (_handle, child) => (reader.isPresent(b) ? reader.sourceString(child) : ''))
+      );
+    });
+    t.deepEqual(tuples, ['ab', 'ab']);
+
+    let emptyOpt;
+    g.match('a').use(mr2 => {
+      const reader2 = createReader(mr2);
+      reader2.forEachChild(reader2.root, child => {
+        list = child;
+      });
+      reader2.forEachTuple(list, (_a, b) => {
+        emptyOpt = b;
+      });
+      t.false(reader2.isPresent(emptyOpt));
+      t.is(
+        reader2.withChildren(emptyOpt, (_handle, child) => (child === undefined ? 'missing' : 'present')),
+        'missing'
+      );
+    });
+  });
+});
+
 // --- unparse via walk ---
 
 test('unparse: simple terminals', async t => {
