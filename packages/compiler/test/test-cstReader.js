@@ -1,4 +1,5 @@
 import test from 'ava';
+import * as fc from 'fast-check';
 
 import {createHandle, createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
@@ -281,7 +282,7 @@ const spaceMemoIgnored = test.macro(async (t, twoBody, input = '> xx') => {
   });
 });
 
-test.failing('spaces memo ignored in lexical rule', spaceMemoIgnored, '">" " x" x');
+test('spaces memo ignored in lexical rule', spaceMemoIgnored, '">" " x" x');
 test('spaces memo ignored in lexical rule: plus', spaceMemoIgnored, '">" (" x")+ x');
 test('spaces memo ignored in lexical rule: star', spaceMemoIgnored, '">" (" x")* x');
 test('spaces memo ignored in lexical rule: opt', spaceMemoIgnored, '">" (" x")? x');
@@ -380,4 +381,264 @@ test('isSyntactic reads compiler-embedded classification', async t => {
     }
     check(reader.root);
   });
+});
+
+// --- property-based: source tiling ---
+
+// Recursively check all invariants on a CST node and its descendants.
+// Returns an array of error strings (empty = all good).
+function checkInvariants(reader, handle, isLexicalParent) {
+  const errors = [];
+  const type = reader.type(handle);
+  const ctor = reader.ctorName(handle);
+  const start = reader.startIdx(handle);
+  const len = reader.matchLength(handle);
+
+  // -- Packed-handle span consistency --
+  const actual = reader.sourceString(handle);
+  const expected = reader.input.slice(start, start + len);
+  if (actual !== expected) {
+    errors.push(
+      `span mismatch at ${start}: sourceString=${JSON.stringify(actual)}, ` +
+        `slice=${JSON.stringify(expected)}`
+    );
+  }
+
+  // -- Node-type contracts --
+  if (type === CstNodeType.TERMINAL) {
+    if (ctor !== '_terminal') {
+      errors.push(`terminal ctorName=${ctor}, expected '_terminal'`);
+    }
+    if (reader.childCount(handle) !== 0) {
+      errors.push(`terminal childCount=${reader.childCount(handle)}, expected 0`);
+    }
+    // Terminals are leaves — nothing more to check.
+    return errors;
+  }
+
+  if (type === CstNodeType.OPT) {
+    const cc = reader.childCount(handle);
+    if (cc !== 0 && cc !== 1) {
+      errors.push(`opt childCount=${cc}, expected 0 or 1`);
+    }
+  }
+
+  // -- Public iteration contract --
+  const childCount = reader.childCount(handle);
+  let callbackCount = 0;
+  const indices = [];
+
+  // -- Source tiling + round-trip reconstruction --
+  const parentEnd = start + len;
+  let cursor = start;
+  let reconstructed = '';
+
+  reader.forEachChild(handle, (child, leadingSpacesLen, childStartIdx, index) => {
+    indices.push(index);
+    callbackCount++;
+
+    // Lexical children must never have leading spaces.
+    if (isLexicalParent && leadingSpacesLen > 0) {
+      errors.push(
+        `lexical child at ${childStartIdx} has leadingSpacesLen=${leadingSpacesLen}`
+      );
+    }
+
+    // LIST/OPT edges never report leading spaces (documented contract).
+    const childType = reader.type(child);
+    if (
+      (childType === CstNodeType.LIST || childType === CstNodeType.OPT) &&
+      leadingSpacesLen > 0
+    ) {
+      errors.push(
+        `${childType === CstNodeType.LIST ? 'list' : 'opt'} edge has ` +
+          `leadingSpacesLen=${leadingSpacesLen}`
+      );
+    }
+
+    // Tiling: cursor + leadingSpaces should equal childStartIdx.
+    const expectedStart = cursor + leadingSpacesLen;
+    if (childStartIdx !== expectedStart) {
+      errors.push(
+        `gap/overlap at cursor=${cursor}: expected childStartIdx=${expectedStart}, ` +
+          `got ${childStartIdx}`
+      );
+    }
+
+    // Round-trip reconstruction: interleave spaces + child text.
+    if (leadingSpacesLen > 0) {
+      reconstructed += reader.sourceSlice(childStartIdx - leadingSpacesLen, leadingSpacesLen);
+    }
+    reconstructed += reader.sourceString(child);
+
+    cursor = childStartIdx + reader.matchLength(child);
+
+    // Recurse. Lexical context propagates through non-nonterminal wrappers.
+    let childIsLexical;
+    if (childType === CstNodeType.NONTERMINAL) {
+      childIsLexical = !reader.isSyntactic(child);
+    } else {
+      childIsLexical = isLexicalParent;
+    }
+    errors.push(...checkInvariants(reader, child, childIsLexical));
+  });
+
+  // Tiling: children must cover entire parent span.
+  if (cursor !== parentEnd) {
+    errors.push(`children don't cover parent: cursor=${cursor}, parentEnd=${parentEnd}`);
+  }
+
+  // Round-trip: reconstructed text must equal parent's sourceString.
+  if (reconstructed !== actual) {
+    errors.push(
+      `reconstruction mismatch: got ${JSON.stringify(reconstructed)}, ` +
+        `expected ${JSON.stringify(actual)}`
+    );
+  }
+
+  // Iteration contract: callback count and indices.
+  if (callbackCount !== childCount) {
+    errors.push(`forEachChild count=${callbackCount}, childCount()=${childCount}`);
+  }
+  const expectedIndices = Array.from({length: childCount}, (_, i) => i);
+  if (indices.join(',') !== expectedIndices.join(',')) {
+    errors.push(`forEachChild indices=[${indices}], expected=[${expectedIndices}]`);
+  }
+
+  return errors;
+}
+
+// Check all invariants on a full match result, including root-level checks.
+function checkMatch(reader) {
+  const errors = [];
+  const {root, rootLeadingSpacesLen, input} = reader;
+
+  // -- Root consumption invariant --
+  if (reader.startIdx(root) !== rootLeadingSpacesLen) {
+    errors.push(
+      `root startIdx=${reader.startIdx(root)}, ` +
+        `rootLeadingSpacesLen=${rootLeadingSpacesLen}`
+    );
+  }
+  if (rootLeadingSpacesLen + reader.matchLength(root) !== input.length) {
+    errors.push(
+      `rootLeadingSpacesLen(${rootLeadingSpacesLen}) + matchLength(${reader.matchLength(root)}) ` +
+        `!== input.length(${input.length})`
+    );
+  }
+
+  // -- Root round-trip: leadingSpaces + render(root) === input --
+  const rootSpaces = reader.sourceSlice(0, rootLeadingSpacesLen);
+  const rootText = reader.sourceString(root);
+  if (rootSpaces + rootText !== input) {
+    errors.push(
+      `root round-trip: ${JSON.stringify(rootSpaces + rootText)} !== ${JSON.stringify(input)}`
+    );
+  }
+
+  // Recurse into the tree.
+  const isLexicalRoot = !reader.isSyntactic(root);
+  errors.push(...checkInvariants(reader, root, isLexicalRoot));
+  return errors;
+}
+
+// Letters including non-BMP (surrogate pairs in UTF-16).
+const astralLetters = ['\u{1D49E}', '\u{10000}', '\u{1D504}']; // 𝒞, 𐀀, 𝔄
+
+const propertyGrammars = [
+  // Mix of syntactic + lexical, with iteration and alternation.
+  {
+    source: `G {
+      Start = Item+
+      Item = word | punct
+      word = letter+
+      punct = "." | "," | "!"
+    }`,
+    arb: fc
+      .array(
+        fc.oneof(
+          fc
+            .array(fc.constantFrom(...'abcXYZ', ...astralLetters), {
+              minLength: 1,
+              maxLength: 4,
+            })
+            .map(a => a.join('')),
+          fc.constantFrom('.', ',', '!')
+        ),
+        {minLength: 1, maxLength: 8}
+      )
+      .map(parts => parts.join(' ')),
+  },
+  // Nested syntactic rules with optional and star.
+  {
+    source: `G {
+      Start = Outer*
+      Outer = "(" Inner ")"
+      Inner = digit+
+    }`,
+    arb: fc
+      .array(
+        fc
+          .array(fc.constantFrom(...'0123456789'), {minLength: 1, maxLength: 4})
+          .map(a => `(${a.join('')})`),
+        {minLength: 1, maxLength: 6}
+      )
+      .map(parts => parts.join(' ')),
+  },
+  // Lexical rule called from syntactic context — the core bug scenario.
+  {
+    source: `G {
+      Start = ">" tok+
+      tok = letter+
+    }`,
+    arb: fc
+      .array(
+        fc
+          .array(fc.constantFrom(...'abcxyz', ...astralLetters), {minLength: 1, maxLength: 3})
+          .map(a => a.join('')),
+        {minLength: 1, maxLength: 6}
+      )
+      .map(parts => '>' + parts.join(' ')),
+  },
+  // Non-BMP letters — stresses UTF-16 surrogate pair indexing.
+  {
+    source: `G {
+      Start = tok+
+      tok = letter+
+    }`,
+    arb: fc
+      .array(
+        fc
+          .array(fc.constantFrom('a', 'x', 'Z', ...astralLetters), {
+            minLength: 1,
+            maxLength: 4,
+          })
+          .map(a => a.join('')),
+        {minLength: 1, maxLength: 6}
+      )
+      .map(parts => parts.join(' ')),
+  },
+];
+
+test('fast-check: CST structural invariants', async t => {
+  for (const {source, arb} of propertyGrammars) {
+    const g = await compileAndLoad(source);
+    const result = fc.check(
+      fc.property(arb, input => {
+        return g.match(input).use(mr => {
+          if (!mr.succeeded()) {
+            throw new Error(`expected match for input=${JSON.stringify(input)}`);
+          }
+          const reader = createReader(mr);
+          const errors = checkMatch(reader);
+          if (errors.length > 0) {
+            throw new Error(`input=${JSON.stringify(input)}\n${errors.join('\n')}`);
+          }
+          return true;
+        });
+      }),
+      {numRuns: 200}
+    );
+    t.false(result.failed, `${source}\n${fc.defaultReportMessage(result)}`);
+  }
 });
