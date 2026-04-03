@@ -151,7 +151,9 @@ test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
     reader.forEachTuple(list, (a, b) => {
       tuples.push(
         reader.sourceString(a) +
-          reader.withChildren(b, (_handle, child) => (reader.isPresent(b) ? reader.sourceString(child) : ''))
+          reader.withChildren(b, (_handle, child) =>
+            reader.isPresent(b) ? reader.sourceString(child) : ''
+          )
       );
     });
     t.deepEqual(tuples, ['ab', 'ab']);
@@ -167,7 +169,9 @@ test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
       });
       t.false(reader2.isPresent(emptyOpt));
       t.is(
-        reader2.withChildren(emptyOpt, (_handle, child) => (child === undefined ? 'missing' : 'present')),
+        reader2.withChildren(emptyOpt, (_handle, child) =>
+          child === undefined ? 'missing' : 'present'
+        ),
         'missing'
       );
     });

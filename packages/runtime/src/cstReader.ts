@@ -262,10 +262,7 @@ export class CstReader {
    * Call `fn` with the node handle followed by its children.
    * Avoids allocation for nodes with up to 7 children.
    */
-  withChildren<R>(
-    handle: number,
-    fn: (handle: number, ...children: number[]) => R
-  ): R {
+  withChildren<R>(handle: number, fn: (handle: number, ...children: number[]) => R): R {
     const count = this.childCount(handle);
     let edgeStartIdx = this.startIdx(handle);
 
