@@ -15,13 +15,24 @@
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "type": "module",
   "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./reader": {
+      "types": "./dist/src/reader.d.ts",
+      "default": "./dist/src/reader.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
-    "test": "ava"
+    "test": "ava && node --experimental-strip-types bench.ts --small-size"
   },
   "devDependencies": {
     "@ohm-js/compiler": "workspace:^",
-    "ava": "^6.0.0"
+    "ava": "^6.0.0",
+    "tinybench": "^6.0.0"
   },
   "peerDependencies": {
     "@ohm-js/compiler": "workspace:^",

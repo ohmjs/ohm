@@ -166,6 +166,11 @@ export class CstReader {
     return this._ctx.input;
   }
 
+  /** The array of rule names, indexed by rule ID. */
+  get ruleNames(): readonly string[] {
+    return this._ctx.ruleNames;
+  }
+
   /**
    * Iterate over children. The callback receives (childHandle, leadingSpacesLen,
    * childStartIdx, index).
@@ -211,6 +216,27 @@ export class CstReader {
 
       edgeStartIdx = childStartIdx + len;
     }
+  }
+
+  /**
+   * Get the handle of the child at `index`, given the current `edgeStartIdx`.
+   * The caller must track `edgeStartIdx`: for the first child, it's
+   * `startIdx(parentHandle)`; for subsequent children, it's
+   * `startIdx(prevChild) + matchLength(prevChild)`.
+   */
+  childAt(handle: number, index: number, edgeStartIdx: number): number {
+    const raw = handle & MASK;
+    const slot = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + index * 4, true);
+    const suppressSpaces = (slot & 2) !== 0;
+    const rawChild = slot & ~2;
+
+    const {getSpacesLenAt} = this._ctx;
+    const leadingSpacesLen =
+      !suppressSpaces && getSpacesLenAt && this._hasParentSpaces(rawChild)
+        ? Math.max(0, getSpacesLenAt(edgeStartIdx))
+        : 0;
+
+    return createHandle(rawChild, edgeStartIdx + leadingSpacesLen);
   }
 
   /**
