@@ -485,9 +485,7 @@ function checkInvariants(reader, handle, isLexicalParent) {
 
   // Tiling: children must cover entire parent span.
   if (cursor !== parentEnd) {
-    errors.push(
-      `children don't cover parent: cursor=${cursor}, parentEnd=${parentEnd}`
-    );
+    errors.push(`children don't cover parent: cursor=${cursor}, parentEnd=${parentEnd}`);
   }
 
   // Round-trip: reconstructed text must equal parent's sourceString.
@@ -500,15 +498,11 @@ function checkInvariants(reader, handle, isLexicalParent) {
 
   // Iteration contract: callback count and indices.
   if (callbackCount !== childCount) {
-    errors.push(
-      `forEachChild count=${callbackCount}, childCount()=${childCount}`
-    );
+    errors.push(`forEachChild count=${callbackCount}, childCount()=${childCount}`);
   }
   const expectedIndices = Array.from({length: childCount}, (_, i) => i);
   if (indices.join(',') !== expectedIndices.join(',')) {
-    errors.push(
-      `forEachChild indices=[${indices}], expected=[${expectedIndices}]`
-    );
+    errors.push(`forEachChild indices=[${indices}], expected=[${expectedIndices}]`);
   }
 
   return errors;
@@ -560,13 +554,20 @@ const propertyGrammars = [
       word = letter+
       punct = "." | "," | "!"
     }`,
-    arb: fc.array(
-      fc.oneof(
-        fc.array(fc.constantFrom(...'abcXYZ', ...astralLetters), {minLength: 1, maxLength: 4}).map(a => a.join('')),
-        fc.constantFrom('.', ',', '!')
-      ),
-      {minLength: 1, maxLength: 8}
-    ).map(parts => parts.join(' ')),
+    arb: fc
+      .array(
+        fc.oneof(
+          fc
+            .array(fc.constantFrom(...'abcXYZ', ...astralLetters), {
+              minLength: 1,
+              maxLength: 4,
+            })
+            .map(a => a.join('')),
+          fc.constantFrom('.', ',', '!')
+        ),
+        {minLength: 1, maxLength: 8}
+      )
+      .map(parts => parts.join(' ')),
   },
   // Nested syntactic rules with optional and star.
   {
@@ -575,11 +576,14 @@ const propertyGrammars = [
       Outer = "(" Inner ")"
       Inner = digit+
     }`,
-    arb: fc.array(
-      fc.array(fc.constantFrom(...'0123456789'), {minLength: 1, maxLength: 4})
-        .map(a => `(${a.join('')})`),
-      {minLength: 1, maxLength: 6}
-    ).map(parts => parts.join(' ')),
+    arb: fc
+      .array(
+        fc
+          .array(fc.constantFrom(...'0123456789'), {minLength: 1, maxLength: 4})
+          .map(a => `(${a.join('')})`),
+        {minLength: 1, maxLength: 6}
+      )
+      .map(parts => parts.join(' ')),
   },
   // Lexical rule called from syntactic context — the core bug scenario.
   {
@@ -587,10 +591,14 @@ const propertyGrammars = [
       Start = ">" tok+
       tok = letter+
     }`,
-    arb: fc.array(
-      fc.array(fc.constantFrom(...'abcxyz', ...astralLetters), {minLength: 1, maxLength: 3}).map(a => a.join('')),
-      {minLength: 1, maxLength: 6}
-    ).map(parts => '>' + parts.join(' ')),
+    arb: fc
+      .array(
+        fc
+          .array(fc.constantFrom(...'abcxyz', ...astralLetters), {minLength: 1, maxLength: 3})
+          .map(a => a.join('')),
+        {minLength: 1, maxLength: 6}
+      )
+      .map(parts => '>' + parts.join(' ')),
   },
   // Non-BMP letters — stresses UTF-16 surrogate pair indexing.
   {
@@ -598,13 +606,17 @@ const propertyGrammars = [
       Start = tok+
       tok = letter+
     }`,
-    arb: fc.array(
-      fc.array(
-        fc.constantFrom('a', 'x', 'Z', ...astralLetters),
-        {minLength: 1, maxLength: 4}
-      ).map(a => a.join('')),
-      {minLength: 1, maxLength: 6}
-    ).map(parts => parts.join(' ')),
+    arb: fc
+      .array(
+        fc
+          .array(fc.constantFrom('a', 'x', 'Z', ...astralLetters), {
+            minLength: 1,
+            maxLength: 4,
+          })
+          .map(a => a.join('')),
+        {minLength: 1, maxLength: 6}
+      )
+      .map(parts => parts.join(' ')),
   },
 ];
 
