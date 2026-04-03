@@ -178,6 +178,29 @@ test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
   });
 });
 
+test('type-specific helpers assert on the wrong handle kind', async t => {
+  const g = await compileAndLoad('G { Start = ("a" "b"?)* }');
+  g.match('ab').use(mr => {
+    const reader = createReader(mr);
+    let list;
+    reader.forEachChild(reader.root, child => {
+      list = child;
+    });
+
+    let terminal;
+    let opt;
+    reader.forEachTuple(list, (a, b) => {
+      terminal = a;
+      opt = b;
+    });
+
+    t.throws(() => reader.ruleId(list), {message: 'Not a nonterminal'});
+    t.throws(() => reader.tupleArity(reader.root), {message: 'Not a list'});
+    t.throws(() => reader.isPresent(terminal), {message: 'Not an opt'});
+    t.true(reader.isPresent(opt));
+  });
+});
+
 // --- unparse via walk ---
 
 test('unparse: simple terminals', async t => {

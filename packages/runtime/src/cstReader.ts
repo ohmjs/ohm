@@ -8,6 +8,7 @@ import {
   MatchRecordType,
   rawMatchRecordType,
 } from './miniohm.ts';
+import {assert} from './assert.ts';
 
 import type {MatchContext, SucceededMatchResult} from './miniohm.ts';
 
@@ -156,16 +157,19 @@ export class CstReader {
 
   /** Rule ID for a nonterminal node. */
   ruleId(handle: number): number {
+    assert(this.type(handle) === CstNodeType.NONTERMINAL, 'Not a nonterminal');
     return this.details(handle);
   }
 
   /** Children per tuple for a list node. */
   tupleArity(handle: number): number {
+    assert(this.type(handle) === CstNodeType.LIST, 'Not a list');
     return this.details(handle);
   }
 
   /** Whether an optional node has a child. */
   isPresent(handle: number): boolean {
+    assert(this.type(handle) === CstNodeType.OPT, 'Not an opt');
     return this.childCount(handle) > 0;
   }
 
