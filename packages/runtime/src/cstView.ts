@@ -1,18 +1,22 @@
 import {
   CST_CHILD_COUNT_OFFSET,
   CST_CHILDREN_OFFSET,
-  CST_MATCH_LENGTH_OFFSET,
   CST_HAS_LEADING_SPACES_FLAG,
+  CST_MATCH_LENGTH_OFFSET,
   CST_TYPE_AND_DETAILS_OFFSET,
   CstNodeType,
+  createHandle,
   isTaggedTerminal,
   MatchRecordType,
+  rawHandle,
   rawMatchRecordType,
-} from './miniohm.ts';
+  unpackStartIdx,
+  _nodeFactory,
+} from './cstCommon.ts';
 import {assert, checkNotNull} from './assert.ts';
-import {createHandle, rawHandle, unpackStartIdx, _nodeFactory} from './cstReaderShared.ts';
 
-import type {CstNode, MatchContext} from './miniohm.ts';
+import type {MatchContext} from './cstCommon.ts';
+import type {CstNode} from './miniohm.ts';
 
 export {CstNodeType};
 
@@ -31,7 +35,7 @@ function nextEdgePos(cst: CstView, child: number): number {
  * Leading spaces are edge data (they belong to the parent→child relationship),
  * not node data. For each child edge:
  * - startIdx(childHandle) is the child's start position
- * - leadingSpacesLen >= 0
+ * - leadingSpacesLen \>= 0
  * - leading spaces span: start = startIdx(childHandle) - leadingSpacesLen, length = leadingSpacesLen
  * - child source span: start = startIdx(childHandle), length = matchLength(childHandle)
  *

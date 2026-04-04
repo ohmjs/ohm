@@ -1,54 +1,48 @@
 import {assert, checkNotNull} from './assert.ts';
-import {CstView} from './cstReader.ts';
-import {createReaderFromCtx} from './cstReaderFactory.ts';
-import {createHandle, rawHandle, _nodeFactory} from './cstReaderShared.ts';
+import {CstView} from './cstView.ts';
+import {
+  createHandle,
+  CstNodeType,
+  HANDLE_BITS,
+  INPUT_LENGTH_LIMIT,
+  rawHandle,
+  SHIFT,
+  _nodeFactory,
+} from './cstCommon.ts';
+import type {MatchContext} from './cstCommon.ts';
 import {getLineAndColumn, getLineAndColumnMessage} from './extras.ts';
 
-export const MATCH_RECORD_TYPE_MASK = 0b11;
-
-// Byte offsets for fields in a CST match record (Wasm linear memory layout).
-export const CST_MATCH_LENGTH_OFFSET = 0;
-export const CST_TYPE_AND_DETAILS_OFFSET = 4;
-export const CST_CHILD_COUNT_OFFSET = 8;
-export const CST_CHILDREN_OFFSET = 16;
-
-/** Bit 1 of a child slot is the HAS_LEADING_SPACES edge flag. */
-export const CST_HAS_LEADING_SPACES_FLAG = 2;
-
-// Tagged terminal: (matchLength << 2) | 1. Bit 0 distinguishes from real pointers.
-// Bit 1 is the HAS_LEADING_SPACES edge flag (set on child slots, not on root handles).
-export function isTaggedTerminal(handle: number): boolean {
-  return (handle & 1) !== 0;
+function createCstView(ctx: MatchContext, exports: any): CstView {
+  const heapTop = exports.__offset.value;
+  if (heapTop >= SHIFT) {
+    throw new Error(
+      `Wasm heap too large for CstView: ${heapTop} bytes exceeds ${HANDLE_BITS}-bit limit (${SHIFT} bytes)`
+    );
+  }
+  if (ctx.input.length >= INPUT_LENGTH_LIMIT) {
+    throw new Error(
+      `Input too long for CstView: ${ctx.input.length} chars exceeds limit (${INPUT_LENGTH_LIMIT} chars)`
+    );
+  }
+  const rootLeadingSpacesLen = Math.max(0, exports.getSpacesLenAt(0));
+  const rootPtr = exports.bindingsAt(0);
+  return new CstView(ctx, createHandle(rootPtr, rootLeadingSpacesLen), rootLeadingSpacesLen);
 }
 
-// Extract the MatchRecordType from a raw (non-tagged-terminal) CST pointer.
-export function rawMatchRecordType(view: DataView, ptr: number): MatchRecordType {
-  return (view.getInt32(ptr + CST_TYPE_AND_DETAILS_OFFSET, true) &
-    MATCH_RECORD_TYPE_MASK) as MatchRecordType;
-}
-
-// A MatchRecord is the representation of a CstNode in Wasm linear memory.
-export const MatchRecordType = {
-  NONTERMINAL: 0,
-  TERMINAL: 1, // Only for tagged-integer detection, never in heap nodes.
-  ITER_FLAG: 2,
-  OPTIONAL: 3,
-} as const;
-
-export type MatchRecordType = (typeof MatchRecordType)[keyof typeof MatchRecordType];
-
-// A _CST node_ is the user-facing representation, built from a match record.
-export const CstNodeType = {
-  NONTERMINAL: 0,
-  TERMINAL: 1,
-  LIST: 2,
-  OPT: 3,
-  SEQ: 4,
-} as const;
-
-// Define types with the same name as the values above. This gives us roughly the
-// same functionality as a TypeScript enum, but works with erasableSyntaxOnly.
-export type CstNodeType = (typeof CstNodeType)[keyof typeof CstNodeType];
+export {
+  CST_CHILD_COUNT_OFFSET,
+  CST_CHILDREN_OFFSET,
+  CST_HAS_LEADING_SPACES_FLAG,
+  CST_MATCH_LENGTH_OFFSET,
+  CST_TYPE_AND_DETAILS_OFFSET,
+  CstNodeType,
+  isTaggedTerminal,
+  MATCH_RECORD_TYPE_MASK,
+  MatchRecordType,
+  rawMatchRecordType,
+} from './cstCommon.ts';
+export type {CstNodeType} from './cstCommon.ts';
+export type {MatchContext, MatchRecordType} from './cstCommon.ts';
 
 const EMPTY_CHILDREN: ReadonlyArray<CstNode> = Object.freeze([]);
 
@@ -454,7 +448,7 @@ export class Grammar {
       evalSpacesFull: exports.evalSpacesFull,
       memory: exports.memory,
     };
-    const reader = createReaderFromCtx(ctx, exports);
+    const reader = createCstView(ctx, exports);
     return new CstNodeImpl(reader, reader.root, reader.rootLeadingSpacesLen) as CstNode;
   }
 
@@ -473,15 +467,6 @@ export class Grammar {
   }
 }
 
-export interface MatchContext {
-  ruleNames: string[];
-  ruleIsSyntactic: boolean[];
-  view: DataView;
-  input: string;
-  getSpacesLenAt?: (pos: number) => number;
-  evalSpacesFull?: (pos: number) => number;
-  memory?: WebAssembly.Memory;
-}
 
 export type CstNode = NonterminalNode | TerminalNode | ListNode | OptNode | SeqNode;
 export type CstNodeChildren = readonly CstNode[];
@@ -1000,7 +985,7 @@ export class SucceededMatchResult extends MatchResult {
   cstView(): CstView {
     if (!this._cstView) {
       const exports = (this.grammar as any)._instance.exports;
-      this._cstView = createReaderFromCtx(this._ctx, exports);
+      this._cstView = createCstView(this._ctx, exports);
     }
     return this._cstView;
   }

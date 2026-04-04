@@ -22,6 +22,29 @@ export const CstNodeType: {
 // @public (undocumented)
 export type CstNodeType = (typeof CstNodeType)[keyof typeof CstNodeType];
 
+// @public
+export class CstView {
+    childCount(handle: number): number;
+    ctorName(handle: number): string;
+    forEachChild(handle: number, fn: (child: number, leadingSpacesLen: number, index: number) => void): void;
+    forEachTuple(handle: number, fn: (...children: number[]) => void): void;
+    get input(): string;
+    isPresent(handle: number): boolean;
+    isSyntactic(handle: number): boolean;
+    matchLength(handle: number): number;
+    node(handle: number): CstNode;
+    readonly root: number;
+    readonly rootLeadingSpacesLen: number;
+    rootNode(): CstNode;
+    ruleId(handle: number): number;
+    get ruleNames(): readonly string[];
+    sourceString(handle: number): string;
+    startIdx(handle: number): number;
+    tupleArity(handle: number): number;
+    type(handle: number): CstNodeType;
+    withChildren<R>(handle: number, fn: (handle: number, ...children: number[]) => R): R;
+}
+
 // @public (undocumented)
 export class FailedMatchResult extends MatchResult {
     // (undocumented)
@@ -163,8 +186,7 @@ export interface SeqNode<TChildren extends CstNodeChildren = CstNodeChildren> ex
 
 // @public (undocumented)
 export class SucceededMatchResult extends MatchResult {
-    // (undocumented)
-    getCstRoot(): CstNode;
+    cstView(): CstView;
 }
 
 // @public (undocumented)

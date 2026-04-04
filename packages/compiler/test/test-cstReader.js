@@ -1,10 +1,9 @@
 import test from 'ava';
 import * as fc from 'fast-check';
 
-import {CstNodeType} from '../../runtime/src/cstReader.ts';
-import {createHandle} from '../../runtime/src/cstReaderShared.ts';
+import {CstNodeType} from '../../runtime/src/cstView.ts';
+import {createHandle} from '../../runtime/src/cstCommon.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
-
 
 test('root node basics', async t => {
   const g = await compileAndLoad('G { start = "ab" "cd" }');

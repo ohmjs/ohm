@@ -19,7 +19,7 @@ import {Bench} from 'tinybench';
 import {Grammar} from 'ohm-js';
 import {compileGrammars} from '../src/api.ts';
 import {unparse} from '../test/_helpers.js';
-import {CstNodeType} from '../../runtime/src/cstReader.ts';
+import {CstNodeType} from '../../runtime/src/cstView.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');

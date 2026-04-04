@@ -1,5 +1,5 @@
-import type {CstView} from 'ohm-js/cstReader';
-import {CstNodeType} from 'ohm-js/cstReader';
+import type {CstView} from 'ohm-js/cstView';
+import {CstNodeType} from 'ohm-js/cstView';
 
 export type ReaderActionDict<R> = {
   _list?: (handle: number) => R;
