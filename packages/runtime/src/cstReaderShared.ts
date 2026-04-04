@@ -45,3 +45,11 @@ export function createHandle(rawPtr: number, startIdx: number): number {
 }
 
 export {HANDLE_BITS, INPUT_LENGTH_LIMIT, SHIFT};
+
+// Factory for creating CstNode wrappers from CstView. Stored here (a leaf
+// module) so both cstReader.ts and miniohm.ts can access it without
+// circular initialization issues.
+/** @internal */
+export const _nodeFactory: {make: ((view: any, handle: number, leadingSpacesLen: number) => any) | null} = {
+  make: null,
+};

@@ -3,7 +3,6 @@ import process from 'node:process';
 
 import {Bench} from 'tinybench';
 import * as ohm from '@ohm-js/compiler/compat';
-import {createReader} from 'ohm-js/cstReader';
 
 import {createOperation} from './src/index.ts';
 import {createReaderOperation} from './src/reader.ts';
@@ -38,13 +37,13 @@ const countNodesCstNode = createOperation<number>('countNodes', {
 
 // --- CstReader-based (createReaderOperation) ---
 
-let _rd: ReturnType<typeof createReader>;
+let _cst: any;
 
 const countNodesCstReader = createReaderOperation<number>('countNodes', {
   _nonterminal(h) {
     let sum = 1;
-    _rd.forEachChild(h, child => {
-      sum += countNodesCstReader(_rd, child);
+    _cst.forEachChild(h, child => {
+      sum += countNodesCstReader(_cst, child);
     });
     return sum;
   },
@@ -53,8 +52,8 @@ const countNodesCstReader = createReaderOperation<number>('countNodes', {
   },
   _default(h) {
     let sum = 1;
-    _rd.forEachChild(h, child => {
-      sum += countNodesCstReader(_rd, child);
+    _cst.forEachChild(h, child => {
+      sum += countNodesCstReader(_cst, child);
     });
     return sum;
   },
@@ -77,7 +76,7 @@ const bench = new Bench({
 
 bench.add(
   'createOperation (CstNode)',
-  () => g.match(input).use((r: any) => countNodesCstNode(r.getCstRoot())),
+  () => g.match(input).use((r: any) => countNodesCstNode(r.cst().rootNode())),
   opts
 );
 
@@ -85,8 +84,9 @@ bench.add(
   'createReaderOperation (CstReader)',
   () =>
     g.match(input).use((r: any) => {
-      _rd = createReader(r);
-      return countNodesCstReader(_rd, _rd.root);
+      const cst = r.cst();
+      _cst = cst;
+      return countNodesCstReader(_cst, cst.root);
     }),
   opts
 );

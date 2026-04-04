@@ -1,7 +1,7 @@
 import {assert, checkNotNull} from './assert.ts';
-import {CstReader} from './cstReader.ts';
+import {CstView} from './cstReader.ts';
 import {createReaderFromCtx} from './cstReaderFactory.ts';
-import {createHandle, rawHandle} from './cstReaderShared.ts';
+import {createHandle, rawHandle, _nodeFactory} from './cstReaderShared.ts';
 import {getLineAndColumn, getLineAndColumnMessage} from './extras.ts';
 
 export const MATCH_RECORD_TYPE_MASK = 0b11;
@@ -552,16 +552,16 @@ export interface SeqNode<TChildren extends CstNodeChildren = CstNodeChildren>
 }
 
 class CstNodeImpl implements CstNodeBase {
-  _reader!: CstReader;
+  _cstView!: CstView;
   _handle: number;
   _children?: CstNodeChildren = undefined;
   leadingSpaces?: NonterminalNode = undefined;
   source: {startIdx: number; endIdx: number};
 
-  constructor(reader: CstReader, handle: number, leadingSpacesLen = 0) {
+  constructor(reader: CstView, handle: number, leadingSpacesLen = 0) {
     // Non-enumerable properties
     Object.defineProperties(this, {
-      _reader: {value: reader},
+      _cstView: {value: reader},
       _children: {writable: true},
     });
     this._handle = handle;
@@ -580,7 +580,7 @@ class CstNodeImpl implements CstNodeBase {
   }
 
   get startIdx(): number {
-    return this._reader.startIdx(this._handle);
+    return this._cstView.startIdx(this._handle);
   }
 
   /** @internal Raw CST pointer (for debug/test use). */
@@ -589,7 +589,7 @@ class CstNodeImpl implements CstNodeBase {
   }
 
   get type(): CstNodeType {
-    return this._reader.type(this._handle);
+    return this._cstView.type(this._handle);
   }
 
   isNonterminal(): this is NonterminalNode {
@@ -613,11 +613,11 @@ class CstNodeImpl implements CstNodeBase {
   }
 
   get ctorName(): string {
-    return this._reader.ctorName(this._handle);
+    return this._cstView.ctorName(this._handle);
   }
 
   get matchLength(): number {
-    return this._reader.matchLength(this._handle);
+    return this._cstView.matchLength(this._handle);
   }
 
   get value(): string {
@@ -627,7 +627,7 @@ class CstNodeImpl implements CstNodeBase {
   get children(): CstNodeChildren {
     if (!this._children) {
       this._children = this._computeChildren().map((n): CstNode => {
-        const type = n._reader.type(n._handle);
+        const type = n._cstView.type(n._handle);
         if (type === CstNodeType.OPT) {
           const child: CstNode | undefined =
             n.children.length <= 1
@@ -635,7 +635,7 @@ class CstNodeImpl implements CstNodeBase {
               : new SeqNodeImpl(n.children, n.source, n.sourceString);
           return new OptNodeImpl(child, n.source, n.sourceString);
         } else if (type === CstNodeType.LIST) {
-          const arity = n._reader.tupleArity(n._handle);
+          const arity = n._cstView.tupleArity(n._handle);
           if (arity <= 1) {
             return new ListNodeImpl(n.children, n.source, n.sourceString);
           }
@@ -645,7 +645,7 @@ class CstNodeImpl implements CstNodeBase {
             // FIXME: We don't need any of this nonsense if we actually build the SeqNodes at parse time.
             const seqChildren = n.children.slice(i, i + arity);
             const endIdx = checkNotNull(seqChildren.at(-1)).source.endIdx;
-            const sourceString = n._reader.input.slice(startIdx, endIdx);
+            const sourceString = n._cstView.input.slice(startIdx, endIdx);
             arr.push(new SeqNodeImpl(seqChildren, {startIdx, endIdx}, sourceString));
             startIdx = endIdx;
           }
@@ -660,7 +660,7 @@ class CstNodeImpl implements CstNodeBase {
 
   _computeChildren(): CstNodeImpl[] {
     const children: CstNodeImpl[] = [];
-    const reader = this._reader;
+    const reader = this._cstView;
     reader.forEachChild(this._handle, (childHandle, leadingSpacesLen) => {
       children.push(new CstNodeImpl(reader, childHandle, leadingSpacesLen));
     });
@@ -668,17 +668,17 @@ class CstNodeImpl implements CstNodeBase {
   }
 
   get sourceString(): string {
-    return this._reader.sourceString(this._handle);
+    return this._cstView.sourceString(this._handle);
   }
 
   isSyntactic(): boolean {
     assert(this.isNonterminal(), 'Not a nonterminal');
-    return this._reader.isSyntactic(this._handle);
+    return this._cstView.isSyntactic(this._handle);
   }
 
   isLexical(): boolean {
     assert(this.isNonterminal(), 'Not a nonterminal');
-    return !this._reader.isSyntactic(this._handle);
+    return !this._cstView.isSyntactic(this._handle);
   }
 
   toString(): string {
@@ -694,14 +694,14 @@ class LazySpacesNode implements NonterminalNode {
   readonly leadingSpaces = undefined;
   readonly source: {startIdx: number; endIdx: number};
 
-  private _reader: CstReader;
+  private _cstView: CstView;
   private _startIdx: number;
   private _matchLength: number;
   private _children?: CstNodeChildren;
   private _sourceString?: string;
 
-  constructor(reader: CstReader, startIdx: number, matchLength: number) {
-    this._reader = reader;
+  constructor(reader: CstView, startIdx: number, matchLength: number) {
+    this._cstView = reader;
     this._startIdx = startIdx;
     this._matchLength = matchLength;
     this.source = {startIdx, endIdx: startIdx + matchLength};
@@ -713,7 +713,7 @@ class LazySpacesNode implements NonterminalNode {
 
   get sourceString(): string {
     if (this._sourceString === undefined) {
-      this._sourceString = this._reader.input.slice(
+      this._sourceString = this._cstView.input.slice(
         this._startIdx,
         this._startIdx + this._matchLength
       );
@@ -729,10 +729,10 @@ class LazySpacesNode implements NonterminalNode {
   }
 
   private _parseChildren(): CstNodeChildren {
-    const ptr = this._reader.evalSpacesFull(this._startIdx);
+    const ptr = this._cstView.evalSpacesFull(this._startIdx);
     if (ptr === 0) return EMPTY_CHILDREN;
     const handle = createHandle(ptr, this._startIdx);
-    const fullNode = new CstNodeImpl(this._reader, handle);
+    const fullNode = new CstNodeImpl(this._cstView, handle);
     return fullNode.children;
   }
 
@@ -977,9 +977,14 @@ function createMatchResult(
       );
 }
 
+// Register the CstNode factory so CstView.node() / .rootNode() can
+// create CstNodeImpl instances without a circular import.
+_nodeFactory.make = (view, handle, leadingSpacesLen) =>
+  new CstNodeImpl(view, handle, leadingSpacesLen) as CstNode;
+
 export class SucceededMatchResult extends MatchResult {
   /** @internal */
-  _cst: CstNode;
+  private _cstView?: CstView;
 
   /** @internal */
   protected constructor(
@@ -989,12 +994,17 @@ export class SucceededMatchResult extends MatchResult {
     succeeded: boolean
   ) {
     super(grammar, startExpr, ctx, succeeded);
-    this._cst = grammar._getCstRoot(ctx);
   }
 
-  getCstRoot(): CstNode {
-    return this._cst;
+  /** Returns a CstView — the canonical, lazy CST access object for this match. */
+  cst(): CstView {
+    if (!this._cstView) {
+      const exports = (this.grammar as any)._instance.exports;
+      this._cstView = createReaderFromCtx(this._ctx, exports);
+    }
+    return this._cstView;
   }
+
 }
 
 export class FailedMatchResult extends MatchResult {

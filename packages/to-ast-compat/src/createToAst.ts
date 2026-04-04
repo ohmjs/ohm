@@ -155,7 +155,7 @@ export class AstBuilder<TNode = any> {
     if (typeof (nodeOrResult as MatchResult)._succeeded === 'boolean') {
       const matchResult = nodeOrResult as MatchResult;
       assert(matchResult._succeeded, 'Cannot convert failed match result to AST');
-      node = (matchResult as SucceededMatchResult).getCstRoot();
+      node = (matchResult as SucceededMatchResult).cst().rootNode();
     }
     let ans;
     this._depth++;

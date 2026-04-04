@@ -14,7 +14,7 @@
   "license": "MIT",
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
@@ -27,7 +27,9 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "ava && node --experimental-strip-types bench.ts --small-size"
+    "bench": "node bench.ts",
+    "bench:smoke": "node bench.ts --small-size",
+    "test": "ava"
   },
   "devDependencies": {
     "@ohm-js/compiler": "workspace:^",

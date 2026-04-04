@@ -45,7 +45,7 @@ export function grammars(source: string): Record<string, any> {
       if (result.failed()) {
         throw new Error(`Failed to parse grammar:\n${result.message}`);
       }
-      buildGrammars(result.getCstRoot() as CstNode, ns, source);
+      buildGrammars(result.cst().rootNode() as CstNode, ns, source);
     });
   return ns;
 }

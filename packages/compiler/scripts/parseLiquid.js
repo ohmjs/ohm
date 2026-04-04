@@ -19,7 +19,7 @@ import {Bench} from 'tinybench';
 import {Grammar} from 'ohm-js';
 import {compileGrammars} from '../src/api.ts';
 import {unparse} from '../test/_helpers.js';
-import {createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
+import {CstNodeType} from '../../runtime/src/cstReader.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -106,18 +106,18 @@ const pattern = positionalArgs[0];
 
   // Walk CST using CstReader, collecting terminal text.
   function unparseCstReader(matchResult) {
-    const reader = createReader(matchResult);
+    const cst = matchResult.cst();
     let ans = '';
     function walk(handle) {
-      if (reader.type(handle) === CstNodeType.TERMINAL) {
-        ans += reader.sourceString(handle);
+      if (cst.type(handle) === CstNodeType.TERMINAL) {
+        ans += cst.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, (child, _leadingSpaces) => {
+      cst.forEachChild(handle, (child, _leadingSpaces) => {
         walk(child);
       });
     }
-    walk(reader.root);
+    walk(cst.root);
     return ans;
   }
 

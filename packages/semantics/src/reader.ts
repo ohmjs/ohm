@@ -1,4 +1,4 @@
-import type {CstReader} from 'ohm-js/cstReader';
+import type {CstView} from 'ohm-js/cstReader';
 import {CstNodeType} from 'ohm-js/cstReader';
 
 export type ReaderActionDict<R> = {
@@ -10,7 +10,7 @@ export type ReaderActionDict<R> = {
   [ruleName: string]: ((handle: number, ...children: number[]) => R) | undefined;
 };
 
-export type ReaderOperation<R> = (reader: CstReader, handle: number) => R;
+export type ReaderOperation<R> = (cst: CstView, handle: number) => R;
 
 type ActionFn<R> = (handle: number, ...children: number[]) => R;
 
@@ -33,8 +33,8 @@ export function createReaderOperation<R>(
   const optAction = actions._opt;
   const defaultAction = actions._default;
 
-  function fail(reader: CstReader, handle: number): never {
-    throw new Error(`missing semantic action for '${reader.ctorName(handle)}' in '${name}'`);
+  function fail(cst: CstView, handle: number): never {
+    throw new Error(`missing semantic action for '${cst.ctorName(handle)}' in '${name}'`);
   }
 
   function buildTable(ruleNames: readonly string[]): (ActionFn<R> | number)[] {
@@ -55,43 +55,43 @@ export function createReaderOperation<R>(
     return table;
   }
 
-  function getTable(reader: CstReader): (ActionFn<R> | number)[] {
-    const ruleNames = reader.ruleNames;
+  function getTable(cst: CstView): (ActionFn<R> | number)[] {
+    const ruleNames = cst.ruleNames;
     if (actionTable && cachedRuleNames === ruleNames) return actionTable;
     cachedRuleNames = ruleNames;
     actionTable = buildTable(ruleNames);
     return actionTable;
   }
 
-  const doIt: ReaderOperation<R> = (reader: CstReader, handle: number): R => {
-    const nodeType = reader.type(handle);
+  const doIt: ReaderOperation<R> = (cst: CstView, handle: number): R => {
+    const nodeType = cst.type(handle);
 
     // Terminal — no children, no table lookup needed.
     if (nodeType === CstNodeType.TERMINAL) {
       if (terminalAction) return terminalAction(handle);
       if (defaultAction) return defaultAction(handle);
-      return fail(reader, handle);
+      return fail(cst, handle);
     }
 
     if (nodeType === CstNodeType.LIST) {
       if (listAction) return listAction(handle);
       if (defaultAction) return defaultAction(handle);
-      return fail(reader, handle);
+      return fail(cst, handle);
     }
 
     if (nodeType === CstNodeType.OPT) {
       if (optAction) return optAction(handle);
       if (defaultAction) return defaultAction(handle);
-      return fail(reader, handle);
+      return fail(cst, handle);
     }
 
     // Nonterminal — use dispatch table indexed by ruleId.
-    const table = getTable(reader);
-    const ruleId = reader.ruleId(handle);
+    const table = getTable(cst);
+    const ruleId = cst.ruleId(handle);
     const entry = table[ruleId];
 
     if (typeof entry === 'function') {
-      return reader.withChildren(handle, entry);
+      return cst.withChildren(handle, entry);
     }
     if (entry === USE_NONTERMINAL) {
       return nonterminalAction!(handle);
@@ -99,10 +99,10 @@ export function createReaderOperation<R>(
     if (entry === USE_DEFAULT) {
       return defaultAction!(handle);
     }
-    if (reader.childCount(handle) === 1) {
-      return reader.withChildren(handle, (_handle, child) => doIt(reader, child));
+    if (cst.childCount(handle) === 1) {
+      return cst.withChildren(handle, (_handle, child) => doIt(cst, child));
     }
-    return fail(reader, handle);
+    return fail(cst, handle);
   };
 
   return doIt;

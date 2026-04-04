@@ -10,15 +10,14 @@ import {
   rawMatchRecordType,
 } from './miniohm.ts';
 import {assert} from './assert.ts';
-import {createReaderFromCtx} from './cstReaderFactory.ts';
-import {createHandle, rawHandle, unpackStartIdx} from './cstReaderShared.ts';
+import {createHandle, rawHandle, unpackStartIdx, _nodeFactory} from './cstReaderShared.ts';
 
-import type {MatchContext, SucceededMatchResult} from './miniohm.ts';
+import type {CstNode, MatchContext} from './miniohm.ts';
 
 export {CstNodeType};
 
-function nextEdgePos(reader: CstReader, child: number): number {
-  return reader.startIdx(child) + reader.matchLength(child);
+function nextEdgePos(cst: CstView, child: number): number {
+  return cst.startIdx(child) + cst.matchLength(child);
 }
 
 /**
@@ -40,7 +39,7 @@ function nextEdgePos(reader: CstReader, child: number): number {
  * - startIdx(root) === rootLeadingSpacesLen
  * - leading spaces before root are input.slice(0, rootLeadingSpacesLen)
  */
-export class CstReader {
+export class CstView {
   /** @internal */
   private _ctx: MatchContext;
 
@@ -194,9 +193,8 @@ export class CstReader {
    * The caller must track `edgeStartIdx`: for the first child, it's
    * `startIdx(parentHandle)`; for subsequent children, it's
    * `startIdx(prevChild) + matchLength(prevChild)`.
-   * @internal
    */
-  childAt(handle: number, index: number, edgeStartIdx: number): number {
+  private childAt(handle: number, index: number, edgeStartIdx: number): number {
     const raw = rawHandle(handle);
     const slot = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + index * 4, true);
     const hasLeadingSpaces = (slot & CST_HAS_LEADING_SPACES_FLAG) !== 0;
@@ -346,9 +344,15 @@ export class CstReader {
     const type = rawMatchRecordType(this._ctx.view, rawChild);
     return type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL;
   }
+
+  /** Create a lazy CstNode wrapper for the given handle. */
+  node(handle: number): CstNode {
+    return _nodeFactory.make!(this, handle, 0);
+  }
+
+  /** Create a lazy CstNode wrapper for the root, including leading spaces. */
+  rootNode(): CstNode {
+    return _nodeFactory.make!(this, this.root, this.rootLeadingSpacesLen);
+  }
 }
 
-export function createReader(result: SucceededMatchResult): CstReader {
-  const exports = (result.grammar as any)._instance.exports;
-  return createReaderFromCtx(result._ctx, exports);
-}

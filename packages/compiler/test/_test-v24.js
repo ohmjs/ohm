@@ -8,12 +8,12 @@ test('nested matching with `using`', async t => {
   {
     using outer = g.match('abc');
     t.assert(outer.succeeded());
-    const outerCst = outer.getCstRoot();
+    const outerCst = outer.cst().rootNode();
 
     {
       using inner = g.match('1234');
       t.assert(inner.succeeded());
-      t.is(inner.getCstRoot().sourceString, '1234');
+      t.is(inner.cst().rootNode().sourceString, '1234');
     }
 
     // Outer CST is still valid after inner is disposed.

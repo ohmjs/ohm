@@ -129,7 +129,7 @@ function walkRecordTree(
  * the memo table globals reflect the last match.
  */
 export function getMatchStats(result: SucceededMatchResult): MatchStats {
-  const root = result.getCstRoot() as any;
+  const root = result.cst().rootNode() as any;
   const grammar = result.grammar as any;
   const exports = grammar._instance.exports;
   const ctx = (result as any)._ctx;
