@@ -13,7 +13,7 @@ test('reader-based: arithmetic', t => {
   const g2 = ohm.grammar(readFileSync(scriptRel('../../ohm-js/test/arithmetic.ohm'), 'utf8'));
   g2.match('1+(2*3)').use(r => {
     if (!r.succeeded()) return t.fail('parse failed');
-    const cst = r.cst();
+    const cst = r.cstView();
 
     const evalIt: ReaderOperation<number> = createReaderOperation<number>('evalIt', {
       addExp_plus(h, a, _, b) {
@@ -49,7 +49,7 @@ test('reader-based: list and opt', t => {
 
   g.match('abcbc!!').use(r => {
     if (!r.succeeded()) return t.fail('parse failed');
-    const cst = r.cst();
+    const cst = r.cstView();
 
     const reversed: ReaderOperation<string> = createReaderOperation<string>('reversed', {
       Start(h, a, list, opt) {

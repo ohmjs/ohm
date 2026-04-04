@@ -76,7 +76,7 @@ const bench = new Bench({
 
 bench.add(
   'createOperation (CstNode)',
-  () => g.match(input).use((r: any) => countNodesCstNode(r.cst().rootNode())),
+  () => g.match(input).use((r: any) => countNodesCstNode(r.cstView().rootNode())),
   opts
 );
 
@@ -84,7 +84,7 @@ bench.add(
   'createReaderOperation (CstReader)',
   () =>
     g.match(input).use((r: any) => {
-      const cst = r.cst();
+      const cst = r.cstView();
       _cst = cst;
       return countNodesCstReader(_cst, cst.root);
     }),

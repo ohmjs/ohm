@@ -997,14 +997,13 @@ export class SucceededMatchResult extends MatchResult {
   }
 
   /** Returns a CstView — the canonical, lazy CST access object for this match. */
-  cst(): CstView {
+  cstView(): CstView {
     if (!this._cstView) {
       const exports = (this.grammar as any)._instance.exports;
       this._cstView = createReaderFromCtx(this._ctx, exports);
     }
     return this._cstView;
   }
-
 }
 
 export class FailedMatchResult extends MatchResult {

@@ -193,7 +193,7 @@ test('cst: leadingSpaces children via lazy parsing', async t => {
   // Access children within the match lifecycle (evalSpacesFull needs live WASM state).
   g.match('  x').use(r => {
     t.true(r.succeeded());
-    const root = r.cst().rootNode();
+    const root = r.cstView().rootNode();
     const spaces = root.leadingSpaces;
     t.truthy(spaces);
 
@@ -221,7 +221,7 @@ test('cst: leadingSpaces with custom spaces rule', async t => {
   }`);
   g.match('abc // yo\n def').use(r => {
     t.true(r.succeeded());
-    const root = r.cst().rootNode();
+    const root = r.cstView().rootNode();
 
     // The Plus list should contain two words.
     const list = root.children[0];
@@ -262,7 +262,7 @@ test('cst: leadingSpaces children are not corrupted by cached spaces', async t =
   const g = await compileAndLoad('G { Start = "a" "b" "c" }');
   g.match('a  b   c').use(r => {
     t.true(r.succeeded());
-    const root = r.cst().rootNode();
+    const root = r.cstView().rootNode();
 
     // "b" has 2 leading spaces, "c" has 3 leading spaces.
     const [a, b, c] = root.children;
@@ -304,7 +304,7 @@ test('cst: leadingSpaces suppressed in prealloc lexical rule', async t => {
   }`);
   g.match('a bc').use(r => {
     t.true(r.succeeded());
-    const root = r.cst().rootNode();
+    const root = r.cstView().rootNode();
     // Start > two > x x
     const two = root.children[1];
     t.is(two.ctorName, 'two');
@@ -325,7 +325,7 @@ test('cst: lazy parsing survives memory.grow()', async t => {
   const g = await compileAndLoad('G { Start = "x" }');
   g.match('  x').use(r => {
     t.true(r.succeeded());
-    const root = r.cst().rootNode();
+    const root = r.cstView().rootNode();
     const spaces = root.leadingSpaces;
     t.truthy(spaces);
 
@@ -1407,9 +1407,9 @@ test('nested matching with use()', async t => {
   const g = await compileAndLoad('G { Start = letter+ | digit+ }');
 
   g.match('abc').use(outer => {
-    const outerCst = outer.cst().rootNode();
+    const outerCst = outer.cstView().rootNode();
     g.match('1234').use(inner => {
-      t.is(inner.cst().rootNode().sourceString, '1234');
+      t.is(inner.cstView().rootNode().sourceString, '1234');
       // Both CSTs valid simultaneously.
       t.is(outerCst.sourceString, 'abc');
     });
@@ -1781,7 +1781,7 @@ test('accessing CST node after dispose throws', async t => {
   let savedCst;
   wasmGrammar.match('abc').use(r => {
     t.true(r.succeeded(), 'match should succeed');
-    savedCst = r.cst().rootNode();
+    savedCst = r.cstView().rootNode();
     // Accessing CST inside use() should work fine.
     t.is(savedCst.sourceString, 'abc');
   });

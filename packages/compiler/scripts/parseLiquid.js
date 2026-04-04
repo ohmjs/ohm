@@ -106,7 +106,7 @@ const pattern = positionalArgs[0];
 
   // Walk CST using CstReader, collecting terminal text.
   function unparseCstReader(matchResult) {
-    const cst = matchResult.cst();
+    const cst = matchResult.cstView();
     let ans = '';
     function walk(handle) {
       if (cst.type(handle) === CstNodeType.TERMINAL) {

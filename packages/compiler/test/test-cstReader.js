@@ -16,7 +16,7 @@ test('root node basics', async t => {
   t.is(matchWithInput(g, 'abcd'), 1);
 
   g.match('abcd').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     t.is(cst.type(cst.root), CstNodeType.NONTERMINAL);
     t.is(cst.matchLength(cst.root), 4);
     t.is(cst.ctorName(cst.root), 'start');
@@ -30,7 +30,7 @@ test('root node basics', async t => {
 test('terminal children', async t => {
   const g = await compileAndLoad('G { start = "ab" "cd" }');
   g.match('abcd').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     const children = [];
     cst.forEachChild(cst.root, (child, leadingSpaces, index) => {
       children.push({child, leadingSpaces, startIdx: cst.startIdx(child), index});
@@ -56,7 +56,7 @@ test('terminal children', async t => {
 test('nonterminal children', async t => {
   const g = await compileAndLoad('G { start = a b\na = "x"\nb = "y" }');
   g.match('xy').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     const children = [];
     cst.forEachChild(cst.root, (child, ls, i) => {
       children.push({child, ls, startIdx: cst.startIdx(child), i});
@@ -74,7 +74,7 @@ test('nonterminal children', async t => {
 test('iteration (list) node', async t => {
   const g = await compileAndLoad('G { start = "a"* }');
   g.match('aaa').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let listHandle;
     cst.forEachChild(cst.root, child => {
       listHandle = child;
@@ -94,7 +94,7 @@ test('iteration (list) node', async t => {
 test('iteration with nonterminals', async t => {
   const g = await compileAndLoad('G { start = letter* }');
   g.match('abc').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let listHandle;
     cst.forEachChild(cst.root, child => {
       listHandle = child;
@@ -112,7 +112,7 @@ test('iteration with nonterminals', async t => {
 test('optional node: present', async t => {
   const g = await compileAndLoad('G { start = "a"? }');
   g.match('a').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let opt;
     cst.forEachChild(cst.root, child => {
       opt = child;
@@ -127,7 +127,7 @@ test('optional node: present', async t => {
 test('optional node: absent', async t => {
   const g = await compileAndLoad('G { start = "a"? }');
   g.match('').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let opt;
     cst.forEachChild(cst.root, child => {
       opt = child;
@@ -141,7 +141,7 @@ test('optional node: absent', async t => {
 test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
   const g = await compileAndLoad('G { start = ("a" "b"?)* }');
   g.match('abab').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let list;
     cst.forEachChild(cst.root, child => {
       list = child;
@@ -162,7 +162,7 @@ test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
 
     let emptyOpt;
     g.match('a').use(mr2 => {
-      const cst2 = mr2.cst();
+      const cst2 = mr2.cstView();
       cst2.forEachChild(cst2.root, child => {
         list = child;
       });
@@ -183,7 +183,7 @@ test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
 test('type-specific helpers assert on the wrong handle kind', async t => {
   const g = await compileAndLoad('G { Start = ("a" "b"?)* }');
   g.match('ab').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let list;
     cst.forEachChild(cst.root, child => {
       list = child;
@@ -208,7 +208,7 @@ test('type-specific helpers assert on the wrong handle kind', async t => {
 test('unparse: simple terminals', async t => {
   const g = await compileAndLoad('G { start = "ab" "cd" }');
   g.match('abcd').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
       if (cst.type(handle) === CstNodeType.TERMINAL) {
@@ -225,7 +225,7 @@ test('unparse: simple terminals', async t => {
 test('unparse: with rule application', async t => {
   const g = await compileAndLoad('G { start = a b\na = "x"\nb = "y" }');
   g.match('xy').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
       if (cst.type(handle) === CstNodeType.TERMINAL) {
@@ -242,7 +242,7 @@ test('unparse: with rule application', async t => {
 test('unparse: with nonterminals', async t => {
   const g = await compileAndLoad('G { start = a b\na = "hello"\nb = "world" }');
   g.match('helloworld').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
       if (cst.type(handle) === CstNodeType.TERMINAL) {
@@ -260,7 +260,7 @@ test('unparse: unicode', async t => {
   const g = await compileAndLoad('G { start = any* }');
   const input = 'Nöö';
   g.match(input).use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
       if (cst.type(handle) === CstNodeType.TERMINAL) {
@@ -279,7 +279,7 @@ test('unparse: unicode', async t => {
 test('rootLeadingSpacesLen: present', async t => {
   const g = await compileAndLoad('G { Start = "x" }');
   g.match('  x').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     t.is(cst.rootLeadingSpacesLen, 2);
     t.is(cst.input.slice(0, cst.rootLeadingSpacesLen), '  ');
     t.is(cst.startIdx(cst.root), 2);
@@ -289,7 +289,7 @@ test('rootLeadingSpacesLen: present', async t => {
 test('rootLeadingSpacesLen: absent', async t => {
   const g = await compileAndLoad('G { Start = "x" }');
   g.match('x').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     t.is(cst.rootLeadingSpacesLen, 0);
   });
 });
@@ -297,7 +297,7 @@ test('rootLeadingSpacesLen: absent', async t => {
 test('child leadingSpaces in syntactic rule', async t => {
   const g = await compileAndLoad('G { Start = "a" "b" }');
   g.match('a b').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     const spacesInfo = [];
     cst.forEachChild(cst.root, (child, leadingSpacesLen, index) => {
       const childStartIdx = cst.startIdx(child);
@@ -336,7 +336,7 @@ const spaceMemoIgnored = test.macro(async (t, twoBody, input = '> xx') => {
   `);
   g.match(input).use(mr => {
     t.true(mr.succeeded());
-    const cst = mr.cst();
+    const cst = mr.cstView();
     const [two] = childrenOf(cst, cst.root);
     const children = [];
     cst.forEachChild(two, (child, leadingSpacesLen) => {
@@ -377,7 +377,7 @@ test(
 test('ruleId returns a stable rule index for nonterminals', async t => {
   const g = await compileAndLoad('G { start = a\na = "x" }');
   g.match('x').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     t.true(cst.ruleId(cst.root) >= 0);
   });
 });
@@ -387,7 +387,7 @@ test('ruleId returns a stable rule index for nonterminals', async t => {
 test('childCount is 0 for tagged terminals', async t => {
   const g = await compileAndLoad('G { start = "x" }');
   g.match('x').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     let termChild;
     cst.forEachChild(cst.root, child => {
       termChild = child;
@@ -417,7 +417,7 @@ test('createHandle accepts max valid values', t => {
 test('isSyntactic: true for syntactic rule, false for lexical', async t => {
   const g = await compileAndLoad('G { Start = inner\ninner = "x" }');
   g.match('x').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     t.true(cst.isSyntactic(cst.root)); // Start is syntactic
     let innerHandle;
     cst.forEachChild(cst.root, child => {
@@ -434,7 +434,7 @@ test('isSyntactic reads compiler-embedded classification', async t => {
   // directly rather than rederiving from rule names.
   const g = await compileAndLoad('G { Start = inner\ninner = "x" }');
   g.match('x').use(mr => {
-    const cst = mr.cst();
+    const cst = mr.cstView();
     // Walk all nonterminals and verify classification
     function check(handle) {
       if (cst.type(handle) === CstNodeType.NONTERMINAL) {
@@ -582,8 +582,7 @@ function checkMatch(cst) {
   // -- Root consumption invariant --
   if (cst.startIdx(root) !== rootLeadingSpacesLen) {
     errors.push(
-      `root startIdx=${cst.startIdx(root)}, ` +
-        `rootLeadingSpacesLen=${rootLeadingSpacesLen}`
+      `root startIdx=${cst.startIdx(root)}, ` + `rootLeadingSpacesLen=${rootLeadingSpacesLen}`
     );
   }
   if (rootLeadingSpacesLen + cst.matchLength(root) !== input.length) {
@@ -695,7 +694,7 @@ test('fast-check: CST structural invariants', async t => {
           if (!mr.succeeded()) {
             throw new Error(`expected match for input=${JSON.stringify(input)}`);
           }
-          const cst = mr.cst();
+          const cst = mr.cstView();
           const errors = checkMatch(cst);
           if (errors.length > 0) {
             throw new Error(`input=${JSON.stringify(input)}\n${errors.join('\n')}`);

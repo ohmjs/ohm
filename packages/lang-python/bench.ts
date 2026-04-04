@@ -58,7 +58,7 @@ bench.add(
   const r = matchPython(input);
   r.use(r => {
     if (!r.succeeded()) throw new Error('Match failed');
-    const cst = r.cst().rootNode();
+    const cst = r.cstView().rootNode();
     const {input: tokenizedInput} = tokenize(input);
     const root = cst as NonterminalNode;
     const fullSource = tokenizedInput.slice(0, root.startIdx) + root.sourceString;

@@ -50,6 +50,8 @@ export {HANDLE_BITS, INPUT_LENGTH_LIMIT, SHIFT};
 // module) so both cstReader.ts and miniohm.ts can access it without
 // circular initialization issues.
 /** @internal */
-export const _nodeFactory: {make: ((view: any, handle: number, leadingSpacesLen: number) => any) | null} = {
+export const _nodeFactory: {
+  make: ((view: any, handle: number, leadingSpacesLen: number) => any) | null;
+} = {
   make: null,
 };

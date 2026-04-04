@@ -9,7 +9,7 @@ import {
   MatchRecordType,
   rawMatchRecordType,
 } from './miniohm.ts';
-import {assert} from './assert.ts';
+import {assert, checkNotNull} from './assert.ts';
 import {createHandle, rawHandle, unpackStartIdx, _nodeFactory} from './cstReaderShared.ts';
 
 import type {CstNode, MatchContext} from './miniohm.ts';
@@ -347,12 +347,11 @@ export class CstView {
 
   /** Create a lazy CstNode wrapper for the given handle. */
   node(handle: number): CstNode {
-    return _nodeFactory.make!(this, handle, 0);
+    return checkNotNull(_nodeFactory.make)(this, handle, 0);
   }
 
   /** Create a lazy CstNode wrapper for the root, including leading spaces. */
   rootNode(): CstNode {
-    return _nodeFactory.make!(this, this.root, this.rootLeadingSpacesLen);
+    return checkNotNull(_nodeFactory.make)(this, this.root, this.rootLeadingSpacesLen);
   }
 }
-

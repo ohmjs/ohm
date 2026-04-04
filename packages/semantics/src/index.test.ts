@@ -41,7 +41,7 @@ test('it basically works', t => {
     },
   });
   if (r.succeeded()) {
-    t.is(evalIt(r.cst().rootNode()), 7);
+    t.is(evalIt(r.cstView().rootNode()), 7);
   } else {
     t.fail('parse failed');
   }
@@ -95,7 +95,7 @@ test('it handles v17 CSTs', t => {
   });
   const r = g.match('abcbc!!');
   if (r.succeeded()) {
-    t.is(reversed(r.cst().rootNode()), '!!cbcba');
+    t.is(reversed(r.cstView().rootNode()), '!!cbcba');
   } else {
     t.fail('parse failed');
   }
@@ -126,7 +126,7 @@ test('missing action does not corrupt the action stack', t => {
   });
   const r = twoChildG.match('abcd');
   assert(r.succeeded(), 'match should succeed');
-  const err = t.throws(() => op(r.cst().rootNode()), {
+  const err = t.throws(() => op(r.cstView().rootNode()), {
     message: /missing semantic action: alsoBroken/,
   });
   // The error trace should show that we're inside 'start'.
