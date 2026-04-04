@@ -126,8 +126,9 @@ test('missing action does not corrupt the action stack', t => {
       return (ctx.thisNode as any).sourceString;
     },
   });
-  const cst = twoChildG.match('abcd').getCstRoot();
-  const err = t.throws(() => op(cst), {message: /missing semantic action: alsoBroken/});
+  const r = twoChildG.match('abcd');
+  assert(r.succeeded(), 'match should succeed');
+  const err = t.throws(() => op(r.getCstRoot()), {message: /missing semantic action: alsoBroken/});
   // The error trace should show that we're inside 'start'.
   t.regex(err!.message, /op > start/);
 });
