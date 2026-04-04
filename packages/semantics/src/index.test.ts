@@ -117,7 +117,9 @@ test('missing action does not corrupt the action stack', t => {
   );
   const op: Operation<string> = createOperation('op', {
     start(ctx, broken, alsoBroken) {
-      try { op(broken); } catch {}
+      try {
+        op(broken);
+      } catch {}
       return op(alsoBroken);
     },
     _terminal(ctx) {

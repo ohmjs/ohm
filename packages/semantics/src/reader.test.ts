@@ -90,7 +90,7 @@ test('reader-based: list and opt', t => {
       _default(h) {
         let result = '';
         rd.forEachChild(h, child => {
-          result = reversed(rd, child);
+          result += reversed(rd, child);
         });
         return result;
       },
