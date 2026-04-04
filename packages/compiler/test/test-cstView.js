@@ -406,7 +406,7 @@ test('createHandle accepts max valid values', t => {
   t.true(handle > 0);
 });
 
-// --- isSyntactic via CstReader ---
+// --- isSyntactic via CstView ---
 
 test('isSyntactic: true for syntactic rule, false for lexical', async t => {
   const g = await compileAndLoad('G { Start = inner\ninner = "x" }');

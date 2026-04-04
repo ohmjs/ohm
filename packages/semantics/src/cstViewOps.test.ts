@@ -6,6 +6,8 @@ import {readFileSync} from 'node:fs';
 
 import type {CstViewOperation} from './cstViewOps.ts';
 import {createCstViewOperation} from './cstViewOps.ts';
+import type {ReaderOperation} from './reader.ts';
+import {createReaderOperation} from './reader.ts';
 
 const scriptRel = (relPath: string) => new URL(relPath, import.meta.url);
 
@@ -35,6 +37,38 @@ test('cstView-based: arithmetic', t => {
         return parseInt(cst.sourceString(h), 10);
       },
     });
+    t.is(evalIt(cst, cst.root), 7);
+  });
+});
+
+test('reader compatibility exports still work', t => {
+  const g2 = ohm.grammar(readFileSync(scriptRel('../../ohm-js/test/arithmetic.ohm'), 'utf8'));
+  g2.match('1+(2*3)').use(r => {
+    if (!r.succeeded()) return t.fail('parse failed');
+    const cst = r.cstView();
+
+    const evalIt: ReaderOperation<number> = createReaderOperation<number>('evalIt', {
+      addExp_plus(h, a, _, b) {
+        return evalIt(cst, a) + evalIt(cst, b);
+      },
+      addExp_minus(h, a, _, b) {
+        return evalIt(cst, a) - evalIt(cst, b);
+      },
+      mulExp_times(h, a, _, b) {
+        return evalIt(cst, a) * evalIt(cst, b);
+      },
+      mulExp_divide(h, a, _, b) {
+        return evalIt(cst, a) / evalIt(cst, b);
+      },
+      priExp_paren(h, _, e, _2) {
+        return evalIt(cst, e);
+      },
+      number(h, _) {
+        return parseInt(cst.sourceString(h), 10);
+      },
+    });
+
+    t.is(createReaderOperation, createCstViewOperation);
     t.is(evalIt(cst, cst.root), 7);
   });
 });

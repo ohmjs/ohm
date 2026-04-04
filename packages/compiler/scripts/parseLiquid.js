@@ -35,7 +35,7 @@ const positionalArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
 // https://matklad.github.io/2024/03/22/basic-things.html
 const smallSize = flags.has('--small-size');
 const includeUnparse = flags.has('--include-unparse');
-const useCstReader = flags.has('--cst-reader');
+const useCstView = flags.has('--cst-view');
 
 // Get pattern from command line arguments
 const pattern = positionalArgs[0];
@@ -104,8 +104,8 @@ const pattern = positionalArgs[0];
     opts
   );
 
-  // Walk CST using CstReader, collecting terminal text.
-  function unparseCstReader(matchResult) {
+  // Walk CST using CstView, collecting terminal text.
+  function unparseCstView(matchResult) {
     const cst = matchResult.cstView();
     let ans = '';
     function walk(handle) {
@@ -123,7 +123,7 @@ const pattern = positionalArgs[0];
 
   const wasmLabel = includeUnparse ? 'Wasm parse+unparse' : 'Wasm parse';
   bench.add(
-    useCstReader ? `${wasmLabel} (CstReader)` : wasmLabel,
+    useCstView ? `${wasmLabel} (CstView)` : wasmLabel,
     () => {
       let overriddenDuration = 0;
       for (const {input} of files) {
@@ -140,7 +140,7 @@ const pattern = positionalArgs[0];
             peakWasmMemoryBytes,
             exports.memory.buffer.byteLength
           );
-          return useCstReader ? unparseCstReader(m) : unparse(g);
+          return useCstView ? unparseCstView(m) : unparse(g);
         });
         if (includeUnparse) overriddenDuration += bench.now() - start;
       }

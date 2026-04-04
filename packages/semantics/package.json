@@ -20,9 +20,9 @@
       "types": "./dist/src/index.d.ts",
       "default": "./dist/src/index.js"
     },
-    "./reader": {
-      "types": "./dist/src/reader.d.ts",
-      "default": "./dist/src/reader.js"
+    "./cstView": {
+      "types": "./dist/src/cstViewOps.d.ts",
+      "default": "./dist/src/cstViewOps.js"
     }
   },
   "scripts": {
