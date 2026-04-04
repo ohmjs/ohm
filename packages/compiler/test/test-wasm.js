@@ -2132,10 +2132,12 @@ test('edge flag: tagged terminal decoding with HAS_LEADING_SPACES bit', async t 
 // not the most recent match on the same grammar.
 test('MatchResult.input is stable after a subsequent match', async t => {
   const g = await compileAndLoad('G { start = letter+ }');
-  using r1 = g.match('abc');
-  using r2 = g.match('xy');
-  t.is(r1.input, 'abc');
-  t.is(r2.input, 'xy');
+  g.match('abc').use(r1 => {
+    g.match('xy').use(r2 => {
+      t.is(r1.input, 'abc');
+      t.is(r2.input, 'xy');
+    });
+  });
 });
 
 // Regression: getRightmostFailures() must not silently return wrong data
@@ -2143,16 +2145,18 @@ test('MatchResult.input is stable after a subsequent match', async t => {
 test('FailedMatchResult.getRightmostFailures throws if not the most recent match', async t => {
   const g = await compileAndLoad('G { start = "ok" end }');
 
-  using r1 = g.match('bad');
-  t.true(r1.failed());
+  g.match('bad').use(r1 => {
+    t.true(r1.failed());
 
-  // A subsequent match overwrites the wasm state.
-  using r2 = g.match('ok');
-  t.true(r2.succeeded());
+    // A subsequent match overwrites the wasm state.
+    g.match('ok').use(r2 => {
+      t.true(r2.succeeded());
 
-  // Accessing failures on the stale result should throw.
-  t.throws(() => r1.getRightmostFailures(), {
-    message: /not the most recent match/,
+      // Accessing failures on the stale result should throw.
+      t.throws(() => r1.getRightmostFailures(), {
+        message: /not the most recent match/,
+      });
+    });
   });
 });
 
@@ -2160,10 +2164,11 @@ test('FailedMatchResult.getRightmostFailures throws if not the most recent match
 test('FailedMatchResult.getRightmostFailures works on most recent match', async t => {
   const g = await compileAndLoad('G { start = "ok" end }');
 
-  using r1 = g.match('bad');
-  t.true(r1.failed());
+  g.match('bad').use(r1 => {
+    t.true(r1.failed());
 
-  const failures = r1.getRightmostFailures();
-  t.true(failures.length > 0);
-  t.is(r1.getRightmostFailurePosition(), 0);
+    const failures = r1.getRightmostFailures();
+    t.true(failures.length > 0);
+    t.is(r1.getRightmostFailurePosition(), 0);
+  });
 });
