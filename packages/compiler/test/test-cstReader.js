@@ -498,7 +498,8 @@ function checkInvariants(reader, handle, isLexicalParent) {
   let cursor = start;
   let reconstructed = '';
 
-  reader.forEachChild(handle, (child, leadingSpacesLen, childStartIdx, index) => {
+  reader.forEachChild(handle, (child, leadingSpacesLen, index) => {
+    const childStartIdx = reader.startIdx(child);
     indices.push(index);
     callbackCount++;
 
@@ -532,7 +533,7 @@ function checkInvariants(reader, handle, isLexicalParent) {
 
     // Round-trip reconstruction: interleave spaces + child text.
     if (leadingSpacesLen > 0) {
-      reconstructed += reader.sourceSlice(childStartIdx - leadingSpacesLen, leadingSpacesLen);
+      reconstructed += reader.input.slice(childStartIdx - leadingSpacesLen, childStartIdx);
     }
     reconstructed += reader.sourceString(child);
 
@@ -593,7 +594,7 @@ function checkMatch(reader) {
   }
 
   // -- Root round-trip: leadingSpaces + render(root) === input --
-  const rootSpaces = reader.sourceSlice(0, rootLeadingSpacesLen);
+  const rootSpaces = input.slice(0, rootLeadingSpacesLen);
   const rootText = reader.sourceString(root);
   if (rootSpaces + rootText !== input) {
     errors.push(

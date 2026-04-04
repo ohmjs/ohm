@@ -2127,3 +2127,43 @@ test('edge flag: tagged terminal decoding with HAS_LEADING_SPACES bit', async t 
   t.is(letter.sourceString, 'c');
   t.falsy(letter.leadingSpaces);
 });
+
+// Regression: MatchResult.input must reflect the input from *its* match,
+// not the most recent match on the same grammar.
+test('MatchResult.input is stable after a subsequent match', async t => {
+  const g = await compileAndLoad('G { start = letter+ }');
+  using r1 = g.match('abc');
+  using r2 = g.match('xy');
+  t.is(r1.input, 'abc');
+  t.is(r2.input, 'xy');
+});
+
+// Regression: getRightmostFailures() must not silently return wrong data
+// when wasm state has been overwritten by a subsequent match().
+test('FailedMatchResult.getRightmostFailures throws if not the most recent match', async t => {
+  const g = await compileAndLoad('G { start = "ok" end }');
+
+  using r1 = g.match('bad');
+  t.true(r1.failed());
+
+  // A subsequent match overwrites the wasm state.
+  using r2 = g.match('ok');
+  t.true(r2.succeeded());
+
+  // Accessing failures on the stale result should throw.
+  t.throws(() => r1.getRightmostFailures(), {
+    message: /not the most recent match/,
+  });
+});
+
+// getRightmostFailures() works when called on the most recent match.
+test('FailedMatchResult.getRightmostFailures works on most recent match', async t => {
+  const g = await compileAndLoad('G { start = "ok" end }');
+
+  using r1 = g.match('bad');
+  t.true(r1.failed());
+
+  const failures = r1.getRightmostFailures();
+  t.true(failures.length > 0);
+  t.is(r1.getRightmostFailurePosition(), 0);
+});

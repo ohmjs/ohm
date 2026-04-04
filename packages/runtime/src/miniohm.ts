@@ -922,7 +922,7 @@ export abstract class MatchResult {
   }
 
   get input(): string {
-    return (this.grammar as any)._input;
+    return this._ctx.input;
   }
 
   // `using` accesses [Symbol.dispose] at declaration time to get the
@@ -1017,12 +1017,18 @@ export class FailedMatchResult extends MatchResult {
     this._rightmostFailurePosition = rightmostFailurePosition;
   }
 
-  /** @internal */
-  private _assertAttached(property: string) {
+  private _assertMostRecent(method: string) {
     if (!this._attached) {
       throw new Error(
-        `Cannot access '${property}' after MatchResult has been disposed. ` +
+        `Cannot access '${method}' after MatchResult has been disposed. ` +
           `Access failure information before calling dispose(), or use result.use().`
+      );
+    }
+    const stack = (this.grammar as any)._resultStack;
+    if (stack.at(-1) !== this) {
+      throw new Error(
+        `Cannot call ${method} on a FailedMatchResult that is not the most recent match. ` +
+          `Failure information is only available before a subsequent match() call.`
       );
     }
   }
@@ -1033,11 +1039,11 @@ export class FailedMatchResult extends MatchResult {
 
   getRightmostFailures(): Failure[] {
     if (this._rightmostFailures === null) {
-      this._assertAttached('getRightmostFailures()');
+      this._assertMostRecent('getRightmostFailures()');
       const {exports} = (this.grammar as any)._instance;
       const ruleIds = (this.grammar as any)._ruleIds;
       const ruleNames = (this.grammar as any)._ruleNames;
-      const inputLength = (this.grammar as any)._input.length;
+      const inputLength = this._ctx.input.length;
       exports.recordFailures(inputLength, ruleIds.get(ruleNames[0]));
 
       // Use a Map to deduplicate by description while preserving fluffy status.

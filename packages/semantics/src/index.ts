@@ -1,5 +1,6 @@
 import type {CstNode, NonterminalNode} from 'ohm-js';
 import type {ActionDict, Operation, VisitorCtx} from './types.ts';
+export type {Operation} from './types.ts';
 
 const globalActionStack: [string, string, string][] = [];
 
