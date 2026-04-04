@@ -467,7 +467,6 @@ export class Grammar {
   }
 }
 
-
 export type CstNode = NonterminalNode | TerminalNode | ListNode | OptNode | SeqNode;
 export type CstNodeChildren = readonly CstNode[];
 
