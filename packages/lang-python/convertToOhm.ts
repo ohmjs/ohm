@@ -1,8 +1,8 @@
 import assert from 'node:assert';
 
 import {grammar} from '@ohm-js/compiler/compat';
-import type {Operation} from '@ohm-js/semantics/src/types.ts';
-import {createOperation} from '@ohm-js/semantics/src/index.ts';
+import {createOperation} from '@ohm-js/semantics';
+import type {Operation} from '@ohm-js/semantics';
 
 const hasOwn = (obj: object, prop: string) => Object.hasOwnProperty.call(obj, prop);
 

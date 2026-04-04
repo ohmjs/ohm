@@ -356,6 +356,9 @@ importers:
       ava:
         specifier: ^6.0.0
         version: 6.2.0(rollup@4.43.0)
+      tinybench:
+        specifier: ^6.0.0
+        version: 6.0.0
 
   packages/to-ast-compat:
     dependencies:

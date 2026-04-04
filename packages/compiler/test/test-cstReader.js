@@ -1,10 +1,11 @@
 import test from 'ava';
 import * as fc from 'fast-check';
 
-import {createHandle, createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
+import {createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
+import {createHandle} from '../../runtime/src/cstReaderShared.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
 
-const childrenOf = (reader, handle, i) => {
+const childrenOf = (reader, handle) => {
   const arr = [];
   reader.forEachChild(handle, c => arr.push(c));
   return arr;
@@ -31,8 +32,8 @@ test('terminal children', async t => {
   g.match('abcd').use(mr => {
     const reader = createReader(mr);
     const children = [];
-    reader.forEachChild(reader.root, (child, leadingSpaces, startIdx, index) => {
-      children.push({child, leadingSpaces, startIdx, index});
+    reader.forEachChild(reader.root, (child, leadingSpaces, index) => {
+      children.push({child, leadingSpaces, startIdx: reader.startIdx(child), index});
     });
     t.is(children.length, 2);
 
@@ -57,8 +58,8 @@ test('nonterminal children', async t => {
   g.match('xy').use(mr => {
     const reader = createReader(mr);
     const children = [];
-    reader.forEachChild(reader.root, (child, ls, startIdx, i) => {
-      children.push({child, ls, startIdx, i});
+    reader.forEachChild(reader.root, (child, ls, i) => {
+      children.push({child, ls, startIdx: reader.startIdx(child), i});
     });
     t.is(children.length, 2);
     t.is(reader.ctorName(children[0].child), 'a');
@@ -134,6 +135,71 @@ test('optional node: absent', async t => {
     t.is(reader.type(opt), CstNodeType.OPT);
     t.is(reader.childCount(opt), 0);
     t.is(reader.matchLength(opt), 0);
+  });
+});
+
+test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
+  const g = await compileAndLoad('G { start = ("a" "b"?)* }');
+  g.match('abab').use(mr => {
+    const reader = createReader(mr);
+    let list;
+    reader.forEachChild(reader.root, child => {
+      list = child;
+    });
+
+    t.is(reader.tupleArity(list), 2);
+
+    const tuples = [];
+    reader.forEachTuple(list, (a, b) => {
+      tuples.push(
+        reader.sourceString(a) +
+          reader.withChildren(b, (_handle, child) =>
+            reader.isPresent(b) ? reader.sourceString(child) : ''
+          )
+      );
+    });
+    t.deepEqual(tuples, ['ab', 'ab']);
+
+    let emptyOpt;
+    g.match('a').use(mr2 => {
+      const reader2 = createReader(mr2);
+      reader2.forEachChild(reader2.root, child => {
+        list = child;
+      });
+      reader2.forEachTuple(list, (_a, b) => {
+        emptyOpt = b;
+      });
+      t.false(reader2.isPresent(emptyOpt));
+      t.is(
+        reader2.withChildren(emptyOpt, (_handle, child) =>
+          child === undefined ? 'missing' : 'present'
+        ),
+        'missing'
+      );
+    });
+  });
+});
+
+test('type-specific helpers assert on the wrong handle kind', async t => {
+  const g = await compileAndLoad('G { Start = ("a" "b"?)* }');
+  g.match('ab').use(mr => {
+    const reader = createReader(mr);
+    let list;
+    reader.forEachChild(reader.root, child => {
+      list = child;
+    });
+
+    let terminal;
+    let opt;
+    reader.forEachTuple(list, (a, b) => {
+      terminal = a;
+      opt = b;
+    });
+
+    t.throws(() => reader.ruleId(list), {message: 'Not a nonterminal'});
+    t.throws(() => reader.tupleArity(reader.root), {message: 'Not a list'});
+    t.throws(() => reader.isPresent(terminal), {message: 'Not an opt'});
+    t.true(reader.isPresent(opt));
   });
 });
 
@@ -215,7 +281,7 @@ test('rootLeadingSpacesLen: present', async t => {
   g.match('  x').use(mr => {
     const reader = createReader(mr);
     t.is(reader.rootLeadingSpacesLen, 2);
-    t.is(reader.sourceSlice(0, reader.rootLeadingSpacesLen), '  ');
+    t.is(reader.input.slice(0, reader.rootLeadingSpacesLen), '  ');
     t.is(reader.startIdx(reader.root), 2);
   });
 });
@@ -233,14 +299,15 @@ test('child leadingSpaces in syntactic rule', async t => {
   g.match('a b').use(mr => {
     const reader = createReader(mr);
     const spacesInfo = [];
-    reader.forEachChild(reader.root, (child, leadingSpacesLen, childStartIdx, index) => {
+    reader.forEachChild(reader.root, (child, leadingSpacesLen, index) => {
+      const childStartIdx = reader.startIdx(child);
       spacesInfo.push({
         index,
         hasSpaces: leadingSpacesLen > 0,
         spacesLen: leadingSpacesLen,
         spacesStr:
           leadingSpacesLen > 0
-            ? reader.sourceSlice(childStartIdx - leadingSpacesLen, leadingSpacesLen)
+            ? reader.input.slice(childStartIdx - leadingSpacesLen, childStartIdx)
             : '',
       });
     });
@@ -272,8 +339,8 @@ const spaceMemoIgnored = test.macro(async (t, twoBody, input = '> xx') => {
     const reader = createReader(mr);
     const [two] = childrenOf(reader, reader.root);
     const children = [];
-    reader.forEachChild(two, (child, leadingSpacesLen, childStartIdx) => {
-      children.push({child, leadingSpacesLen, childStartIdx});
+    reader.forEachChild(two, (child, leadingSpacesLen) => {
+      children.push({child, leadingSpacesLen, childStartIdx: reader.startIdx(child)});
     });
     t.deepEqual(
       children.map(({leadingSpacesLen}) => leadingSpacesLen),
@@ -305,15 +372,13 @@ test(
   '> x'
 );
 
-// --- details ---
+// --- rule metadata ---
 
-test('details returns ruleId for nonterminals', async t => {
+test('ruleId returns a stable rule index for nonterminals', async t => {
   const g = await compileAndLoad('G { start = a\na = "x" }');
   g.match('x').use(mr => {
     const reader = createReader(mr);
-    // Root is 'start', details should be its ruleId (>= 0).
-    const d = reader.details(reader.root);
-    t.true(d >= 0);
+    t.true(reader.ruleId(reader.root) >= 0);
   });
 });
 
@@ -433,7 +498,8 @@ function checkInvariants(reader, handle, isLexicalParent) {
   let cursor = start;
   let reconstructed = '';
 
-  reader.forEachChild(handle, (child, leadingSpacesLen, childStartIdx, index) => {
+  reader.forEachChild(handle, (child, leadingSpacesLen, index) => {
+    const childStartIdx = reader.startIdx(child);
     indices.push(index);
     callbackCount++;
 
@@ -467,7 +533,7 @@ function checkInvariants(reader, handle, isLexicalParent) {
 
     // Round-trip reconstruction: interleave spaces + child text.
     if (leadingSpacesLen > 0) {
-      reconstructed += reader.sourceSlice(childStartIdx - leadingSpacesLen, leadingSpacesLen);
+      reconstructed += reader.input.slice(childStartIdx - leadingSpacesLen, childStartIdx);
     }
     reconstructed += reader.sourceString(child);
 
@@ -528,7 +594,7 @@ function checkMatch(reader) {
   }
 
   // -- Root round-trip: leadingSpaces + render(root) === input --
-  const rootSpaces = reader.sourceSlice(0, rootLeadingSpacesLen);
+  const rootSpaces = input.slice(0, rootLeadingSpacesLen);
   const rootText = reader.sourceString(root);
   if (rootSpaces + rootText !== input) {
     errors.push(

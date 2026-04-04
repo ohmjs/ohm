@@ -1,5 +1,6 @@
 import type {CstNode, NonterminalNode} from 'ohm-js';
 import type {ActionDict, Operation, VisitorCtx} from './types.ts';
+export type {Operation} from './types.ts';
 
 const globalActionStack: [string, string, string][] = [];
 
@@ -21,6 +22,7 @@ export function createOperation<R, T extends ActionDict<R>>(
     };
 
     // Ported from Operation.execute in ohm-js/src/Semantics.js
+    const stackLen = globalActionStack.length;
     try {
       // Look for a semantic action whose name matches the node's constructor name, which is either
       // the name of a rule in the grammar, or '_terminal' (for a terminal node), or '_iter' (for an
@@ -66,7 +68,7 @@ export function createOperation<R, T extends ActionDict<R>>(
       throw new Error(`missing semantic action: ${ctorName}` + getActionStackTrace());
       // End inlined logic
     } finally {
-      globalActionStack.pop();
+      globalActionStack.length = stackLen;
     }
   };
   return doIt;
