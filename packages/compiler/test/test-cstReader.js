@@ -5,11 +5,6 @@ import {CstNodeType} from '../../runtime/src/cstReader.ts';
 import {createHandle} from '../../runtime/src/cstReaderShared.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
 
-const childrenOf = (cst, handle) => {
-  const arr = [];
-  cst.forEachChild(handle, c => arr.push(c));
-  return arr;
-};
 
 test('root node basics', async t => {
   const g = await compileAndLoad('G { start = "ab" "cd" }');
@@ -337,7 +332,7 @@ const spaceMemoIgnored = test.macro(async (t, twoBody, input = '> xx') => {
   g.match(input).use(mr => {
     t.true(mr.succeeded());
     const cst = mr.cstView();
-    const [two] = childrenOf(cst, cst.root);
+    const two = cst.withChildren(cst.root, (_h, first) => first);
     const children = [];
     cst.forEachChild(two, (child, leadingSpacesLen) => {
       children.push({child, leadingSpacesLen, childStartIdx: cst.startIdx(child)});
