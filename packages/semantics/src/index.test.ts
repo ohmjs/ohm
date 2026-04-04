@@ -102,3 +102,30 @@ test('it handles v17 CSTs', t => {
     t.fail('parse failed');
   }
 });
+
+// Regression: a missing-action error in a nested call should not corrupt
+// the global action stack (the finally block should only pop if this frame pushed).
+test('missing action does not corrupt the action stack', t => {
+  // 'start' has an action that catches the missing-action error for 'broken'
+  // (which has 2 children, so no default action applies) and then visits
+  // 'alsoBroken' (also 2 children, no action).
+  // With the bug: broken's finally pops start's frame, then start's finally
+  // pops from empty. When alsoBroken throws, the stack trace is empty —
+  // it should still show start.
+  const twoChildG = ohm.grammar(
+    'G { start = broken alsoBroken  broken = "a" "b"  alsoBroken = "c" "d" }'
+  );
+  const op: Operation<string> = createOperation('op', {
+    start(ctx, broken, alsoBroken) {
+      try { op(broken); } catch {}
+      return op(alsoBroken);
+    },
+    _terminal(ctx) {
+      return (ctx.thisNode as any).sourceString;
+    },
+  });
+  const cst = twoChildG.match('abcd').getCstRoot();
+  const err = t.throws(() => op(cst), {message: /missing semantic action: alsoBroken/});
+  // The error trace should show that we're inside 'start'.
+  t.regex(err!.message, /op > start/);
+});
