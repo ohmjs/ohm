@@ -4,18 +4,18 @@ import * as ohm from '@ohm-js/compiler/compat';
 import test from 'ava';
 import {readFileSync} from 'node:fs';
 
-import type {ReaderOperation} from './reader.ts';
-import {createReaderOperation} from './reader.ts';
+import type {CstViewOperation} from './cstViewOps.ts';
+import {createCstViewOperation} from './cstViewOps.ts';
 
 const scriptRel = (relPath: string) => new URL(relPath, import.meta.url);
 
-test('reader-based: arithmetic', t => {
+test('cstView-based: arithmetic', t => {
   const g2 = ohm.grammar(readFileSync(scriptRel('../../ohm-js/test/arithmetic.ohm'), 'utf8'));
   g2.match('1+(2*3)').use(r => {
     if (!r.succeeded()) return t.fail('parse failed');
     const cst = r.cstView();
 
-    const evalIt: ReaderOperation<number> = createReaderOperation<number>('evalIt', {
+    const evalIt: CstViewOperation<number> = createCstViewOperation<number>('evalIt', {
       addExp_plus(h, a, _, b) {
         return evalIt(cst, a) + evalIt(cst, b);
       },
@@ -39,7 +39,7 @@ test('reader-based: arithmetic', t => {
   });
 });
 
-test('reader-based: list and opt', t => {
+test('cstView-based: list and opt', t => {
   const g = ohm.grammar(String.raw`
     G {
       Start = ~end #"a" &(letter "c") ("b"+ letter?)* punc?
@@ -51,7 +51,7 @@ test('reader-based: list and opt', t => {
     if (!r.succeeded()) return t.fail('parse failed');
     const cst = r.cstView();
 
-    const reversed: ReaderOperation<string> = createReaderOperation<string>('reversed', {
+    const reversed: CstViewOperation<string> = createCstViewOperation<string>('reversed', {
       Start(h, a, list, opt) {
         const parts: string[] = [];
         cst.forEachTuple(list, (b, optLetter) => {

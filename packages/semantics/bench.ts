@@ -5,7 +5,7 @@ import {Bench} from 'tinybench';
 import * as ohm from '@ohm-js/compiler/compat';
 
 import {createOperation} from './src/index.ts';
-import {createReaderOperation} from './src/reader.ts';
+import {createCstViewOperation} from './src/cstViewOps.ts';
 
 const smallSize = process.argv.includes('--small-size');
 
@@ -35,15 +35,15 @@ const countNodesCstNode = createOperation<number>('countNodes', {
   },
 });
 
-// --- CstReader-based (createReaderOperation) ---
+// --- CstView-based (createCstViewOperation) ---
 
 let _cst: any;
 
-const countNodesCstReader = createReaderOperation<number>('countNodes', {
+const countNodesCstView = createCstViewOperation<number>('countNodes', {
   _nonterminal(h) {
     let sum = 1;
     _cst.forEachChild(h, child => {
-      sum += countNodesCstReader(_cst, child);
+      sum += countNodesCstView(_cst, child);
     });
     return sum;
   },
@@ -53,7 +53,7 @@ const countNodesCstReader = createReaderOperation<number>('countNodes', {
   _default(h) {
     let sum = 1;
     _cst.forEachChild(h, child => {
-      sum += countNodesCstReader(_cst, child);
+      sum += countNodesCstView(_cst, child);
     });
     return sum;
   },
@@ -81,12 +81,12 @@ bench.add(
 );
 
 bench.add(
-  'createReaderOperation (CstReader)',
+  'createCstViewOperation (CstView)',
   () =>
     g.match(input).use((r: any) => {
       const cst = r.cstView();
       _cst = cst;
-      return countNodesCstReader(_cst, cst.root);
+      return countNodesCstView(_cst, cst.root);
     }),
   opts
 );
@@ -103,6 +103,6 @@ console.log(`Input: ${smallSize ? 'small' : 'underscore-1.8.3.js'} (${input.leng
   }
 
   const cstNodeMean = bench.tasks[0].result!.latency.mean;
-  const cstReaderMean = bench.tasks[1].result!.latency.mean;
-  console.log(`\nSpeedup: ${(cstNodeMean / cstReaderMean).toFixed(2)}x`);
+  const cstViewMean = bench.tasks[1].result!.latency.mean;
+  console.log(`\nSpeedup: ${(cstNodeMean / cstViewMean).toFixed(2)}x`);
 })();

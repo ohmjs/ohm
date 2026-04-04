@@ -1,7 +1,7 @@
 import type {CstView} from 'ohm-js/cstView';
 import {CstNodeType} from 'ohm-js/cstView';
 
-export type ReaderActionDict<R> = {
+export type CstViewActionDict<R> = {
   _list?: (handle: number) => R;
   _nonterminal?: (handle: number) => R;
   _opt?: (handle: number) => R;
@@ -10,7 +10,7 @@ export type ReaderActionDict<R> = {
   [ruleName: string]: ((handle: number, ...children: number[]) => R) | undefined;
 };
 
-export type ReaderOperation<R> = (cst: CstView, handle: number) => R;
+export type CstViewOperation<R> = (cst: CstView, handle: number) => R;
 
 type ActionFn<R> = (handle: number, ...children: number[]) => R;
 
@@ -19,10 +19,10 @@ const NO_ACTION = 0;
 const USE_NONTERMINAL = 1;
 const USE_DEFAULT = 2;
 
-export function createReaderOperation<R>(
+export function createCstViewOperation<R>(
   name: string,
-  actions: ReaderActionDict<R>
-): ReaderOperation<R> {
+  actions: CstViewActionDict<R>
+): CstViewOperation<R> {
   // Lazily-built dispatch table: actionTable[ruleId] is either an action
   // function or a sentinel (NO_ACTION / USE_NONTERMINAL / USE_DEFAULT).
   let actionTable: (ActionFn<R> | number)[] | undefined;
@@ -63,7 +63,7 @@ export function createReaderOperation<R>(
     return actionTable;
   }
 
-  const doIt: ReaderOperation<R> = (cst: CstView, handle: number): R => {
+  const doIt: CstViewOperation<R> = (cst: CstView, handle: number): R => {
     const nodeType = cst.type(handle);
 
     // Terminal — no children, no table lookup needed.
