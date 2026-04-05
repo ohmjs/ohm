@@ -3,7 +3,6 @@
 // building and validation.
 
 import {Grammar} from 'ohm-js';
-import type {CstNode} from 'ohm-js';
 
 import {Grammar as ParsedGrammar} from 'ohm-js-legacy/src/Grammar.js';
 
@@ -45,7 +44,7 @@ export function grammars(source: string): Record<string, any> {
       if (result.failed()) {
         throw new Error(`Failed to parse grammar:\n${result.message}`);
       }
-      buildGrammars(result.getCstRoot() as CstNode, ns, source);
+      buildGrammars(result.cstView().rootNode(), ns, source);
     });
   return ns;
 }

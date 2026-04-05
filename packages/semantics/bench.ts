@@ -3,10 +3,9 @@ import process from 'node:process';
 
 import {Bench} from 'tinybench';
 import * as ohm from '@ohm-js/compiler/compat';
-import {createReader} from 'ohm-js/cstReader';
 
 import {createOperation} from './src/index.ts';
-import {createReaderOperation} from './src/reader.ts';
+import {createCstViewOperation} from './src/cstViewOps.ts';
 
 const smallSize = process.argv.includes('--small-size');
 
@@ -36,15 +35,15 @@ const countNodesCstNode = createOperation<number>('countNodes', {
   },
 });
 
-// --- CstReader-based (createReaderOperation) ---
+// --- CstView-based (createCstViewOperation) ---
 
-let _rd: ReturnType<typeof createReader>;
+let _cst: any;
 
-const countNodesCstReader = createReaderOperation<number>('countNodes', {
+const countNodesCstView = createCstViewOperation<number>('countNodes', {
   _nonterminal(h) {
     let sum = 1;
-    _rd.forEachChild(h, child => {
-      sum += countNodesCstReader(_rd, child);
+    _cst.forEachChild(h, child => {
+      sum += countNodesCstView(_cst, child);
     });
     return sum;
   },
@@ -53,8 +52,8 @@ const countNodesCstReader = createReaderOperation<number>('countNodes', {
   },
   _default(h) {
     let sum = 1;
-    _rd.forEachChild(h, child => {
-      sum += countNodesCstReader(_rd, child);
+    _cst.forEachChild(h, child => {
+      sum += countNodesCstView(_cst, child);
     });
     return sum;
   },
@@ -77,16 +76,17 @@ const bench = new Bench({
 
 bench.add(
   'createOperation (CstNode)',
-  () => g.match(input).use((r: any) => countNodesCstNode(r.getCstRoot())),
+  () => g.match(input).use((r: any) => countNodesCstNode(r.cstView().rootNode())),
   opts
 );
 
 bench.add(
-  'createReaderOperation (CstReader)',
+  'createCstViewOperation (CstView)',
   () =>
     g.match(input).use((r: any) => {
-      _rd = createReader(r);
-      return countNodesCstReader(_rd, _rd.root);
+      const cst = r.cstView();
+      _cst = cst;
+      return countNodesCstView(_cst, cst.root);
     }),
   opts
 );
@@ -103,6 +103,6 @@ console.log(`Input: ${smallSize ? 'small' : 'underscore-1.8.3.js'} (${input.leng
   }
 
   const cstNodeMean = bench.tasks[0].result!.latency.mean;
-  const cstReaderMean = bench.tasks[1].result!.latency.mean;
-  console.log(`\nSpeedup: ${(cstNodeMean / cstReaderMean).toFixed(2)}x`);
+  const cstViewMean = bench.tasks[1].result!.latency.mean;
+  console.log(`\nSpeedup: ${(cstNodeMean / cstViewMean).toFixed(2)}x`);
 })();

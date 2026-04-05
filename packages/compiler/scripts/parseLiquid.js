@@ -19,7 +19,7 @@ import {Bench} from 'tinybench';
 import {Grammar} from 'ohm-js';
 import {compileGrammars} from '../src/api.ts';
 import {unparse} from '../test/_helpers.js';
-import {createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
+import {CstNodeType} from '../../runtime/src/cstView.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -35,7 +35,7 @@ const positionalArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
 // https://matklad.github.io/2024/03/22/basic-things.html
 const smallSize = flags.has('--small-size');
 const includeUnparse = flags.has('--include-unparse');
-const useCstReader = flags.has('--cst-reader');
+const useCstView = flags.has('--cst-view');
 
 // Get pattern from command line arguments
 const pattern = positionalArgs[0];
@@ -104,26 +104,26 @@ const pattern = positionalArgs[0];
     opts
   );
 
-  // Walk CST using CstReader, collecting terminal text.
-  function unparseCstReader(matchResult) {
-    const reader = createReader(matchResult);
+  // Walk CST using CstView, collecting terminal text.
+  function unparseCstView(matchResult) {
+    const cst = matchResult.cstView();
     let ans = '';
     function walk(handle) {
-      if (reader.type(handle) === CstNodeType.TERMINAL) {
-        ans += reader.sourceString(handle);
+      if (cst.type(handle) === CstNodeType.TERMINAL) {
+        ans += cst.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, (child, _leadingSpaces) => {
+      cst.forEachChild(handle, (child, _leadingSpaces) => {
         walk(child);
       });
     }
-    walk(reader.root);
+    walk(cst.root);
     return ans;
   }
 
   const wasmLabel = includeUnparse ? 'Wasm parse+unparse' : 'Wasm parse';
   bench.add(
-    useCstReader ? `${wasmLabel} (CstReader)` : wasmLabel,
+    useCstView ? `${wasmLabel} (CstView)` : wasmLabel,
     () => {
       let overriddenDuration = 0;
       for (const {input} of files) {
@@ -140,7 +140,7 @@ const pattern = positionalArgs[0];
             peakWasmMemoryBytes,
             exports.memory.buffer.byteLength
           );
-          return useCstReader ? unparseCstReader(m) : unparse(g);
+          return useCstView ? unparseCstView(m) : unparse(g);
         });
         if (includeUnparse) overriddenDuration += bench.now() - start;
       }

@@ -1,24 +1,27 @@
 import {
   CST_CHILD_COUNT_OFFSET,
   CST_CHILDREN_OFFSET,
-  CST_MATCH_LENGTH_OFFSET,
   CST_HAS_LEADING_SPACES_FLAG,
+  CST_MATCH_LENGTH_OFFSET,
   CST_TYPE_AND_DETAILS_OFFSET,
   CstNodeType,
+  createHandle,
   isTaggedTerminal,
   MatchRecordType,
+  rawHandle,
   rawMatchRecordType,
-} from './miniohm.ts';
-import {assert} from './assert.ts';
-import {createReaderFromCtx} from './cstReaderFactory.ts';
-import {createHandle, rawHandle, unpackStartIdx} from './cstReaderShared.ts';
+  unpackStartIdx,
+  _nodeFactory,
+} from './cstCommon.ts';
+import {assert, checkNotNull} from './assert.ts';
 
-import type {MatchContext, SucceededMatchResult} from './miniohm.ts';
+import type {MatchContext} from './cstCommon.ts';
+import type {CstNode} from './miniohm.ts';
 
 export {CstNodeType};
 
-function nextEdgePos(reader: CstReader, child: number): number {
-  return reader.startIdx(child) + reader.matchLength(child);
+function nextEdgePos(cst: CstView, child: number): number {
+  return cst.startIdx(child) + cst.matchLength(child);
 }
 
 /**
@@ -32,7 +35,7 @@ function nextEdgePos(reader: CstReader, child: number): number {
  * Leading spaces are edge data (they belong to the parent→child relationship),
  * not node data. For each child edge:
  * - startIdx(childHandle) is the child's start position
- * - leadingSpacesLen >= 0
+ * - leadingSpacesLen \>= 0
  * - leading spaces span: start = startIdx(childHandle) - leadingSpacesLen, length = leadingSpacesLen
  * - child source span: start = startIdx(childHandle), length = matchLength(childHandle)
  *
@@ -40,7 +43,7 @@ function nextEdgePos(reader: CstReader, child: number): number {
  * - startIdx(root) === rootLeadingSpacesLen
  * - leading spaces before root are input.slice(0, rootLeadingSpacesLen)
  */
-export class CstReader {
+export class CstView {
   /** @internal */
   private _ctx: MatchContext;
 
@@ -194,9 +197,8 @@ export class CstReader {
    * The caller must track `edgeStartIdx`: for the first child, it's
    * `startIdx(parentHandle)`; for subsequent children, it's
    * `startIdx(prevChild) + matchLength(prevChild)`.
-   * @internal
    */
-  childAt(handle: number, index: number, edgeStartIdx: number): number {
+  private childAt(handle: number, index: number, edgeStartIdx: number): number {
     const raw = rawHandle(handle);
     const slot = this._ctx.view.getUint32(raw + CST_CHILDREN_OFFSET + index * 4, true);
     const hasLeadingSpaces = (slot & CST_HAS_LEADING_SPACES_FLAG) !== 0;
@@ -346,9 +348,14 @@ export class CstReader {
     const type = rawMatchRecordType(this._ctx.view, rawChild);
     return type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL;
   }
-}
 
-export function createReader(result: SucceededMatchResult): CstReader {
-  const exports = (result.grammar as any)._instance.exports;
-  return createReaderFromCtx(result._ctx, exports);
+  /** Create a lazy CstNode wrapper for the given handle. */
+  node(handle: number): CstNode {
+    return checkNotNull(_nodeFactory.make)(this, handle, 0);
+  }
+
+  /** Create a lazy CstNode wrapper for the root, including leading spaces. */
+  rootNode(): CstNode {
+    return checkNotNull(_nodeFactory.make)(this, this.root, this.rootLeadingSpacesLen);
+  }
 }

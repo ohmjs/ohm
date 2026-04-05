@@ -24,9 +24,9 @@
       "types": "./dist/src/unstableDebug.d.ts",
       "default": "./dist/src/unstableDebug.js"
     },
-    "./cstReader": {
-      "types": "./dist/src/cstReader.d.ts",
-      "default": "./dist/src/cstReader.js"
+    "./cstView": {
+      "types": "./dist/src/cstView.d.ts",
+      "default": "./dist/src/cstView.js"
     }
   },
   "files": ["dist"],

@@ -1,54 +1,48 @@
 import test from 'ava';
 import * as fc from 'fast-check';
 
-import {createReader, CstNodeType} from '../../runtime/src/cstReader.ts';
-import {createHandle} from '../../runtime/src/cstReaderShared.ts';
+import {CstNodeType} from '../../runtime/src/cstView.ts';
+import {createHandle} from '../../runtime/src/cstCommon.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
-
-const childrenOf = (reader, handle) => {
-  const arr = [];
-  reader.forEachChild(handle, c => arr.push(c));
-  return arr;
-};
 
 test('root node basics', async t => {
   const g = await compileAndLoad('G { start = "ab" "cd" }');
   t.is(matchWithInput(g, 'abcd'), 1);
 
   g.match('abcd').use(mr => {
-    const reader = createReader(mr);
-    t.is(reader.type(reader.root), CstNodeType.NONTERMINAL);
-    t.is(reader.matchLength(reader.root), 4);
-    t.is(reader.ctorName(reader.root), 'start');
-    t.is(reader.childCount(reader.root), 2);
-    t.is(reader.input, 'abcd');
-    t.is(reader.sourceString(reader.root), 'abcd');
-    t.is(reader.startIdx(reader.root), 0);
+    const cst = mr.cstView();
+    t.is(cst.type(cst.root), CstNodeType.NONTERMINAL);
+    t.is(cst.matchLength(cst.root), 4);
+    t.is(cst.ctorName(cst.root), 'start');
+    t.is(cst.childCount(cst.root), 2);
+    t.is(cst.input, 'abcd');
+    t.is(cst.sourceString(cst.root), 'abcd');
+    t.is(cst.startIdx(cst.root), 0);
   });
 });
 
 test('terminal children', async t => {
   const g = await compileAndLoad('G { start = "ab" "cd" }');
   g.match('abcd').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     const children = [];
-    reader.forEachChild(reader.root, (child, leadingSpaces, index) => {
-      children.push({child, leadingSpaces, startIdx: reader.startIdx(child), index});
+    cst.forEachChild(cst.root, (child, leadingSpaces, index) => {
+      children.push({child, leadingSpaces, startIdx: cst.startIdx(child), index});
     });
     t.is(children.length, 2);
 
     // First child: "ab"
-    t.is(reader.type(children[0].child), CstNodeType.TERMINAL);
-    t.is(reader.matchLength(children[0].child), 2);
-    t.is(reader.ctorName(children[0].child), '_terminal');
-    t.is(reader.sourceString(children[0].child), 'ab');
+    t.is(cst.type(children[0].child), CstNodeType.TERMINAL);
+    t.is(cst.matchLength(children[0].child), 2);
+    t.is(cst.ctorName(children[0].child), '_terminal');
+    t.is(cst.sourceString(children[0].child), 'ab');
     t.is(children[0].leadingSpaces, 0);
     t.is(children[0].index, 0);
 
     // Second child: "cd"
-    t.is(reader.type(children[1].child), CstNodeType.TERMINAL);
-    t.is(reader.matchLength(children[1].child), 2);
-    t.is(reader.sourceString(children[1].child), 'cd');
+    t.is(cst.type(children[1].child), CstNodeType.TERMINAL);
+    t.is(cst.matchLength(children[1].child), 2);
+    t.is(cst.sourceString(children[1].child), 'cd');
     t.is(children[1].index, 1);
   });
 });
@@ -56,36 +50,36 @@ test('terminal children', async t => {
 test('nonterminal children', async t => {
   const g = await compileAndLoad('G { start = a b\na = "x"\nb = "y" }');
   g.match('xy').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     const children = [];
-    reader.forEachChild(reader.root, (child, ls, i) => {
-      children.push({child, ls, startIdx: reader.startIdx(child), i});
+    cst.forEachChild(cst.root, (child, ls, i) => {
+      children.push({child, ls, startIdx: cst.startIdx(child), i});
     });
     t.is(children.length, 2);
-    t.is(reader.ctorName(children[0].child), 'a');
-    t.is(reader.ctorName(children[1].child), 'b');
-    t.is(reader.type(children[0].child), CstNodeType.NONTERMINAL);
-    t.is(reader.type(children[1].child), CstNodeType.NONTERMINAL);
-    t.is(reader.sourceString(children[0].child), 'x');
-    t.is(reader.sourceString(children[1].child), 'y');
+    t.is(cst.ctorName(children[0].child), 'a');
+    t.is(cst.ctorName(children[1].child), 'b');
+    t.is(cst.type(children[0].child), CstNodeType.NONTERMINAL);
+    t.is(cst.type(children[1].child), CstNodeType.NONTERMINAL);
+    t.is(cst.sourceString(children[0].child), 'x');
+    t.is(cst.sourceString(children[1].child), 'y');
   });
 });
 
 test('iteration (list) node', async t => {
   const g = await compileAndLoad('G { start = "a"* }');
   g.match('aaa').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let listHandle;
-    reader.forEachChild(reader.root, child => {
+    cst.forEachChild(cst.root, child => {
       listHandle = child;
     });
-    t.is(reader.type(listHandle), CstNodeType.LIST);
-    t.is(reader.ctorName(listHandle), '_list');
-    t.is(reader.childCount(listHandle), 3);
+    t.is(cst.type(listHandle), CstNodeType.LIST);
+    t.is(cst.ctorName(listHandle), '_list');
+    t.is(cst.childCount(listHandle), 3);
 
     const items = [];
-    reader.forEachChild(listHandle, child => {
-      items.push(reader.sourceString(child));
+    cst.forEachChild(listHandle, child => {
+      items.push(cst.sourceString(child));
     });
     t.deepEqual(items, ['a', 'a', 'a']);
   });
@@ -94,15 +88,15 @@ test('iteration (list) node', async t => {
 test('iteration with nonterminals', async t => {
   const g = await compileAndLoad('G { start = letter* }');
   g.match('abc').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let listHandle;
-    reader.forEachChild(reader.root, child => {
+    cst.forEachChild(cst.root, child => {
       listHandle = child;
     });
-    t.is(reader.type(listHandle), CstNodeType.LIST);
+    t.is(cst.type(listHandle), CstNodeType.LIST);
     const items = [];
-    reader.forEachChild(listHandle, child => {
-      items.push(reader.sourceString(child));
+    cst.forEachChild(listHandle, child => {
+      items.push(cst.sourceString(child));
     });
     t.is(items.length, 3);
     t.deepEqual(items, ['a', 'b', 'c']);
@@ -112,49 +106,49 @@ test('iteration with nonterminals', async t => {
 test('optional node: present', async t => {
   const g = await compileAndLoad('G { start = "a"? }');
   g.match('a').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let opt;
-    reader.forEachChild(reader.root, child => {
+    cst.forEachChild(cst.root, child => {
       opt = child;
     });
-    t.is(reader.type(opt), CstNodeType.OPT);
-    t.is(reader.ctorName(opt), '_opt');
-    t.is(reader.childCount(opt), 1);
-    t.is(reader.matchLength(opt), 1);
+    t.is(cst.type(opt), CstNodeType.OPT);
+    t.is(cst.ctorName(opt), '_opt');
+    t.is(cst.childCount(opt), 1);
+    t.is(cst.matchLength(opt), 1);
   });
 });
 
 test('optional node: absent', async t => {
   const g = await compileAndLoad('G { start = "a"? }');
   g.match('').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let opt;
-    reader.forEachChild(reader.root, child => {
+    cst.forEachChild(cst.root, child => {
       opt = child;
     });
-    t.is(reader.type(opt), CstNodeType.OPT);
-    t.is(reader.childCount(opt), 0);
-    t.is(reader.matchLength(opt), 0);
+    t.is(cst.type(opt), CstNodeType.OPT);
+    t.is(cst.childCount(opt), 0);
+    t.is(cst.matchLength(opt), 0);
   });
 });
 
 test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
   const g = await compileAndLoad('G { start = ("a" "b"?)* }');
   g.match('abab').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let list;
-    reader.forEachChild(reader.root, child => {
+    cst.forEachChild(cst.root, child => {
       list = child;
     });
 
-    t.is(reader.tupleArity(list), 2);
+    t.is(cst.tupleArity(list), 2);
 
     const tuples = [];
-    reader.forEachTuple(list, (a, b) => {
+    cst.forEachTuple(list, (a, b) => {
       tuples.push(
-        reader.sourceString(a) +
-          reader.withChildren(b, (_handle, child) =>
-            reader.isPresent(b) ? reader.sourceString(child) : ''
+        cst.sourceString(a) +
+          cst.withChildren(b, (_handle, child) =>
+            cst.isPresent(b) ? cst.sourceString(child) : ''
           )
       );
     });
@@ -162,16 +156,16 @@ test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
 
     let emptyOpt;
     g.match('a').use(mr2 => {
-      const reader2 = createReader(mr2);
-      reader2.forEachChild(reader2.root, child => {
+      const cst2 = mr2.cstView();
+      cst2.forEachChild(cst2.root, child => {
         list = child;
       });
-      reader2.forEachTuple(list, (_a, b) => {
+      cst2.forEachTuple(list, (_a, b) => {
         emptyOpt = b;
       });
-      t.false(reader2.isPresent(emptyOpt));
+      t.false(cst2.isPresent(emptyOpt));
       t.is(
-        reader2.withChildren(emptyOpt, (_handle, child) =>
+        cst2.withChildren(emptyOpt, (_handle, child) =>
           child === undefined ? 'missing' : 'present'
         ),
         'missing'
@@ -183,23 +177,23 @@ test('withChildren, tupleArity, forEachTuple, and isPresent', async t => {
 test('type-specific helpers assert on the wrong handle kind', async t => {
   const g = await compileAndLoad('G { Start = ("a" "b"?)* }');
   g.match('ab').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let list;
-    reader.forEachChild(reader.root, child => {
+    cst.forEachChild(cst.root, child => {
       list = child;
     });
 
     let terminal;
     let opt;
-    reader.forEachTuple(list, (a, b) => {
+    cst.forEachTuple(list, (a, b) => {
       terminal = a;
       opt = b;
     });
 
-    t.throws(() => reader.ruleId(list), {message: 'Not a nonterminal'});
-    t.throws(() => reader.tupleArity(reader.root), {message: 'Not a list'});
-    t.throws(() => reader.isPresent(terminal), {message: 'Not an opt'});
-    t.true(reader.isPresent(opt));
+    t.throws(() => cst.ruleId(list), {message: 'Not a nonterminal'});
+    t.throws(() => cst.tupleArity(cst.root), {message: 'Not a list'});
+    t.throws(() => cst.isPresent(terminal), {message: 'Not an opt'});
+    t.true(cst.isPresent(opt));
   });
 });
 
@@ -208,16 +202,16 @@ test('type-specific helpers assert on the wrong handle kind', async t => {
 test('unparse: simple terminals', async t => {
   const g = await compileAndLoad('G { start = "ab" "cd" }');
   g.match('abcd').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
-      if (reader.type(handle) === CstNodeType.TERMINAL) {
-        ans += reader.sourceString(handle);
+      if (cst.type(handle) === CstNodeType.TERMINAL) {
+        ans += cst.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, child => walk(child));
+      cst.forEachChild(handle, child => walk(child));
     }
-    walk(reader.root);
+    walk(cst.root);
     t.is(ans, 'abcd');
   });
 });
@@ -225,16 +219,16 @@ test('unparse: simple terminals', async t => {
 test('unparse: with rule application', async t => {
   const g = await compileAndLoad('G { start = a b\na = "x"\nb = "y" }');
   g.match('xy').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
-      if (reader.type(handle) === CstNodeType.TERMINAL) {
-        ans += reader.sourceString(handle);
+      if (cst.type(handle) === CstNodeType.TERMINAL) {
+        ans += cst.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, child => walk(child));
+      cst.forEachChild(handle, child => walk(child));
     }
-    walk(reader.root);
+    walk(cst.root);
     t.is(ans, 'xy');
   });
 });
@@ -242,16 +236,16 @@ test('unparse: with rule application', async t => {
 test('unparse: with nonterminals', async t => {
   const g = await compileAndLoad('G { start = a b\na = "hello"\nb = "world" }');
   g.match('helloworld').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
-      if (reader.type(handle) === CstNodeType.TERMINAL) {
-        ans += reader.sourceString(handle);
+      if (cst.type(handle) === CstNodeType.TERMINAL) {
+        ans += cst.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, child => walk(child));
+      cst.forEachChild(handle, child => walk(child));
     }
-    walk(reader.root);
+    walk(cst.root);
     t.is(ans, 'helloworld');
   });
 });
@@ -260,16 +254,16 @@ test('unparse: unicode', async t => {
   const g = await compileAndLoad('G { start = any* }');
   const input = 'Nöö';
   g.match(input).use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
-      if (reader.type(handle) === CstNodeType.TERMINAL) {
-        ans += reader.sourceString(handle);
+      if (cst.type(handle) === CstNodeType.TERMINAL) {
+        ans += cst.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, child => walk(child));
+      cst.forEachChild(handle, child => walk(child));
     }
-    walk(reader.root);
+    walk(cst.root);
     t.is(ans, input);
   });
 });
@@ -279,35 +273,35 @@ test('unparse: unicode', async t => {
 test('rootLeadingSpacesLen: present', async t => {
   const g = await compileAndLoad('G { Start = "x" }');
   g.match('  x').use(mr => {
-    const reader = createReader(mr);
-    t.is(reader.rootLeadingSpacesLen, 2);
-    t.is(reader.input.slice(0, reader.rootLeadingSpacesLen), '  ');
-    t.is(reader.startIdx(reader.root), 2);
+    const cst = mr.cstView();
+    t.is(cst.rootLeadingSpacesLen, 2);
+    t.is(cst.input.slice(0, cst.rootLeadingSpacesLen), '  ');
+    t.is(cst.startIdx(cst.root), 2);
   });
 });
 
 test('rootLeadingSpacesLen: absent', async t => {
   const g = await compileAndLoad('G { Start = "x" }');
   g.match('x').use(mr => {
-    const reader = createReader(mr);
-    t.is(reader.rootLeadingSpacesLen, 0);
+    const cst = mr.cstView();
+    t.is(cst.rootLeadingSpacesLen, 0);
   });
 });
 
 test('child leadingSpaces in syntactic rule', async t => {
   const g = await compileAndLoad('G { Start = "a" "b" }');
   g.match('a b').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     const spacesInfo = [];
-    reader.forEachChild(reader.root, (child, leadingSpacesLen, index) => {
-      const childStartIdx = reader.startIdx(child);
+    cst.forEachChild(cst.root, (child, leadingSpacesLen, index) => {
+      const childStartIdx = cst.startIdx(child);
       spacesInfo.push({
         index,
         hasSpaces: leadingSpacesLen > 0,
         spacesLen: leadingSpacesLen,
         spacesStr:
           leadingSpacesLen > 0
-            ? reader.input.slice(childStartIdx - leadingSpacesLen, childStartIdx)
+            ? cst.input.slice(childStartIdx - leadingSpacesLen, childStartIdx)
             : '',
       });
     });
@@ -336,11 +330,11 @@ const spaceMemoIgnored = test.macro(async (t, twoBody, input = '> xx') => {
   `);
   g.match(input).use(mr => {
     t.true(mr.succeeded());
-    const reader = createReader(mr);
-    const [two] = childrenOf(reader, reader.root);
+    const cst = mr.cstView();
+    const two = cst.withChildren(cst.root, (_h, first) => first);
     const children = [];
-    reader.forEachChild(two, (child, leadingSpacesLen) => {
-      children.push({child, leadingSpacesLen, childStartIdx: reader.startIdx(child)});
+    cst.forEachChild(two, (child, leadingSpacesLen) => {
+      children.push({child, leadingSpacesLen, childStartIdx: cst.startIdx(child)});
     });
     t.deepEqual(
       children.map(({leadingSpacesLen}) => leadingSpacesLen),
@@ -377,8 +371,8 @@ test(
 test('ruleId returns a stable rule index for nonterminals', async t => {
   const g = await compileAndLoad('G { start = a\na = "x" }');
   g.match('x').use(mr => {
-    const reader = createReader(mr);
-    t.true(reader.ruleId(reader.root) >= 0);
+    const cst = mr.cstView();
+    t.true(cst.ruleId(cst.root) >= 0);
   });
 });
 
@@ -387,13 +381,13 @@ test('ruleId returns a stable rule index for nonterminals', async t => {
 test('childCount is 0 for tagged terminals', async t => {
   const g = await compileAndLoad('G { start = "x" }');
   g.match('x').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     let termChild;
-    reader.forEachChild(reader.root, child => {
+    cst.forEachChild(cst.root, child => {
       termChild = child;
     });
-    t.is(reader.type(termChild), CstNodeType.TERMINAL);
-    t.is(reader.childCount(termChild), 0);
+    t.is(cst.type(termChild), CstNodeType.TERMINAL);
+    t.is(cst.childCount(termChild), 0);
   });
 });
 
@@ -412,18 +406,18 @@ test('createHandle accepts max valid values', t => {
   t.true(handle > 0);
 });
 
-// --- isSyntactic via CstReader ---
+// --- isSyntactic via CstView ---
 
 test('isSyntactic: true for syntactic rule, false for lexical', async t => {
   const g = await compileAndLoad('G { Start = inner\ninner = "x" }');
   g.match('x').use(mr => {
-    const reader = createReader(mr);
-    t.true(reader.isSyntactic(reader.root)); // Start is syntactic
+    const cst = mr.cstView();
+    t.true(cst.isSyntactic(cst.root)); // Start is syntactic
     let innerHandle;
-    reader.forEachChild(reader.root, child => {
+    cst.forEachChild(cst.root, child => {
       innerHandle = child;
     });
-    t.false(reader.isSyntactic(innerHandle)); // inner is lexical
+    t.false(cst.isSyntactic(innerHandle)); // inner is lexical
   });
 });
 
@@ -434,17 +428,17 @@ test('isSyntactic reads compiler-embedded classification', async t => {
   // directly rather than rederiving from rule names.
   const g = await compileAndLoad('G { Start = inner\ninner = "x" }');
   g.match('x').use(mr => {
-    const reader = createReader(mr);
+    const cst = mr.cstView();
     // Walk all nonterminals and verify classification
     function check(handle) {
-      if (reader.type(handle) === CstNodeType.NONTERMINAL) {
-        const name = reader.ctorName(handle);
-        if (name === 'Start') t.true(reader.isSyntactic(handle));
-        if (name === 'inner') t.false(reader.isSyntactic(handle));
+      if (cst.type(handle) === CstNodeType.NONTERMINAL) {
+        const name = cst.ctorName(handle);
+        if (name === 'Start') t.true(cst.isSyntactic(handle));
+        if (name === 'inner') t.false(cst.isSyntactic(handle));
       }
-      reader.forEachChild(handle, child => check(child));
+      cst.forEachChild(handle, child => check(child));
     }
-    check(reader.root);
+    check(cst.root);
   });
 });
 
@@ -452,16 +446,16 @@ test('isSyntactic reads compiler-embedded classification', async t => {
 
 // Recursively check all invariants on a CST node and its descendants.
 // Returns an array of error strings (empty = all good).
-function checkInvariants(reader, handle, isLexicalParent) {
+function checkInvariants(cst, handle, isLexicalParent) {
   const errors = [];
-  const type = reader.type(handle);
-  const ctor = reader.ctorName(handle);
-  const start = reader.startIdx(handle);
-  const len = reader.matchLength(handle);
+  const type = cst.type(handle);
+  const ctor = cst.ctorName(handle);
+  const start = cst.startIdx(handle);
+  const len = cst.matchLength(handle);
 
   // -- Packed-handle span consistency --
-  const actual = reader.sourceString(handle);
-  const expected = reader.input.slice(start, start + len);
+  const actual = cst.sourceString(handle);
+  const expected = cst.input.slice(start, start + len);
   if (actual !== expected) {
     errors.push(
       `span mismatch at ${start}: sourceString=${JSON.stringify(actual)}, ` +
@@ -474,22 +468,22 @@ function checkInvariants(reader, handle, isLexicalParent) {
     if (ctor !== '_terminal') {
       errors.push(`terminal ctorName=${ctor}, expected '_terminal'`);
     }
-    if (reader.childCount(handle) !== 0) {
-      errors.push(`terminal childCount=${reader.childCount(handle)}, expected 0`);
+    if (cst.childCount(handle) !== 0) {
+      errors.push(`terminal childCount=${cst.childCount(handle)}, expected 0`);
     }
     // Terminals are leaves — nothing more to check.
     return errors;
   }
 
   if (type === CstNodeType.OPT) {
-    const cc = reader.childCount(handle);
+    const cc = cst.childCount(handle);
     if (cc !== 0 && cc !== 1) {
       errors.push(`opt childCount=${cc}, expected 0 or 1`);
     }
   }
 
   // -- Public iteration contract --
-  const childCount = reader.childCount(handle);
+  const childCount = cst.childCount(handle);
   let callbackCount = 0;
   const indices = [];
 
@@ -498,8 +492,8 @@ function checkInvariants(reader, handle, isLexicalParent) {
   let cursor = start;
   let reconstructed = '';
 
-  reader.forEachChild(handle, (child, leadingSpacesLen, index) => {
-    const childStartIdx = reader.startIdx(child);
+  cst.forEachChild(handle, (child, leadingSpacesLen, index) => {
+    const childStartIdx = cst.startIdx(child);
     indices.push(index);
     callbackCount++;
 
@@ -511,7 +505,7 @@ function checkInvariants(reader, handle, isLexicalParent) {
     }
 
     // LIST/OPT edges never report leading spaces (documented contract).
-    const childType = reader.type(child);
+    const childType = cst.type(child);
     if (
       (childType === CstNodeType.LIST || childType === CstNodeType.OPT) &&
       leadingSpacesLen > 0
@@ -533,20 +527,20 @@ function checkInvariants(reader, handle, isLexicalParent) {
 
     // Round-trip reconstruction: interleave spaces + child text.
     if (leadingSpacesLen > 0) {
-      reconstructed += reader.input.slice(childStartIdx - leadingSpacesLen, childStartIdx);
+      reconstructed += cst.input.slice(childStartIdx - leadingSpacesLen, childStartIdx);
     }
-    reconstructed += reader.sourceString(child);
+    reconstructed += cst.sourceString(child);
 
-    cursor = childStartIdx + reader.matchLength(child);
+    cursor = childStartIdx + cst.matchLength(child);
 
     // Recurse. Lexical context propagates through non-nonterminal wrappers.
     let childIsLexical;
     if (childType === CstNodeType.NONTERMINAL) {
-      childIsLexical = !reader.isSyntactic(child);
+      childIsLexical = !cst.isSyntactic(child);
     } else {
       childIsLexical = isLexicalParent;
     }
-    errors.push(...checkInvariants(reader, child, childIsLexical));
+    errors.push(...checkInvariants(cst, child, childIsLexical));
   });
 
   // Tiling: children must cover entire parent span.
@@ -575,27 +569,26 @@ function checkInvariants(reader, handle, isLexicalParent) {
 }
 
 // Check all invariants on a full match result, including root-level checks.
-function checkMatch(reader) {
+function checkMatch(cst) {
   const errors = [];
-  const {root, rootLeadingSpacesLen, input} = reader;
+  const {root, rootLeadingSpacesLen, input} = cst;
 
   // -- Root consumption invariant --
-  if (reader.startIdx(root) !== rootLeadingSpacesLen) {
+  if (cst.startIdx(root) !== rootLeadingSpacesLen) {
     errors.push(
-      `root startIdx=${reader.startIdx(root)}, ` +
-        `rootLeadingSpacesLen=${rootLeadingSpacesLen}`
+      `root startIdx=${cst.startIdx(root)}, ` + `rootLeadingSpacesLen=${rootLeadingSpacesLen}`
     );
   }
-  if (rootLeadingSpacesLen + reader.matchLength(root) !== input.length) {
+  if (rootLeadingSpacesLen + cst.matchLength(root) !== input.length) {
     errors.push(
-      `rootLeadingSpacesLen(${rootLeadingSpacesLen}) + matchLength(${reader.matchLength(root)}) ` +
+      `rootLeadingSpacesLen(${rootLeadingSpacesLen}) + matchLength(${cst.matchLength(root)}) ` +
         `!== input.length(${input.length})`
     );
   }
 
   // -- Root round-trip: leadingSpaces + render(root) === input --
   const rootSpaces = input.slice(0, rootLeadingSpacesLen);
-  const rootText = reader.sourceString(root);
+  const rootText = cst.sourceString(root);
   if (rootSpaces + rootText !== input) {
     errors.push(
       `root round-trip: ${JSON.stringify(rootSpaces + rootText)} !== ${JSON.stringify(input)}`
@@ -603,8 +596,8 @@ function checkMatch(reader) {
   }
 
   // Recurse into the tree.
-  const isLexicalRoot = !reader.isSyntactic(root);
-  errors.push(...checkInvariants(reader, root, isLexicalRoot));
+  const isLexicalRoot = !cst.isSyntactic(root);
+  errors.push(...checkInvariants(cst, root, isLexicalRoot));
   return errors;
 }
 
@@ -695,8 +688,8 @@ test('fast-check: CST structural invariants', async t => {
           if (!mr.succeeded()) {
             throw new Error(`expected match for input=${JSON.stringify(input)}`);
           }
-          const reader = createReader(mr);
-          const errors = checkMatch(reader);
+          const cst = mr.cstView();
+          const errors = checkMatch(cst);
           if (errors.length > 0) {
             throw new Error(`input=${JSON.stringify(input)}\n${errors.join('\n')}`);
           }

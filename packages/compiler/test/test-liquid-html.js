@@ -79,7 +79,7 @@ test('liquidRawTagImpl', async t => {
   const g = await loadWasmLiquidHTML();
   const r = g.match(sourceCode);
   t.true(r.succeeded());
-  const root = r._cst;
+  const root = r.cstView().rootNode();
   t.is(root.ctorName, 'Node');
   t.is(root.startIdx, 5);
   const [opt, list] = root.children;

@@ -288,6 +288,6 @@ export function convertToOhm(rawSource: string): string {
     if (!r.succeeded()) {
       throw new Error(String(r));
     }
-    return rewrite(r.getCstRoot());
+    return rewrite(r.cstView().rootNode());
   });
 }
