@@ -233,7 +233,7 @@ pexprs.Apply.prototype.handleCycle = function (state) {
   const memoKey = this.toMemoKey();
   let memoRec = posInfo.memo[memoKey];
 
-  if (currentLeftRecursion && currentLeftRecursion.headApplication.toMemoKey() === memoKey) {
+  if (memoRec && currentLeftRecursion && currentLeftRecursion.headApplication.toMemoKey() === memoKey) {
     // We already know about this left recursion, but it's possible there are "involved
     // applications" that we don't already know about, so...
     memoRec.updateInvolvedApplicationMemoKeys();
@@ -276,7 +276,7 @@ pexprs.Apply.prototype.reallyEval = function (state) {
   let memoRec;
 
   if (state.doNotMemoize) {
-    state.doNotMemoize = false;
+    // state.doNotMemoize = false;
   } else if (isHeadOfLeftRecursion) {
     value = this.growSeedResult(body, state, origPos, currentLR, value);
     origPosInfo.endLeftRecursion();
@@ -309,7 +309,7 @@ pexprs.Apply.prototype.reallyEval = function (state) {
 
   // Record trace information in the memo table, so that it is available if the memoized result
   // is used later.
-  if (state.isTracing() && memoRec) {
+  if (state.isTracing() && memoRec && !state.doNotMemoize) {
     const entry = state.getTraceEntry(origPos, this, succeeded, succeeded ? [value] : []);
     if (isHeadOfLeftRecursion) {
       common.assert(entry.terminatingLREntry != null || !succeeded);
