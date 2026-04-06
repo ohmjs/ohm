@@ -5,6 +5,17 @@
 ```ts
 
 // @public (undocumented)
+export const CstHandleType: {
+    readonly NONTERMINAL: 0;
+    readonly TERMINAL: 1;
+    readonly LIST: 2;
+    readonly OPT: 3;
+};
+
+// @public (undocumented)
+export type CstHandleType = (typeof CstHandleType)[keyof typeof CstHandleType];
+
+// @public (undocumented)
 export type CstNode = NonterminalNode | TerminalNode | ListNode | OptNode | SeqNode;
 
 // @public (undocumented)
@@ -32,16 +43,14 @@ export class CstView {
     isPresent(handle: number): boolean;
     isSyntactic(handle: number): boolean;
     matchLength(handle: number): number;
-    node(handle: number): CstNode;
     readonly root: number;
     readonly rootLeadingSpacesLen: number;
-    rootNode(): CstNode;
     ruleId(handle: number): number;
     get ruleNames(): readonly string[];
     sourceString(handle: number): string;
     startIdx(handle: number): number;
     tupleArity(handle: number): number;
-    type(handle: number): CstNodeType;
+    type(handle: number): CstHandleType;
     withChildren<R>(handle: number, fn: (handle: number, ...children: number[]) => R): R;
 }
 
@@ -187,6 +196,8 @@ export interface SeqNode<TChildren extends CstNodeChildren = CstNodeChildren> ex
 // @public (undocumented)
 export class SucceededMatchResult extends MatchResult {
     cstView(): CstView;
+    // (undocumented)
+    rootNode(): CstNode;
 }
 
 // @public (undocumented)

@@ -19,7 +19,7 @@ import {Bench} from 'tinybench';
 import {Grammar} from 'ohm-js';
 import {compileGrammars} from '../src/api.ts';
 import {unparse} from '../test/_helpers.js';
-import {CstNodeType} from '../../runtime/src/cstView.ts';
+import {CstHandleType} from '../../runtime/src/cstView.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -109,7 +109,7 @@ const pattern = positionalArgs[0];
     const cst = matchResult.cstView();
     let ans = '';
     function walk(handle) {
-      if (cst.type(handle) === CstNodeType.TERMINAL) {
+      if (cst.type(handle) === CstHandleType.TERMINAL) {
         ans += cst.sourceString(handle);
         return;
       }

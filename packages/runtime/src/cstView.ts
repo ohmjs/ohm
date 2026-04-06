@@ -4,6 +4,7 @@ import {
   CST_HAS_LEADING_SPACES_FLAG,
   CST_MATCH_LENGTH_OFFSET,
   CST_TYPE_AND_DETAILS_OFFSET,
+  CstHandleType,
   CstNodeType,
   createHandle,
   isTaggedTerminal,
@@ -11,14 +12,12 @@ import {
   rawHandle,
   rawMatchRecordType,
   unpackStartIdx,
-  _nodeFactory,
 } from './cstCommon.ts';
-import {assert, checkNotNull} from './assert.ts';
+import {assert} from './assert.ts';
 
 import type {MatchContext} from './cstCommon.ts';
-import type {CstNode} from './miniohm.ts';
 
-export {CstNodeType};
+export {CstHandleType, CstNodeType};
 
 function nextEdgePos(cst: CstView, child: number): number {
   return cst.startIdx(child) + cst.matchLength(child);
@@ -64,15 +63,15 @@ export class CstView {
     return unpackStartIdx(handle);
   }
 
-  /** Node type: NONTERMINAL, TERMINAL, LIST, or OPT. */
-  type(handle: number): CstNodeType {
+  /** Node type: NONTERMINAL, TERMINAL, LIST, or OPT (never SEQ). */
+  type(handle: number): CstHandleType {
     const raw = rawHandle(handle);
-    if (isTaggedTerminal(raw)) return CstNodeType.TERMINAL;
+    if (isTaggedTerminal(raw)) return CstHandleType.TERMINAL;
     const mrType = rawMatchRecordType(this._ctx.view, raw);
-    if (mrType === MatchRecordType.NONTERMINAL) return CstNodeType.NONTERMINAL;
-    if (mrType === MatchRecordType.TERMINAL) return CstNodeType.TERMINAL;
-    if (mrType === MatchRecordType.ITER_FLAG) return CstNodeType.LIST;
-    return CstNodeType.OPT;
+    if (mrType === MatchRecordType.NONTERMINAL) return CstHandleType.NONTERMINAL;
+    if (mrType === MatchRecordType.TERMINAL) return CstHandleType.TERMINAL;
+    if (mrType === MatchRecordType.ITER_FLAG) return CstHandleType.LIST;
+    return CstHandleType.OPT;
   }
 
   /** Number of raw children stored in this match record. */
@@ -115,19 +114,19 @@ export class CstView {
 
   /** Rule ID for a nonterminal node. */
   ruleId(handle: number): number {
-    assert(this.type(handle) === CstNodeType.NONTERMINAL, 'Not a nonterminal');
+    assert(this.type(handle) === CstHandleType.NONTERMINAL, 'Not a nonterminal');
     return this._details(handle);
   }
 
   /** Children per tuple for a list node. */
   tupleArity(handle: number): number {
-    assert(this.type(handle) === CstNodeType.LIST, 'Not a list');
+    assert(this.type(handle) === CstHandleType.LIST, 'Not a list');
     return this._details(handle);
   }
 
   /** Whether an optional node has a child. */
   isPresent(handle: number): boolean {
-    assert(this.type(handle) === CstNodeType.OPT, 'Not an opt');
+    assert(this.type(handle) === CstHandleType.OPT, 'Not an opt');
     return this.childCount(handle) > 0;
   }
 
@@ -349,13 +348,4 @@ export class CstView {
     return type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL;
   }
 
-  /** Create a lazy CstNode wrapper for the given handle. */
-  node(handle: number): CstNode {
-    return checkNotNull(_nodeFactory.make)(this, handle, 0);
-  }
-
-  /** Create a lazy CstNode wrapper for the root, including leading spaces. */
-  rootNode(): CstNode {
-    return checkNotNull(_nodeFactory.make)(this, this.root, this.rootLeadingSpacesLen);
-  }
 }

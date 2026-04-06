@@ -1,7 +1,7 @@
 import test from 'ava';
 import * as fc from 'fast-check';
 
-import {CstNodeType} from '../../runtime/src/cstView.ts';
+import {CstHandleType} from '../../runtime/src/cstView.ts';
 import {createHandle} from '../../runtime/src/cstCommon.ts';
 import {compileAndLoad, matchWithInput} from './_helpers.js';
 
@@ -11,7 +11,7 @@ test('root node basics', async t => {
 
   g.match('abcd').use(mr => {
     const cst = mr.cstView();
-    t.is(cst.type(cst.root), CstNodeType.NONTERMINAL);
+    t.is(cst.type(cst.root), CstHandleType.NONTERMINAL);
     t.is(cst.matchLength(cst.root), 4);
     t.is(cst.ctorName(cst.root), 'start');
     t.is(cst.childCount(cst.root), 2);
@@ -32,7 +32,7 @@ test('terminal children', async t => {
     t.is(children.length, 2);
 
     // First child: "ab"
-    t.is(cst.type(children[0].child), CstNodeType.TERMINAL);
+    t.is(cst.type(children[0].child), CstHandleType.TERMINAL);
     t.is(cst.matchLength(children[0].child), 2);
     t.is(cst.ctorName(children[0].child), '_terminal');
     t.is(cst.sourceString(children[0].child), 'ab');
@@ -40,7 +40,7 @@ test('terminal children', async t => {
     t.is(children[0].index, 0);
 
     // Second child: "cd"
-    t.is(cst.type(children[1].child), CstNodeType.TERMINAL);
+    t.is(cst.type(children[1].child), CstHandleType.TERMINAL);
     t.is(cst.matchLength(children[1].child), 2);
     t.is(cst.sourceString(children[1].child), 'cd');
     t.is(children[1].index, 1);
@@ -58,8 +58,8 @@ test('nonterminal children', async t => {
     t.is(children.length, 2);
     t.is(cst.ctorName(children[0].child), 'a');
     t.is(cst.ctorName(children[1].child), 'b');
-    t.is(cst.type(children[0].child), CstNodeType.NONTERMINAL);
-    t.is(cst.type(children[1].child), CstNodeType.NONTERMINAL);
+    t.is(cst.type(children[0].child), CstHandleType.NONTERMINAL);
+    t.is(cst.type(children[1].child), CstHandleType.NONTERMINAL);
     t.is(cst.sourceString(children[0].child), 'x');
     t.is(cst.sourceString(children[1].child), 'y');
   });
@@ -73,7 +73,7 @@ test('iteration (list) node', async t => {
     cst.forEachChild(cst.root, child => {
       listHandle = child;
     });
-    t.is(cst.type(listHandle), CstNodeType.LIST);
+    t.is(cst.type(listHandle), CstHandleType.LIST);
     t.is(cst.ctorName(listHandle), '_list');
     t.is(cst.childCount(listHandle), 3);
 
@@ -93,7 +93,7 @@ test('iteration with nonterminals', async t => {
     cst.forEachChild(cst.root, child => {
       listHandle = child;
     });
-    t.is(cst.type(listHandle), CstNodeType.LIST);
+    t.is(cst.type(listHandle), CstHandleType.LIST);
     const items = [];
     cst.forEachChild(listHandle, child => {
       items.push(cst.sourceString(child));
@@ -111,7 +111,7 @@ test('optional node: present', async t => {
     cst.forEachChild(cst.root, child => {
       opt = child;
     });
-    t.is(cst.type(opt), CstNodeType.OPT);
+    t.is(cst.type(opt), CstHandleType.OPT);
     t.is(cst.ctorName(opt), '_opt');
     t.is(cst.childCount(opt), 1);
     t.is(cst.matchLength(opt), 1);
@@ -126,7 +126,7 @@ test('optional node: absent', async t => {
     cst.forEachChild(cst.root, child => {
       opt = child;
     });
-    t.is(cst.type(opt), CstNodeType.OPT);
+    t.is(cst.type(opt), CstHandleType.OPT);
     t.is(cst.childCount(opt), 0);
     t.is(cst.matchLength(opt), 0);
   });
@@ -205,7 +205,7 @@ test('unparse: simple terminals', async t => {
     const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
-      if (cst.type(handle) === CstNodeType.TERMINAL) {
+      if (cst.type(handle) === CstHandleType.TERMINAL) {
         ans += cst.sourceString(handle);
         return;
       }
@@ -222,7 +222,7 @@ test('unparse: with rule application', async t => {
     const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
-      if (cst.type(handle) === CstNodeType.TERMINAL) {
+      if (cst.type(handle) === CstHandleType.TERMINAL) {
         ans += cst.sourceString(handle);
         return;
       }
@@ -239,7 +239,7 @@ test('unparse: with nonterminals', async t => {
     const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
-      if (cst.type(handle) === CstNodeType.TERMINAL) {
+      if (cst.type(handle) === CstHandleType.TERMINAL) {
         ans += cst.sourceString(handle);
         return;
       }
@@ -257,7 +257,7 @@ test('unparse: unicode', async t => {
     const cst = mr.cstView();
     let ans = '';
     function walk(handle) {
-      if (cst.type(handle) === CstNodeType.TERMINAL) {
+      if (cst.type(handle) === CstHandleType.TERMINAL) {
         ans += cst.sourceString(handle);
         return;
       }
@@ -386,7 +386,7 @@ test('childCount is 0 for tagged terminals', async t => {
     cst.forEachChild(cst.root, child => {
       termChild = child;
     });
-    t.is(cst.type(termChild), CstNodeType.TERMINAL);
+    t.is(cst.type(termChild), CstHandleType.TERMINAL);
     t.is(cst.childCount(termChild), 0);
   });
 });
@@ -431,7 +431,7 @@ test('isSyntactic reads compiler-embedded classification', async t => {
     const cst = mr.cstView();
     // Walk all nonterminals and verify classification
     function check(handle) {
-      if (cst.type(handle) === CstNodeType.NONTERMINAL) {
+      if (cst.type(handle) === CstHandleType.NONTERMINAL) {
         const name = cst.ctorName(handle);
         if (name === 'Start') t.true(cst.isSyntactic(handle));
         if (name === 'inner') t.false(cst.isSyntactic(handle));
@@ -464,7 +464,7 @@ function checkInvariants(cst, handle, isLexicalParent) {
   }
 
   // -- Node-type contracts --
-  if (type === CstNodeType.TERMINAL) {
+  if (type === CstHandleType.TERMINAL) {
     if (ctor !== '_terminal') {
       errors.push(`terminal ctorName=${ctor}, expected '_terminal'`);
     }
@@ -475,7 +475,7 @@ function checkInvariants(cst, handle, isLexicalParent) {
     return errors;
   }
 
-  if (type === CstNodeType.OPT) {
+  if (type === CstHandleType.OPT) {
     const cc = cst.childCount(handle);
     if (cc !== 0 && cc !== 1) {
       errors.push(`opt childCount=${cc}, expected 0 or 1`);
@@ -507,11 +507,11 @@ function checkInvariants(cst, handle, isLexicalParent) {
     // LIST/OPT edges never report leading spaces (documented contract).
     const childType = cst.type(child);
     if (
-      (childType === CstNodeType.LIST || childType === CstNodeType.OPT) &&
+      (childType === CstHandleType.LIST || childType === CstHandleType.OPT) &&
       leadingSpacesLen > 0
     ) {
       errors.push(
-        `${childType === CstNodeType.LIST ? 'list' : 'opt'} edge has ` +
+        `${childType === CstHandleType.LIST ? 'list' : 'opt'} edge has ` +
           `leadingSpacesLen=${leadingSpacesLen}`
       );
     }
@@ -535,7 +535,7 @@ function checkInvariants(cst, handle, isLexicalParent) {
 
     // Recurse. Lexical context propagates through non-nonterminal wrappers.
     let childIsLexical;
-    if (childType === CstNodeType.NONTERMINAL) {
+    if (childType === CstHandleType.NONTERMINAL) {
       childIsLexical = !cst.isSyntactic(child);
     } else {
       childIsLexical = isLexicalParent;

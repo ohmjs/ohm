@@ -35,7 +35,20 @@ export const MatchRecordType = {
 
 export type MatchRecordType = (typeof MatchRecordType)[keyof typeof MatchRecordType];
 
-// A _CST node_ is the user-facing representation, built from a match record.
+// Low-level handle types returned by CstView.type(). These are the four kinds
+// that exist in the packed CST (Wasm linear memory). No SEQ — that's a
+// wrapper-only synthetic node.
+export const CstHandleType = {
+  NONTERMINAL: 0,
+  TERMINAL: 1,
+  LIST: 2,
+  OPT: 3,
+} as const;
+
+export type CstHandleType = (typeof CstHandleType)[keyof typeof CstHandleType];
+
+// A _CST node_ is the user-facing wrapper representation, built from a match record.
+// Includes SEQ, which is synthetic and only exists at the wrapper level.
 export const CstNodeType = {
   NONTERMINAL: 0,
   TERMINAL: 1,

@@ -2,6 +2,7 @@ import {assert, checkNotNull} from './assert.ts';
 import {CstView} from './cstView.ts';
 import {
   createHandle,
+  CstHandleType,
   CstNodeType,
   HANDLE_BITS,
   INPUT_LENGTH_LIMIT,
@@ -35,13 +36,14 @@ export {
   CST_HAS_LEADING_SPACES_FLAG,
   CST_MATCH_LENGTH_OFFSET,
   CST_TYPE_AND_DETAILS_OFFSET,
+  CstHandleType,
   CstNodeType,
   isTaggedTerminal,
   MATCH_RECORD_TYPE_MASK,
   MatchRecordType,
   rawMatchRecordType,
 } from './cstCommon.ts';
-export type {CstNodeType} from './cstCommon.ts';
+export type {CstHandleType, CstNodeType} from './cstCommon.ts';
 export type {MatchContext, MatchRecordType} from './cstCommon.ts';
 
 const EMPTY_CHILDREN: ReadonlyArray<CstNode> = Object.freeze([]);
@@ -558,7 +560,7 @@ class CstNodeImpl implements CstNodeBase {
       this.leadingSpaces = new LazySpacesNode(reader, si - leadingSpacesLen, leadingSpacesLen);
     }
     const type = reader.type(handle);
-    if (type === CstNodeType.TERMINAL || reader.childCount(handle) === 0) {
+    if (type === CstHandleType.TERMINAL || reader.childCount(handle) === 0) {
       this._children = EMPTY_CHILDREN;
     }
   }
@@ -612,13 +614,13 @@ class CstNodeImpl implements CstNodeBase {
     if (!this._children) {
       this._children = this._computeChildren().map((n): CstNode => {
         const type = n._cstView.type(n._handle);
-        if (type === CstNodeType.OPT) {
+        if (type === CstHandleType.OPT) {
           const child: CstNode | undefined =
             n.children.length <= 1
               ? n.children[0]
               : new SeqNodeImpl(n.children, n.source, n.sourceString);
           return new OptNodeImpl(child, n.source, n.sourceString);
-        } else if (type === CstNodeType.LIST) {
+        } else if (type === CstHandleType.LIST) {
           const arity = n._cstView.tupleArity(n._handle);
           if (arity <= 1) {
             return new ListNodeImpl(n.children, n.source, n.sourceString);
@@ -961,7 +963,7 @@ function createMatchResult(
       );
 }
 
-// Register the CstNode factory so CstView.node() / .rootNode() can
+// Register the CstNode factory so CstView.rootNode() can
 // create CstNodeImpl instances without a circular import.
 _nodeFactory.make = (view, handle, leadingSpacesLen) =>
   new CstNodeImpl(view, handle, leadingSpacesLen) as CstNode;
@@ -987,6 +989,11 @@ export class SucceededMatchResult extends MatchResult {
       this._cstView = createCstView(this._ctx, exports);
     }
     return this._cstView;
+  }
+
+  rootNode(): CstNode {
+    const view = this.cstView();
+    return new CstNodeImpl(view, view.root, view.rootLeadingSpacesLen) as CstNode;
   }
 }
 
