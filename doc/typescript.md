@@ -17,13 +17,13 @@ To enable grammar-specific type definitions:
 2. Put your grammar in a separate .ohm file, if it isn't already.
 3. Use the Ohm CLI to generate a bundle (.ohm-bundle.js) for your grammar, along with the associated type definitions (.d.ts). For example, if your grammar is in `src/my-grammar.ohm`:
 
-   ```
+   ```bash
    npx ohm generateBundles --withTypes 'src/*.ohm'
    ```
 
    ...will create `src/my-grammar.ohm-bundle.js` and `src/my-grammar.ohm-bundle.d.ts`. You can directly import the bundle like this:
 
-   ```
+   ```js
    import grammar from './my-grammar.ohm-bundle'
    ```
 

@@ -119,4 +119,4 @@ This evaluates to either (a) `undefined`, if the node has no child, or (b) the r
 
 ### Handling the built-in list rules
 
-When using the built-in list rules (`listOf`, etc.) in your grammar, you usually don't need to write semantic actions for them. Instead, you can use the [built-in `asIteration` operation](./api-reference.md#asIteration).
+When using the built-in list rules (`listOf`, etc.) in your grammar, you usually don't need to write semantic actions for them. Instead, you can use the [built-in `asIteration` operation](./api-reference.md#asiteration).

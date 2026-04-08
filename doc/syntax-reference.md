@@ -2,7 +2,7 @@
 
 This document describes the syntax of the _Ohm language_, which is a variant of parsing expression grammars (PEGs). If you have experience with PEGs, the Ohm syntax will mostly look familiar, but there are a few important differences to note:
 
-- When naming rules, **case matters**: whitespace is implicitly skipped inside a rule application if the rule name begins with an uppercase letter. For further information, see [Syntactic vs. Lexical Rules](#syntactic-lexical).
+- When naming rules, **case matters**: whitespace is implicitly skipped inside a rule application if the rule name begins with an uppercase letter. For further information, see [Syntactic vs. Lexical Rules](#syntactic-vs-lexical-rules).
 - Grammars are purely about recognition: they do not contain semantic actions (those are defined separately) or bindings. The separation of semantic actions is one of the defining features of Ohm — we believe that it improves modularity and makes both grammars and semantics easier to understand.
 - Alternation expressions support _case names_, which are used in [inline rule declarations](#inline-rule-declarations). This makes semantic actions for alternation expressions simpler and less error-prone.
 - Ohm does not (yet) support semantic predicates.
@@ -44,7 +44,7 @@ Matches exactly the characters contained inside the quotation marks.
 
 Special characters (`"`, `\`, and `'`) can be escaped with a backslash — e.g., `"\""` will match a literal quote character in the input stream. Other valid escape sequences include: `\b` (backspace), `\f` (form feed), `\n` (line feed), `\r` (carriage return), and `\t` (tab), as well as `\x` followed by 2 hex digits and `\u` followed by 4 hex digits, for matching characters by code point.
 
-The <code>\u{<i>hexDigits</i>}</code> escape sequence can be used to represent _any_ Unicode code point, including code points above `0xFFFF`. E.g., `"\u{1F639}"` will match `'😹'`. (_New in Ohm v16.3.0._)
+The <code>\u&lbrace;<i>hexDigits</i>&rbrace;</code> escape sequence can be used to represent _any_ Unicode code point, including code points above `0xFFFF`. E.g., `"\u{1F639}"` will match `'😹'`. (_New in Ohm v16.3.0._)
 
 **NOTE:** For grammars defined in a JavaScript string literal (i.e., not in a separate .ohm file), it's recommended to use a [template literal with the String.raw tag](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/raw). Without `String.raw`, you'll need to use double-escaping — e.g., `\\n` rather than `\n`.
 
@@ -75,13 +75,13 @@ Matches the body of the _parameterized rule_ named _ruleName_, substituting the 
 
 Matches the expression _expr_ repeated 0 or more times. E.g., `"a"*` will match `''`, `'a'`, `'aa'`, ...
 
-Inside a _syntactic rule_ — any rule whose name begins with an upper-case letter — spaces before a match are automatically skipped. E.g., `"a"*` will match `" a a"` as well as `"aa"`. See the documentation on [syntactic and lexical rules](#syntactic-lexical) for more information.
+Inside a _syntactic rule_ — any rule whose name begins with an upper-case letter — spaces before a match are automatically skipped. E.g., `"a"*` will match `" a a"` as well as `"aa"`. See the documentation on [syntactic and lexical rules](#syntactic-vs-lexical-rules) for more information.
 
 <pre><code><i>expr</i> +</code></pre>
 
 Matches the expression _expr_ repeated 1 or more times. E.g., `letter+` will match `'x'`, `'xA'`, ...
 
-As with the `*` operator, spaces are skipped when used in a [syntactic rule](#syntactic-lexical).
+As with the `*` operator, spaces are skipped when used in a [syntactic rule](#syntactic-vs-lexical-rules).
 
 <pre><code><i>expr</i> ?</code></pre>
 
@@ -93,7 +93,7 @@ Tries to match the expression _expr_, succeeding whether it matches or not. No i
 
 Matches the expression `expr1` followed by `expr2`. E.g., `"grade" letter` will match `'gradeA'`, `'gradeB'`, ...
 
-As with the `*` and `+` operators, spaces are skipped when used in a [syntactic rule](#syntactic-lexical). E.g., `"grade" letter` will match `' grade A'` as well as `'gradeA'`.
+As with the `*` and `+` operators, spaces are skipped when used in a [syntactic rule](#syntactic-vs-lexical-rules). E.g., `"grade" letter` will match `' grade A'` as well as `'gradeA'`.
 
 ### Alternation
 
@@ -117,7 +117,7 @@ Succeeds if the expression `expr` cannot be matched, and does not consume anythi
 
 <pre><code># <i>expr</i></code></pre>
 
-Matches _expr_ as if in a lexical context. This can be used to prevent whitespace skipping before an expression that appears in the body of a syntactic rule. For further information, see [Syntactic vs. Lexical Rules](#syntactic-lexical).
+Matches _expr_ as if in a lexical context. This can be used to prevent whitespace skipping before an expression that appears in the body of a syntactic rule. For further information, see [Syntactic vs. Lexical Rules](#syntactic-vs-lexical-rules).
 
 ### Comment
 
@@ -166,13 +166,13 @@ as well as multiline (`/* */`) comments like:
 
 `end`: Matches the end of the input stream. Equivalent to `~any`.
 
-<code>caseInsensitive&lt;<i>terminal</i>&gt;</code>: Matches _terminal_, but ignoring any differences in casing (based on the simple, single-character Unicode case mappings). E.g., `caseInsensitive<"ohm">` will match `'Ohm'`, `'OHM'`, etc.
+<code>caseInsensitive&lt;<i>terminal</i>&gt;</code>: Matches _terminal_, but ignoring any differences in casing (based on the simple, single-character Unicode case mappings). E.g., <code>caseInsensitive&lt;"ohm"&gt;</code> will match `'Ohm'`, `'OHM'`, etc.
 
-<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.
+<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., <code>ListOf&lt;letter, ","&gt;,</code> will match `''`, `'a'`, and `'a, b, c'`.
 
 <code>NonemptyListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Like `ListOf`, but matches _elem_ at least one time.
 
-<code>listOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Similar to `ListOf<elem, sep>` but interpreted as [lexical rule](#syntactic-lexical).
+<code>listOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Similar to <code>ListOf&lt;elem, sep&gt;</code> but interpreted as [lexical rule](#syntactic-vs-lexical-rules).
 
 <code id="applySyntactic">applySyntactic&lt;<i>ruleName</i>&gt;</code>: Allows the syntactic rule _ruleName_ to be applied in a lexical context, which is otherwise not allowed. Spaces are skipped _before_ and _after_ the rule application. _New in Ohm v16.1.0._
 
@@ -182,14 +182,14 @@ as well as multiline (`/* */`) comments like:
 
 ### Grammar Inheritance
 
-<pre><code><i>grammarName</i> &lt;: <i>supergrammarName</i> { ... }</code></pre>
+<pre><code><i>grammarName</i> &lt;: <i>supergrammarName</i> &lbrace; ... &rbrace;</code></pre>
 
 Declares a grammar named `grammarName` which inherits from `supergrammarName`.
 
 ### Defining, Extending, and Overriding Rules
 
 In the three forms below, the rule body may optionally begin with a `|` character, which will be
-ignored. Also note that in rule names, [**case is significant**](#syntactic-lexical).
+ignored. Also note that in rule names, [**case is significant**](#syntactic-vs-lexical-rules).
 
 <pre><code><i>ruleName</i> = <i>expr</i></code></pre>
 
@@ -252,7 +252,7 @@ AddExp = AddExp_plus
 AddExp_plus = AddExp "+" MulExp
 ```
 
-<h3 id="syntactic-lexical">Syntactic vs. Lexical Rules</h3>
+### Syntactic vs. Lexical Rules
 
 <!-- https://ohmjs.org/d/svl -->
 

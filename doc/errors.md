@@ -9,13 +9,15 @@ from a grammar definition.
 
 Example:
 
-    Uncaught ohm.error.GrammarSyntaxError: Failed to parse grammar:
-    Line 5, col 11:
-      4 | G {
-    > 5 |   start = *x
-                    ^
-      6 | }
-    Expected "~", "&", "#", an identifier, "\"", a number, "(", "[", "``", "{", "--", "|", or "}"
+```
+Uncaught ohm.error.GrammarSyntaxError: Failed to parse grammar:
+Line 5, col 11:
+  4 | G {
+> 5 |   start = *x
+                ^
+  6 | }
+Expected "~", "&", "#", an identifier, "\"", a number, "(", "[", "``", "{", "--", "|", or "}"
+```
 
 Indicates that the grammar definition is not well-formed according to the syntax
 of the Ohm language. See the [syntax reference](./syntax-reference.md) for more
@@ -25,7 +27,9 @@ details.
 
 Example:
 
-    Uncaught ohm.error.UndeclaredGrammar: Grammar Foo is not declared in namespace [object Object]
+```
+Uncaught ohm.error.UndeclaredGrammar: Grammar Foo is not declared in namespace [object Object]
+```
 
 Indicates that the grammar definition refers to another grammar by name, but
 that name does not refer to a grammar that Ohm knows about. This can happen
@@ -49,7 +53,9 @@ fixes:
 
 Example:
 
-    Uncaught ohm.error.DuplicateGrammarDeclaration: Grammar G is already declared in namespace [object Object]
+```
+Uncaught ohm.error.DuplicateGrammarDeclaration: Grammar G is already declared in namespace [object Object]
+```
 
 Occurs when a grammar definition defines a grammar with the same name
 as an existing grammar in the same namespace. Possible fixes:
@@ -62,7 +68,9 @@ as an existing grammar in the same namespace. Possible fixes:
 
 Example:
 
-    Uncaught ohm.error.UndeclaredRule: Rule lettr is not declared in grammar G
+```
+Uncaught ohm.error.UndeclaredRule: Rule lettr is not declared in grammar G
+```
 
 Occurs when the body of a rule refers to a another rule that is not defined in
 the grammar or in any of its supergrammars.
@@ -71,7 +79,9 @@ the grammar or in any of its supergrammars.
 
 Example:
 
-    Uncaught ohm.error.CannotOverrideUndeclaredRule: Cannot override rule foo because it is not declared in BuiltInRules
+```
+Uncaught ohm.error.CannotOverrideUndeclaredRule: Cannot override rule foo because it is not declared in BuiltInRules
+```
 
 Occurs when a rule is being _overridden_ (using `:=`), but no rule with that name
 exists in the supergrammar. Learn more about defining, extending, and overriding
@@ -81,7 +91,9 @@ rules in the [syntax reference](syntax-reference.md#defining-extending-and-overr
 
 Example:
 
-    Uncaught ohm.error.CannotExtendUndeclaredRule: Cannot extend rule start foo it is not declared in BuiltInRules
+```
+Uncaught ohm.error.CannotExtendUndeclaredRule: Cannot extend rule start foo it is not declared in BuiltInRules
+```
 
 Occurs when a rule is being _extended_ (using `+=`), but no rule with that name
 exists in the supergrammar. Learn more about defining, extending, and overriding
@@ -91,7 +103,9 @@ rules in the [syntax reference](syntax-reference.md#defining-extending-and-overr
 
 Example:
 
-    Uncaught ohm.error.DuplicateRuleDeclaration: Duplicate declaration for rule 'letter' in grammar 'G' (originally declared in grammar 'BuiltInRules')
+```
+Uncaught ohm.error.DuplicateRuleDeclaration: Duplicate declaration for rule 'letter' in grammar 'G' (originally declared in grammar 'BuiltInRules')
+```
 
 Occurs when a rule is being _defined_ (using `=`), but a rule with that name
 already exists in the grammar or supergrammar. If it exists in the supergrammar,

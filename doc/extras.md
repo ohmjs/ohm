@@ -17,8 +17,8 @@ To do so, a generic operation is used that can be configure by the optional mapp
 
 The resulting AST is inspired by the [ECMAScript Tree](https://github.com/estree/estree) format that is the output of popular JavaScript parsers like [acorn](https://github.com/ternjs/acorn) or [esprima](http://esprima.org/).
 
-<a name="example"></a>
-**Example:**
+
+### Example
 
 <!-- @markscript
   // Replace 'const ast' with 'var ast' to allow it to redeclared.

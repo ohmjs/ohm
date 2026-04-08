@@ -1,6 +1,6 @@
 # Incremental semantics
 
-Ohm supports incremental parsing, meaning that once an input is parsed, it can be quickly reparsed after each edit operation. Incremental _parsing_ is straightforward to use: you just need to use instantiate a [Matcher object](https://ohmjs.org/docs/api-reference#matcher-objects) rather than directly using your Grammar's `match` method.
+Ohm supports incremental parsing, meaning that once an input is parsed, it can be quickly reparsed after each edit operation. Incremental _parsing_ is straightforward to use: you just need to use instantiate a [Matcher object](api-reference.md#matcher-objects) rather than directly using your Grammar's `match` method.
 
 It's also possible to build fully incremental processing pipelines on top of Ohm's incremental parsing, but this is less straightforward. In this document we talk about some of the strategies for doing so.
 
@@ -42,7 +42,7 @@ assert.equal(semantics(m.match()).value, 1);
 
 Note that the `AddExp_minus` action, which calculates the value of "3 - 4", will only run once. The edit does not affect that part of the parse result, so the attribute value is cached.
 
-Ohm's caching of attribute values is naive; notably, it does not track dependencies between attribute values or do any kind of [autotracking]([)](https://www.pzuraq.com/blog/what-is-reactivity) as seen in signals frameworks.
+Ohm's caching of attribute values is naive; notably, it does not track dependencies between attribute values or do any kind of [autotracking](https://www.pzuraq.com/blog/what-is-reactivity) as seen in signals frameworks.
 
 If the naive caching is not sufficient, there is an **internal** operation named `_forgetMemoizedResultFor` TODO
 
