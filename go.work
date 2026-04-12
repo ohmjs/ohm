@@ -1,7 +1,8 @@
 go 1.24.2
 
 use (
-	./packages/compiler/test/go
+	./golang/cli
 	./golang/examples
 	./golang/runtime
+	./packages/compiler/test/go
 )
