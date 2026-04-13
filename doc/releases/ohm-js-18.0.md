@@ -19,6 +19,13 @@ In v17, grammars were parsed at runtime. In v18, the recommendation is to compil
 npx ohm2wasm my-grammar.ohm   # writes my-grammar.wasm
 ```
 
+or using the ohm docker image
+
+```bash
+docker run --rm -v "$(pwd):/local" ohm:latest compile my-grammar.ohm
+# writes my-grammar.wasm in the current directory
+```
+
 ### Programmatic
 
 ```js
