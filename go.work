@@ -4,5 +4,6 @@ use (
 	./golang/cli
 	./golang/examples
 	./golang/runtime
+	./golang/test
 	./packages/compiler/test/go
 )
