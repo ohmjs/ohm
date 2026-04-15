@@ -12,6 +12,10 @@ packages:
 ignoredBuiltDependencies:
   - esbuild
 
+pnpm:
+  allowBuild:
+    - esbuild
+
 linkWorkspacePackages: true
 
 minimumReleaseAge: 1440
