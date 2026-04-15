@@ -1,4 +1,4 @@
-package main
+package goohm
 
 import (
 	"unicode/utf16"
