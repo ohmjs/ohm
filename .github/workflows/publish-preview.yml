@@ -16,9 +16,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
+      - run: pnpm --version
       - run: pnpm install
       - run: pnpm build
       - run: pnpm dlx pkg-pr-new publish './packages/compiler' './packages/runtime' './packages/to-ast-compat'
