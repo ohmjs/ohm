@@ -52,7 +52,7 @@ func NewGrammar(ctx context.Context, wasmBytes []byte) (*Grammar, error) {
 		return nil, fmt.Errorf("failed to create env module: %v", err)
 	}
 	// Create the ohmRuntime module with required host functions
-	// Note: referring to a method, without calling it is a function with the receiever curried.
+	// Note: referring to a method, without calling it is a function with the receiver curried.
 	_, err = g.runtime.NewHostModuleBuilder("ohmRuntime").
 		NewFunctionBuilder().WithFunc(g.fillInputBuffer).Export("fillInputBuffer").
 		NewFunctionBuilder().WithFunc(g.matchUnicodeChar).Export("matchUnicodeChar").
