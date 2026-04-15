@@ -129,7 +129,7 @@ export VERSION=$(cat packages/runtime/package.json | jq -r '.version')
 # # or if already created
 # docker buildx use ohmjs-builder
 
-# generate a person access token at https://app.docker.com/accounts/millergarym/settings/personal-access-tokens
+# generate a person access token at https://app.docker.com/accounts/<github username>/settings/personal-access-tokens
 # assuming DHPAT contains your PAT
 echo $DHPAT | docker login -u <personal username> --password-stdin
 cd docker
