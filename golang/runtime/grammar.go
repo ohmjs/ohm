@@ -26,6 +26,14 @@ type Grammar struct {
 	resultStack []*MatchResult
 }
 
+// MatchingDockerImageTags, list of docker image tags which generate wasm parsers which work with this runtime version.
+// The head of the list is the recommended tag to use.
+func (*Grammar) MatchingDockerImageTags() []string {
+	return []string{
+		"18.0.0-beta.13",
+	}
+}
+
 // GetModule returns the WebAssembly module
 func (g *Grammar) GetModule() api.Module {
 	return g.module
