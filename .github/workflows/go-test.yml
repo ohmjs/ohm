@@ -1,0 +1,26 @@
+name: Go Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+
+      - name: Compile grammar to wasm
+        run: ./golang/runtime/generate.sh
+
+      - name: Run Go tests
+        working-directory: golang/runtime
+        run: go test ./...

@@ -35,13 +35,11 @@ func (g *Grammar) GetModule() api.Module {
 // This parallels Grammar.instantiate() in the JS API.
 func NewGrammar(ctx context.Context, wasmBytes []byte) (*Grammar, error) {
 	config := wazero.NewRuntimeConfig().WithCustomSections(true)
-
 	g := &Grammar{
 		runtime: wazero.NewRuntimeWithConfig(ctx, config),
 		ctx:     ctx,
 		ruleIds: make(map[string]int),
 	}
-
 	// Create the env module with the abort function
 	_, err := g.runtime.NewHostModuleBuilder("env").
 		NewFunctionBuilder().
@@ -53,41 +51,26 @@ func NewGrammar(ctx context.Context, wasmBytes []byte) (*Grammar, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create env module: %v", err)
 	}
-
 	// Create the ohmRuntime module with required host functions
+	// Note: referring to a method, without calling it is a function with the receiever curried.
 	_, err = g.runtime.NewHostModuleBuilder("ohmRuntime").
-		NewFunctionBuilder().
-		WithFunc(func(ctx context.Context, mod api.Module, dest, length uint32) uint32 {
-			return g.fillInputBuffer(ctx, mod, dest, length)
-		}).
-		Export("fillInputBuffer").
-		NewFunctionBuilder().
-		WithFunc(func(ctx context.Context, mod api.Module, categoryBitmap uint32) uint32 {
-			return g.matchUnicodeChar(ctx, mod, categoryBitmap)
-		}).
-		Export("matchUnicodeChar").
-		NewFunctionBuilder().
-		WithFunc(func(ctx context.Context, mod api.Module, stringIdx uint32) uint32 {
-			return g.matchCaseInsensitive(ctx, mod, stringIdx)
-		}).
-		Export("matchCaseInsensitive").
+		NewFunctionBuilder().WithFunc(g.fillInputBuffer).Export("fillInputBuffer").
+		NewFunctionBuilder().WithFunc(g.matchUnicodeChar).Export("matchUnicodeChar").
+		NewFunctionBuilder().WithFunc(g.matchCaseInsensitive).Export("matchCaseInsensitive").
 		Instantiate(g.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ohmRuntime module: %v", err)
 	}
-
 	// Compile the module to access the custom sections
 	compiledModule, err := g.runtime.CompileModule(g.ctx, wasmBytes)
 	if err != nil {
 		return nil, fmt.Errorf("error compiling module: %v", err)
 	}
-
 	// Parse custom sections
 	customSections := compiledModule.CustomSections()
 	if customSections == nil {
 		return nil, fmt.Errorf("no custom sections found in module")
 	}
-
 	for _, section := range customSections {
 		switch section.Name() {
 		case "ruleNames":
@@ -102,23 +85,19 @@ func NewGrammar(ctx context.Context, wasmBytes []byte) (*Grammar, error) {
 			}
 		}
 	}
-
 	if g.ruleNames == nil {
 		return nil, fmt.Errorf("required custom section 'ruleNames' not found")
 	}
-
 	// Instantiate the module
 	g.module, err = g.runtime.InstantiateModule(g.ctx, compiledModule, wazero.NewModuleConfig())
 	if err != nil {
 		return nil, fmt.Errorf("error instantiating module: %v", err)
 	}
-
 	// Build the ruleIds map
 	g.ruleIds = make(map[string]int, len(g.ruleNames))
 	for i, name := range g.ruleNames {
 		g.ruleIds[name] = i
 	}
-
 	return g, nil
 }
 
@@ -128,7 +107,6 @@ func parseLEB128Strings(data []byte) ([]string, error) {
 	if len(data) == 0 {
 		return nil, fmt.Errorf("empty custom section data")
 	}
-
 	numUint64, bytesRead := binary.Uvarint(data)
 	if bytesRead <= 0 {
 		return nil, fmt.Errorf("failed to read count: %v", io.ErrUnexpectedEOF)
@@ -136,10 +114,8 @@ func parseLEB128Strings(data []byte) ([]string, error) {
 	if numUint64 > uint64(^uint32(0)) {
 		return nil, fmt.Errorf("count exceeds maximum uint32 value")
 	}
-
 	num := uint32(numUint64)
 	data = data[bytesRead:]
-
 	result := make([]string, num)
 	for i := uint32(0); i < num; i++ {
 		lenUint64, bytesRead := binary.Uvarint(data)
@@ -149,18 +125,14 @@ func parseLEB128Strings(data []byte) ([]string, error) {
 		if lenUint64 > uint64(^uint32(0)) {
 			return nil, fmt.Errorf("string length exceeds maximum uint32 value")
 		}
-
 		strLen := uint32(lenUint64)
 		data = data[bytesRead:]
-
 		if uint64(len(data)) < uint64(strLen) {
 			return nil, fmt.Errorf("buffer too small to read string bytes")
 		}
-
 		result[i] = string(data[:strLen])
 		data = data[strLen:]
 	}
-
 	return result, nil
 }
 
@@ -204,7 +176,6 @@ func (g *Grammar) writeOffset(val uint64) {
 func (g *Grammar) Match(input string, startRule ...string) (*MatchResult, error) {
 	g.input = input
 	g.inputUTF16 = utf16.Encode([]rune(input))
-
 	// Resolve the rule ID
 	var ruleId uint64
 	startExpr := ""
@@ -216,22 +187,18 @@ func (g *Grammar) Match(input string, startRule ...string) (*MatchResult, error)
 		}
 		ruleId = uint64(id)
 	}
-
 	// Snapshot the heap bump pointer before the match.
 	heapWatermark := g.readOffset()
-
 	// Call match(inputLength, startRuleId)
 	matchFunc := g.module.ExportedFunction("match")
 	if matchFunc == nil {
 		return nil, fmt.Errorf("match function not exported by module")
 	}
-
 	inputLength := uint64(len(g.inputUTF16))
 	results, err := matchFunc.Call(g.ctx, inputLength, ruleId)
 	if err != nil {
 		return nil, fmt.Errorf("error calling match function: %v", err)
 	}
-
 	result := &MatchResult{
 		grammar:       g,
 		input:         input,
@@ -304,28 +271,23 @@ func (r *MatchResult) cstContext() *cstContext {
 func (r *MatchResult) GetCstRoot() (*CstNode, error) {
 	g := r.grammar
 	ctx := r.cstContext()
-
 	bindingsAtFunc := g.module.ExportedFunction("bindingsAt")
 	if bindingsAtFunc == nil {
 		return nil, fmt.Errorf("bindingsAt function not exported")
 	}
-
 	getBindingsLengthFunc := g.module.ExportedFunction("getBindingsLength")
 	if getBindingsLengthFunc == nil {
 		return nil, fmt.Errorf("getBindingsLength function not exported")
 	}
-
 	// Get first binding
 	results, err := bindingsAtFunc.Call(g.ctx, 0)
 	if err != nil {
 		return nil, fmt.Errorf("error calling bindingsAt(0): %v", err)
 	}
 	firstNode := newCstNode(ctx, uint32(results[0]), 0)
-
 	if firstNode.CtorName() != "$spaces" {
 		return firstNode, nil
 	}
-
 	// If first node is $spaces, the actual root is at binding 1
 	lenResults, err := getBindingsLengthFunc.Call(g.ctx)
 	if err != nil {
@@ -334,7 +296,6 @@ func (r *MatchResult) GetCstRoot() (*CstNode, error) {
 	if lenResults[0] <= 1 {
 		return nil, fmt.Errorf("expected more than 1 binding, got %d", lenResults[0])
 	}
-
 	results, err = bindingsAtFunc.Call(g.ctx, 1)
 	if err != nil {
 		return nil, fmt.Errorf("error calling bindingsAt(1): %v", err)
@@ -348,23 +309,19 @@ func (r *MatchResult) GetCstRoot() (*CstNode, error) {
 func (r *MatchResult) GetAllBindings() ([]*CstNode, error) {
 	g := r.grammar
 	ctx := r.cstContext()
-
 	bindingsAtFunc := g.module.ExportedFunction("bindingsAt")
 	if bindingsAtFunc == nil {
 		return nil, fmt.Errorf("bindingsAt function not exported")
 	}
-
 	getBindingsLengthFunc := g.module.ExportedFunction("getBindingsLength")
 	if getBindingsLengthFunc == nil {
 		return nil, fmt.Errorf("getBindingsLength function not exported")
 	}
-
 	lenResults, err := getBindingsLengthFunc.Call(g.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error calling getBindingsLength: %v", err)
 	}
 	numBindings := int(lenResults[0])
-
 	// Determine leading spaces offset (for syntactic start rules in pos-only mode,
 	// there is no $spaces binding, but the root node starts after leading spaces).
 	startIdx := 0
@@ -374,7 +331,6 @@ func (r *MatchResult) GetAllBindings() ([]*CstNode, error) {
 			startIdx = spacesLen
 		}
 	}
-
 	nodes := make([]*CstNode, numBindings)
 	for i := 0; i < numBindings; i++ {
 		results, err := bindingsAtFunc.Call(g.ctx, uint64(i))
@@ -385,7 +341,6 @@ func (r *MatchResult) GetAllBindings() ([]*CstNode, error) {
 		nodes[i] = node
 		startIdx += node.MatchLength()
 	}
-
 	return nodes, nil
 }
 
@@ -418,18 +373,15 @@ func (g *Grammar) fillInputBuffer(ctx context.Context, mod api.Module, dest, len
 	if memory == nil {
 		panic("WebAssembly module has no memory")
 	}
-
 	// Write UTF-16LE code units
 	numUnits := uint32(len(g.inputUTF16))
 	if length < numUnits {
 		numUnits = length
 	}
-
 	for i := uint32(0); i < numUnits; i++ {
 		offset := dest + i*2
 		memory.WriteUint16Le(offset, g.inputUTF16[i])
 	}
-
 	return numUnits
 }
 
@@ -456,7 +408,6 @@ func (g *Grammar) matchUnicodeChar(ctx context.Context, mod api.Module, category
 	if int(pos) >= len(g.inputUTF16) {
 		return 0
 	}
-
 	// Decode the rune at pos (may be a surrogate pair)
 	codeUnit := g.inputUTF16[pos]
 	var r rune
@@ -467,7 +418,6 @@ func (g *Grammar) matchUnicodeChar(ctx context.Context, mod api.Module, category
 	} else {
 		r = rune(codeUnit)
 	}
-
 	// Check each category bit
 	for bit := 0; bit < 32; bit++ {
 		if categoryBitmap&(1<<uint(bit)) != 0 {
@@ -477,7 +427,6 @@ func (g *Grammar) matchUnicodeChar(ctx context.Context, mod api.Module, category
 			}
 		}
 	}
-
 	return 0
 }
 
@@ -487,23 +436,18 @@ func (g *Grammar) matchCaseInsensitive(ctx context.Context, mod api.Module, stri
 	if int(stringIdx) >= len(g.strings) {
 		return 0
 	}
-
 	str := g.strings[stringIdx]
 	pos := g.readPos()
-
 	// Build a regex for case-insensitive match
 	pattern := "(?i)" + regexp.QuoteMeta(str)
 	re := regexp.MustCompile(pattern)
-
 	// Convert input from pos onward back to a Go string for matching
 	remaining := g.inputUTF16[pos:]
 	remainingStr := string(utf16.Decode(remaining))
-
 	loc := re.FindStringIndex(remainingStr)
 	if loc == nil || loc[0] != 0 {
 		return 0
 	}
-
 	// Advance pos by the number of UTF-16 code units consumed
 	matched := remainingStr[:loc[1]]
 	matchedUTF16 := utf16.Encode([]rune(matched))
@@ -524,12 +468,10 @@ func (g *Grammar) Close() error {
 			return err
 		}
 	}
-
 	if g.runtime != nil {
 		if err := g.runtime.Close(g.ctx); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }

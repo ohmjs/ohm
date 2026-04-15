@@ -16,7 +16,6 @@ const (
 	CstNodeTypeList        CstNodeType = 2
 	CstNodeTypeOpt         CstNodeType = 3
 )
-
 const (
 	matchRecordTypeMask = 3
 	cstNodeHeaderSize   = 16
@@ -54,7 +53,6 @@ func isTerminal(raw uint32) bool {
 }
 
 // --- internal field accessors ---
-
 func (n *CstNode) typeAndDetails() int32 {
 	data, ok := n.ctx.memory.Read(n.base+4, 4)
 	if !ok {
@@ -83,7 +81,6 @@ func (n *CstNode) count() uint32 {
 }
 
 // --- public API (matches the ohm-js CstNode interface) ---
-
 // Type returns the CstNodeType for this node.
 func (n *CstNode) Type() CstNodeType {
 	if isTerminal(n.base) {
@@ -214,12 +211,10 @@ func (n *CstNode) Children() []*CstNode {
 			return children[:i]
 		}
 		slot := readUint32(data, 0)
-
 		// Bit 1 is the HAS_LEADING_SPACES edge flag.
 		hasLeadingSpaces := slot&2 != 0
 		// Strip the edge flag to get the actual value.
 		raw := slot & ^uint32(2)
-
 		// Account for implicit leading spaces.
 		// Only apply if spaces were actually recorded at this position
 		// and the result stays within the parent's span.
@@ -229,7 +224,6 @@ func (n *CstNode) Children() []*CstNode {
 				startIdx += spacesLen
 			}
 		}
-
 		child := newCstNode(n.ctx, raw, startIdx)
 		children[i] = child
 		startIdx += child.MatchLength()
