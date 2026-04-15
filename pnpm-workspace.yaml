@@ -8,5 +8,10 @@ packages:
   - 'examples/operators'
   - 'examples/simple-lisp'
   - 'examples/typescript'
+
+ignoredBuiltDependencies:
+  - esbuild
+
 linkWorkspacePackages: true
+
 minimumReleaseAge: 1440
