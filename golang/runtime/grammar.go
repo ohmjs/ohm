@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strings"
 	"unicode"
 	"unicode/utf16"
 
@@ -13,25 +14,30 @@ import (
 	"github.com/tetratelabs/wazero/api"
 )
 
+// Needs to manually be kept in sync (updated) as packages/compiler changes.
+// The cli uses the head of the list is the recommended tag when generating a generate command (eg docker run ohmjs/ohm:<version>).
+var acceptedVersions = []string{
+	"18.0.0-beta.14",
+	"18.0.0-beta.13",
+}
+
 // Grammar is a Go implementation of the JavaScript Grammar class from miniohm.
 type Grammar struct {
-	runtime     wazero.Runtime
-	module      api.Module
-	input       string
-	inputUTF16  []uint16 // UTF-16 code units of the current input
-	ctx         context.Context
-	ruleIds     map[string]int
-	ruleNames   []string
-	strings     []string // strings table from the custom section
-	resultStack []*MatchResult
+	runtime         wazero.Runtime
+	module          api.Module
+	input           string
+	inputUTF16      []uint16 // UTF-16 code units of the current input
+	ctx             context.Context
+	ruleIds         map[string]int
+	ruleNames       []string
+	strings         []string // strings table from the custom section
+	compilerVersion []string // version string from the custom section
+	resultStack     []*MatchResult
 }
 
 // MatchingDockerImageTags, list of docker image tags which generate wasm parsers which work with this runtime version.
-// The head of the list is the recommended tag to use.
 func (*Grammar) MatchingDockerImageTags() []string {
-	return []string{
-		"18.0.0-beta.13",
-	}
+	return acceptedVersions
 }
 
 // GetModule returns the WebAssembly module
@@ -91,7 +97,30 @@ func NewGrammar(ctx context.Context, wasmBytes []byte) (*Grammar, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse strings: %v", err)
 			}
+		case "version":
+			g.compilerVersion, err = parseLEB128Strings(section.Data())
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse version: %v", err)
+			}
 		}
+	}
+	if g.compilerVersion == nil {
+		return nil, fmt.Errorf("Using a .wasm file compiled with an incompatible compiler version. Required custom section 'version' not found.")
+	}
+	versionMatches := false
+outter:
+	for _, acceptVersion := range g.MatchingDockerImageTags() {
+		for _, compilerVersion := range g.compilerVersion {
+			if compilerVersion == acceptVersion {
+				versionMatches = true
+				break outter
+			}
+		}
+	}
+	if !versionMatches {
+		return nil, fmt.Errorf("Compiler version(s) no match found. Accepted: '%v'. Found: '%v'",
+			strings.Join(g.MatchingDockerImageTags(), ", "), strings.Join(g.compilerVersion, ", "),
+		)
 	}
 	if g.ruleNames == nil {
 		return nil, fmt.Errorf("required custom section 'ruleNames' not found")

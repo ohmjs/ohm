@@ -118,7 +118,7 @@ Build and push a versioned image to Docker Hub using the git tag as the version:
 # if not set default to ohmjs (ie docker hub using the ohmjs org)
 export DOCKER_REPO=<custom docker repo>
 # if not set defaults to 'development'
-export VERSION=$(cat packages/runtime/package.json | jq -r '.version')
+export VERSION=$(cat packages/compiler/package.json | jq -r '.version')
 # or export VERSION=$(git describe --tag --dirty)
 
 # # it might be necessary (particularly on osx) to create a new builder

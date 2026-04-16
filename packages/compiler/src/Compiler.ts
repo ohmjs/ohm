@@ -3,6 +3,7 @@ import * as pexprs from 'ohm-js-legacy/src/pexprs-build.js';
 import {Grammar as ParsedGrammar} from 'ohm-js-legacy/src/Grammar.js';
 // import wabt from 'wabt';
 
+import pkg from '../package.json' with {type: 'json'};
 import * as ir from './ir.ts';
 import type {Expr} from './ir.ts';
 import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
@@ -1698,6 +1699,7 @@ export class Compiler {
       mergeSections(w.SECTION_ID_CODE, adjustedCodesec, codes),
       w.customsec(this.buildStringTable('ruleNames', ruleNames)),
       w.customsec(this.buildStringTable('strings', this._strings)),
+      w.customsec(this.buildStringTable('version', [pkg.version])),
       w.customsec(
         w.custom(
           w.name('syntacticRules'),
