@@ -1,7 +1,12 @@
 module github.com/ohmjs/ohmgo
 
+require github.com/jpillora/opts v1.2.3
+
 require (
-	github.com/jpillora/opts v1.2.3
+	github.com/hashicorp/errwrap v1.0.0 // indirect
+	github.com/hashicorp/go-multierror v1.0.0 // indirect
+	github.com/jpillora/md-tmpl v1.3.0 // indirect
+	github.com/posener/complete v1.2.2-0.20190308074557-af07aa5181b3 // indirect
 )
 
 go 1.24.2
