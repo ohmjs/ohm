@@ -110,16 +110,16 @@ The `-v $(pwd):/local` mount makes your current directory available at `/local` 
 
 The `ohm-dev:latest` images is 1.62 GB and is 97% efficient with only 64 MB potentially wasted space.
 
-### Publishing to Docker Hub
+### Publishing to Docker Hub (from development machine)
+
+**Note: it is perferable to have the gha docker-release.yml do this**
+But there can be a chicken and egg situation where it is easier to do this from a development machine.
 
 Build and push a versioned image to Docker Hub using the git tag as the version:
 
 ```sh
 # if not set default to ohmjs (ie docker hub using the ohmjs org)
 export DOCKER_REPO=<custom docker repo>
-# if not set defaults to 'development'
-export VERSION=$(cat packages/runtime/package.json | jq -r '.version')
-# or export VERSION=$(git describe --tag --dirty)
 
 # # it might be necessary (particularly on osx) to create a new builder
 # # the default builder might not support multi-platform builds
@@ -129,14 +129,23 @@ export VERSION=$(cat packages/runtime/package.json | jq -r '.version')
 # # or if already created
 # docker buildx use ohmjs-builder
 
-# generate a person access token at https://app.docker.com/accounts/millergarym/settings/personal-access-tokens
+# generate a person access token at https://app.docker.com/accounts/<github username>/settings/personal-access-tokens
 # assuming DHPAT contains your PAT
 echo $DHPAT | docker login -u <personal username> --password-stdin
 cd docker
-docker buildx bake --allow=fs.read=.. --push
+# if not set defaults to 'development'
+export VERSION=$(cat ../packages/compiler/package.json | jq -r '.version')
+docker buildx use ohmjs-builder
+docker buildx bake \
+  --set="*.cache-from=type=local,src=.buildx-cache" \
+  --set="*.cache-to=type=local,dest=.buildx-cache,mode=max" \
+  --allow=fs.read=.. \
+  --push
 ```
 
-`git describe --tag --dirty` produces a version string based on the nearest git tag, appending commit info and a `-dirty` suffix if there are uncommitted changes.
+Builds use a local layer cache stored in `docker/.buildx-cache`.
+On subsequent runs this avoids re-downloading base layers and reinstalling dependencies.
+Note the `docker/.buildx-cache` directory is over 1GB, and needs to be cleaned up manually.
 
 The defaults in `docker-compose.yml` are `DOCKER_REPO=ohmjs` and `VERSION=development`. See [docker-compose.yml](../docker/docker-compose.yml) for details.
 

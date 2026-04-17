@@ -3,6 +3,7 @@ Dockerfile
 **/node_modules/**
 docker-compose.yml
 docker-compose.dev.yml
+docker/.buildx-cache
 doc/**
 .dockerignore
 **/build

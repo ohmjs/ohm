@@ -17,6 +17,7 @@
     // [end overrides]
   },
   "include": [
+    "package.json",
     "src/**/*",
     "test/**/*.ts",
     "scripts/**/*.ts",

@@ -1,0 +1,9 @@
+MyGrammar {
+  Start = hello name "!"?
+  hello =
+    | "hello,"
+    | "Hello,"
+    | "hello"
+    | "Hello"
+  name = letter+
+}
