@@ -1,0 +1,116 @@
+-- grammar.ohm  --
+G { 
+  S = "Z" -- A
+    | "B"
+}
+-- file1.txt --
+Z
+-- file1.c_and_p  --
+(S
+  (S_A (_terminal 'Z' 0-1)
+  )
+)
+-- file2.txt --
+B
+-- file2.c_and_p  --
+(S (_terminal 'B' 0-1)
+)
+-- grammar.sexpr  --
+(Grammars
+  (_list
+    (Grammar
+      (ident
+        (name
+          (nameFirst
+            (letter
+              (upper (_terminal 'G' 0-1)
+              )
+            )
+          ) _list
+        )
+      ) _opt (_terminal OC 2-3)
+      (_list
+        (Rule
+          (Rule_define
+            (ident
+              (name
+                (nameFirst
+                  (letter
+                    (upper (_terminal 'S' 7-8)
+                    )
+                  )
+                ) _list
+              )
+            ) _opt _opt (_terminal '=' 9-10)
+            (RuleBody _opt
+              (NonemptyListOf<TopLevelTerm,"|">
+                (TopLevelTerm
+                  (TopLevelTerm_inline
+                    (Seq
+                      (_list
+                        (Iter
+                          (Pred
+                            (Lex
+                              (Base
+                                (Base_terminal
+                                  (terminal (_terminal '"' 11-12)
+                                    (_list
+                                      (terminalChar (_terminal 'Z' 12-13)
+                                      )
+                                    ) (_terminal '"' 13-14)
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                    (caseName (_terminal '--' 15-17)
+                      (_list
+                        (space (_terminal ' ' 17-18)
+                        )
+                      )
+                      (name
+                        (nameFirst
+                          (letter
+                            (upper (_terminal 'A' 18-19)
+                            )
+                          )
+                        ) _list
+                      ) _list (_terminal NL 19-20)
+                    )
+                  )
+                )
+                (_list (_terminal '|' 24-25)
+                  (TopLevelTerm
+                    (Seq
+                      (_list
+                        (Iter
+                          (Pred
+                            (Lex
+                              (Base
+                                (Base_terminal
+                                  (terminal (_terminal '"' 26-27)
+                                    (_list
+                                      (terminalChar (_terminal 'B' 27-28)
+                                      )
+                                    ) (_terminal '"' 28-29)
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      ) (_terminal CC 30-31)
+    )
+  )
+)

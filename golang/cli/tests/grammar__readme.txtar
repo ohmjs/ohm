@@ -1,0 +1,130 @@
+Grammars and tests results in the `a trivial text-based file archive format`
+https://pkg.go.dev/golang.org/x/tools/txtar#hdr-Txtar_format
+
+Filenames are of the form <grammar_name>[.<short flag> ...].<ext>
+
+Where valid <ext> are;
+  ohm
+  sexpr - see  ohmgo test to_sexpr - sexpr tests in txtar files always refer to the 'ohm' file
+  txt
+  c_and_p - see  ohmgo test c_and_p - compile and parse, reference the txt file of the same name
+  rule_ast - see  ohmgo test rule_ast - rule AST, reference the txt file of the same name
+
+There needs to one and only one ohm
+  ohm   for a grammar (no valid short flags)
+
+There can be multiple sexpr file, which test the grammar
+  sexpr for an sexpr representation of the grammar
+        for valid short flags see `ohmgo to_sexpr -h`
+
+When using <fname>[.flags].c_and_p, <fname>.txt is assumed to contain text which can be parsed with the ohm grammar.
+
+When using <fname>[.flags].rule_ast, <fname>.txt is assumed to contain a grammar.
+
+-- grammar.ohm  --
+G { S = "a" | "b" }
+
+-- grammar.S.t.l.sexpr --
+(Grammars
+  (Grammar _opt
+    (Rule
+      (Rule_define _opt _opt
+        (RuleBody _opt
+          (NonemptyListOf<TopLevelTerm,"|">
+            (TopLevelTerm
+              (Seq
+                (Iter
+                  (Pred
+                    (Lex
+                      (Base Base_terminal
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            (TopLevelTerm
+              (Seq
+                (Iter
+                  (Pred
+                    (Lex
+                      (Base Base_terminal
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+-- grammar.S.t.sexpr --
+(Grammars
+  (_list
+    (Grammar _opt
+      (_list
+        (Rule
+          (Rule_define _opt _opt
+            (RuleBody _opt
+              (NonemptyListOf<TopLevelTerm,"|">
+                (TopLevelTerm
+                  (Seq
+                    (_list
+                      (Iter
+                        (Pred
+                          (Lex
+                            (Base Base_terminal
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+                (_list
+                  (TopLevelTerm
+                    (Seq
+                      (_list
+                        (Iter
+                          (Pred
+                            (Lex
+                              (Base Base_terminal
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+-- file1.txt --
+a
+
+-- file1.c_and_p --
+(S (_terminal 'a' 0-1)
+)
+
+-- gmr2.txt --
+G { S = "a" }
+
+-- gmr2.rule_ast --
+G
+```
+S = "a"
+```
+S @bare {
+  term @term
+}

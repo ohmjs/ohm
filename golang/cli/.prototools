@@ -1,0 +1,4 @@
+adlc = "1.2.3"
+
+[plugins]
+adlc = "https://raw.githubusercontent.com/adl-lang/proto-toml-plugins/main/adlc/plugin.toml"

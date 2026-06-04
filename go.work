@@ -1,7 +1,7 @@
 go 1.26
 
 use (
-	// ./golang/cli
+	./golang/cli
 	./golang/examples
 	./golang/runtime
 )

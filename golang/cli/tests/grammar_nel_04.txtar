@@ -1,0 +1,32 @@
+-- grammar.ohm  --
+G {
+    S = ListOf<a*, ",">
+    a = "a"
+}
+-- file1.txt --
+a a
+-- file1.c_and_p --
+(S
+  (ListOf<a*,",">
+    (NonemptyListOf<a*,",">
+      (_list
+        (a (_terminal 'a' 0-1)
+        )
+        (a (_terminal 'a' 2-3)
+        )
+      ) _list
+    )
+  )
+)
+
+-- file2.txt --
+,,,
+-- file2.c_and_p --
+(S
+  (ListOf<a*,",">
+    (NonemptyListOf<a*,","> _list
+      (_list (_terminal ',' 0-1) _list (_terminal ',' 1-2) _list (_terminal ',' 2-3) _list
+      )
+    )
+  )
+)

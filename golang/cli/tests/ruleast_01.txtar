@@ -1,0 +1,524 @@
+-- @../../packages/ohm-js/src/ohm-grammar.ohm --
+relative to golang/cli directory
+ony needed if using sexpr and c_and_p tests
+
+-- gmr1.txt --
+G {
+    S = "a"
+}
+-- gmr1.s.l.rule_ast --
+G // ruleast/build_rule_ast_exec.go:88
+S @bare { // ruleast/build_rule_ast_exec.go:99
+  term @term // ruleast/build_rule_ast_exec.go:101
+} // ruleast/build_rule_ast_exec.go:103
+
+-- gmr1_1.txt --
+G {
+    S (a note) = "a"
+}
+-- gmr1_1.s.rule_ast --
+G
+S @bare (a note) {
+  term @term
+}
+
+-- gmr2.txt --
+G {
+    S = a
+    a = "a"
+}
+-- gmr2.s.rule_ast --
+G
+S @bare {
+  a @rule a
+}
+a @bare {
+  term @term
+}
+
+-- gmr2_1.txt --
+G {
+    S = a a | a a
+    a = "a"
+}
+-- gmr2_1.s.rule_ast --
+G
+S @bare {
+  a1 @rule a
+  a2 @rule a
+}
+a @bare {
+  term @term
+}
+
+-- gmr2_2.txt --
+G {
+    S = a a | b b
+    a = "a"
+    b = "b"
+}
+
+-- gmr2_2.s.rule_ast --
+G
+S @bare {
+  arg1 @node
+  arg2 @node
+}
+a @bare {
+  term @term
+}
+b @bare {
+  term @term
+}
+
+-- gmr2_2.n.l.S.v.t.c_and_p --
+(Grammars 0-47 'G OC\n    S = a a | b b\n    a = "a"\...'
+  (Grammar 0-47 'G OC\n    S = a a | b b\n    a = "a"\...' _opt
+    (Rule 8-21 'S = a a | b b'
+      (Rule_define 8-21 'S = a a | b b' _opt _opt
+        (RuleBody 12-21 'a a | b b' _opt
+          (NonemptyListOf<TopLevelTerm,"|"> 12-21 'a a | b b'
+            (TopLevelTerm 12-15 'a a'
+              (Seq 12-15 'a a'
+                (Iter 12-13 'a'
+                  (Pred 12-13 'a'
+                    (Lex 12-13 'a'
+                      (Base 12-13 'a'
+                        (Base_application 12-13 'a' _opt)))))
+                (Iter 14-15 'a'
+                  (Pred 14-15 'a'
+                    (Lex 14-15 'a'
+                      (Base 14-15 'a'
+                        (Base_application 14-15 'a' _opt)))))))
+            (TopLevelTerm 18-21 'b b'
+              (Seq 18-21 'b b'
+                (Iter 18-19 'b'
+                  (Pred 18-19 'b'
+                    (Lex 18-19 'b'
+                      (Base 18-19 'b'
+                        (Base_application 18-19 'b' _opt)))))
+                (Iter 20-21 'b'
+                  (Pred 20-21 'b'
+                    (Lex 20-21 'b'
+                      (Base 20-21 'b'
+                        (Base_application 20-21 'b' _opt)))))))))))
+    (Rule 26-33 'a = "a"'
+      (Rule_define 26-33 'a = "a"' _opt _opt
+        (RuleBody 30-33 '"a"' _opt
+          (NonemptyListOf<TopLevelTerm,"|"> 30-33 '"a"'
+            (TopLevelTerm 30-33 '"a"'
+              (Seq 30-33 '"a"'
+                (Iter 30-33 '"a"'
+                  (Pred 30-33 '"a"'
+                    (Lex 30-33 '"a"'
+                      (Base 30-33 '"a"' Base_terminal))))))))))
+    (Rule 38-45 'b = "b"'
+      (Rule_define 38-45 'b = "b"' _opt _opt
+        (RuleBody 42-45 '"b"' _opt
+          (NonemptyListOf<TopLevelTerm,"|"> 42-45 '"b"'
+            (TopLevelTerm 42-45 '"b"'
+              (Seq 42-45 '"b"'
+                (Iter 42-45 '"b"'
+                  (Pred 42-45 '"b"'
+                    (Lex 42-45 '"b"'
+                      (Base 42-45 '"b"' Base_terminal))))))))))))
+
+-- gmr2_3.txt --
+G {
+    S = a "1" | "2" b
+    a = "a"
+    b = "b"
+}
+
+-- gmr2_3.s.rule_ast --
+G
+S @bare {
+  arg1 @node
+  arg2 @node
+}
+a @bare {
+  term @term
+}
+b @bare {
+  term @term
+}
+
+-- gmr2_4.txt --
+G {
+    S = a "1" | a b
+    a = "a"
+    b = "b"
+}
+
+-- gmr2_4.s.rule_ast --
+G
+S @bare {
+  a @rule a
+  arg @node
+}
+a @bare {
+  term @term
+}
+b @bare {
+  term @term
+}
+
+-- gmr3.txt --
+G {
+    S (a note) = a -- one
+    a = "a"
+}
+-- gmr3.s.rule_ast --
+G
+S @cases (a note) {
+  one @inline
+}
+S @virt one {
+  a @rule a
+}
+a @bare {
+  term @term
+}
+
+-- gmr3.rule_ast --
+G
+```
+S (a note) = a -- one
+
+```
+S @cases (a note) {
+  one @inline
+}
+```
+a
+```
+S @virt one {
+  a @rule a
+}
+```
+a = "a"
+```
+a @bare {
+  term @term
+}
+
+-- gmr4.txt --
+G {
+    S = a -- one
+        | a
+    a = "a"
+}
+-- gmr4.s.rule_ast --
+G
+S @cases {
+  one @inline
+  a @rule a
+}
+S @virt one {
+  a @rule a
+}
+a @bare {
+  term @term
+}
+
+-- gmr5.txt --
+G {
+    S = a b -- one
+        | a
+    a = "a"
+    b = "b"
+}
+-- gmr5.s.rule_ast --
+G
+S @cases {
+  one @inline
+  a @rule a
+}
+S @virt one {
+  a @rule a
+  b @rule b
+}
+a @bare {
+  term @term
+}
+b @bare {
+  term @term
+}
+
+-- gmr6.txt --
+G {
+    S = 
+      | a b -- one
+      | b a -- two
+      | a
+    a = "a"
+    b = "b"
+}
+-- gmr6.s.rule_ast --
+G
+S @cases {
+  one @inline
+  two @inline
+  a @rule a
+}
+S @virt one {
+  a @rule a
+  b @rule b
+}
+S @virt two {
+  b @rule b
+  a @rule a
+}
+a @bare {
+  term @term
+}
+b @bare {
+  term @term
+}
+
+-- gmr7.txt --
+G {
+    S = 
+      | a b -- one
+      | b a -- two
+      | a
+      | b
+    a = "a"
+    b = "b"
+}
+-- gmr7.s.rule_ast --
+G
+S @cases {
+  one @inline
+  two @inline
+  arg @node
+}
+S @virt one {
+  a @rule a
+  b @rule b
+}
+S @virt two {
+  b @rule b
+  a @rule a
+}
+a @bare {
+  term @term
+}
+b @bare {
+  term @term
+}
+
+-- gmr8.txt --
+G {
+    S = ListOf<a, ",">
+    a = "a"
+}
+-- gmr8.s.rule_ast --
+G
+S @bare {
+  listOf @hor ListOf<@rule a, @term>
+}
+a @bare {
+  term @term
+}
+
+-- gmr8.n.v.b.c_and_p --
+(Grammars 0-40 'G OC\n    S = ListOf<a, ",">\n    a =...'
+  (_list 0-40 'G OC\n    S = ListOf<a, ",">\n    a =...'
+    (Grammar 0-40 'G OC\n    S = ListOf<a, ",">\n    a =...'
+      (ident 0-1 'G'
+        (name 0-1 'G' nameFirst _list)) _opt (_terminal OC 2-3)
+      (_list 3-38 '\n    S = ListOf<a, ",">\n    a = "a"'
+        (Rule 8-26 'S = ListOf<a, ",">'
+          (Rule_define 8-26 'S = ListOf<a, ",">'
+            (ident 8-9 'S'
+              (name 8-9 'S' nameFirst _list)) _opt _opt (_terminal '=' 10-11)
+            (RuleBody 12-26 'ListOf<a, ",">' _opt
+              (NonemptyListOf<TopLevelTerm,"|"> 12-26 'ListOf<a, ",">'
+                (TopLevelTerm 12-26 'ListOf<a, ",">'
+                  (Seq 12-26 'ListOf<a, ",">'
+                    (_list 12-26 'ListOf<a, ",">'
+                      (Iter 12-26 'ListOf<a, ",">'
+                        (Pred 12-26 'ListOf<a, ",">'
+                          (Lex 12-26 'ListOf<a, ",">'
+                            (Base 12-26 'ListOf<a, ",">'
+                              (Base_application 12-26 'ListOf<a, ",">'
+                                (ident 12-18 'ListOf'
+                                  (name 12-18 'ListOf' nameFirst
+                                    (_list 13-18 'istOf' nameRest nameRest nameRest nameRest nameRest)))
+                                (_opt 18-26 '<a, ",">'
+                                  (Params 18-26 '<a, ",">' (_terminal '<' 18-19)
+                                    (ListOf<Seq,","> 19-25 'a, ","'
+                                      (NonemptyListOf<Seq,","> 19-25 'a, ","'
+                                        (Seq 19-20 'a'
+                                          (_list 19-20 'a'
+                                            (Iter 19-20 'a'
+                                              (Pred 19-20 'a'
+                                                (Lex 19-20 'a'
+                                                  (Base 19-20 'a'
+                                                    (Base_application 19-20 'a'
+                                                      (ident 19-20 'a'
+                                                        (name 19-20 'a' nameFirst _list)) _opt)))))))
+                                        (_list 20-25 ', ","' (_terminal ',' 20-21)
+                                          (Seq 22-25 '","'
+                                            (_list 22-25 '","'
+                                              (Iter 22-25 '","'
+                                                (Pred 22-25 '","'
+                                                  (Lex 22-25 '","'
+                                                    (Base 22-25 '","'
+                                                      (Base_terminal 22-25 '","'
+                                                        (terminal 22-25 '","' (_terminal '"' 22-23)
+                                                          (_list 23-24 ','
+                                                            (terminalChar 23-24 ',' (_terminal ',' 23-24))) (_terminal '"' 24-25)))))))))))) (_terminal '>' 25-26))))))))))) _list))))
+        (Rule 31-38 'a = "a"'
+          (Rule_define 31-38 'a = "a"'
+            (ident 31-32 'a'
+              (name 31-32 'a' nameFirst _list)) _opt _opt (_terminal '=' 33-34)
+            (RuleBody 35-38 '"a"' _opt
+              (NonemptyListOf<TopLevelTerm,"|"> 35-38 '"a"'
+                (TopLevelTerm 35-38 '"a"'
+                  (Seq 35-38 '"a"'
+                    (_list 35-38 '"a"'
+                      (Iter 35-38 '"a"'
+                        (Pred 35-38 '"a"'
+                          (Lex 35-38 '"a"'
+                            (Base 35-38 '"a"'
+                              (Base_terminal 35-38 '"a"'
+                                (terminal 35-38 '"a"' (_terminal '"' 35-36)
+                                  (_list 36-37 'a'
+                                    (terminalChar 36-37 'a' (_terminal 'a' 36-37))) (_terminal '"' 37-38)))))))))) _list))))) (_terminal CC 39-40))))
+
+-- gmr8_1.txt --
+G {
+    S = ListOf<a, a>
+    a = "a"
+}
+-- gmr8_1.s.rule_ast --
+G
+S @bare {
+  listOf @hor ListOf<@rule a, @rule a>
+}
+a @bare {
+  term @term
+}
+
+-- gmr8_2.txt --
+G {
+    S = ListOf<a*, ","?>?
+    a = "a"
+}
+-- gmr8_2.s.rule_ast --
+G
+S @bare {
+  listOf @opt @hor ListOf<@list @rule a, @opt @term>
+}
+a @bare {
+  term @term
+}
+
+-- gmr8_5.txt --
+G {
+    S = ListOf<(a|a), ","> -- one
+    a = "a"
+}
+-- gmr8_5.s.rule_ast --
+G
+S @cases {
+  one @inline
+}
+S @virt one {
+  listOf @hor ListOf<@node, @term>
+}
+a @bare {
+  term @term
+}
+
+-- gmr9.txt --
+G {
+    S = a<"a">
+    a<x> = x
+}
+-- gmr9.s.rule_ast --
+G
+S @bare {
+  a @node
+}
+a @bare {
+  x @rule x
+}
+
+-- gmr9.n.v.b.t.S.l.c_and_p --
+(Grammars 0-33 'G OC\n    S = a<"a">\n    a<x> = x\nCC'
+  (Grammar 0-33 'G OC\n    S = a<"a">\n    a<x> = x\nCC' _opt
+    (Rule 8-18 'S = a<"a">'
+      (Rule_define 8-18 'S = a<"a">' _opt _opt
+        (RuleBody 12-18 'a<"a">' _opt
+          (NonemptyListOf<TopLevelTerm,"|"> 12-18 'a<"a">'
+            (TopLevelTerm 12-18 'a<"a">'
+              (Seq 12-18 'a<"a">'
+                (Iter 12-18 'a<"a">'
+                  (Pred 12-18 'a<"a">'
+                    (Lex 12-18 'a<"a">'
+                      (Base 12-18 'a<"a">'
+                        (Base_application 12-18 'a<"a">'
+                          (_opt 13-18 '<"a">'
+                            (Params 13-18 '<"a">'
+                              (ListOf<Seq,","> 14-17 '"a"'
+                                (NonemptyListOf<Seq,","> 14-17 '"a"'
+                                  (Seq 14-17 '"a"'
+                                    (Iter 14-17 '"a"'
+                                      (Pred 14-17 '"a"'
+                                        (Lex 14-17 '"a"'
+                                          (Base 14-17 '"a"' Base_terminal))))))))))))))))))))
+    (Rule 23-31 'a<x> = x'
+      (Rule_define 23-31 'a<x> = x'
+        (_opt 24-27 '<x>'
+          (Formals 24-27 '<x>'
+            (ListOf<ident,","> 25-26 'x'
+              (NonemptyListOf<ident,","> 25-26 'x')))) _opt
+        (RuleBody 30-31 'x' _opt
+          (NonemptyListOf<TopLevelTerm,"|"> 30-31 'x'
+            (TopLevelTerm 30-31 'x'
+              (Seq 30-31 'x'
+                (Iter 30-31 'x'
+                  (Pred 30-31 'x'
+                    (Lex 30-31 'x'
+                      (Base 30-31 'x'
+                        (Base_application 30-31 'x' _opt)))))))))))))
+
+-- gmr10.txt --
+G1 {
+    S = "a"
+}
+G2 {
+    S = "a"
+}
+-- gmr10.s.rule_ast --
+G1
+S @bare {
+  term @term
+}
+G2
+S @bare {
+  term @term
+}
+
+-- grammar_mixed_03.txt --
+G {
+  S = "A" -- A
+    | "B"
+    | C
+  C = "C"
+}
+-- grammar_mixed_03.s.rule_ast --
+G
+S @cases {
+  A @inline
+  arg @node
+}
+S @virt A {
+  term @term
+}
+C @bare {
+  term @term
+}

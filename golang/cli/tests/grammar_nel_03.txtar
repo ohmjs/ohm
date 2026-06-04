@@ -1,0 +1,314 @@
+-- grammar.ohm  --
+G { 
+  S = NonemptyListOf<a, ","> -- A
+  a = "a"
+}
+-- file1.txt --
+a,a,a
+-- file1.c_and_p --
+(S
+  (S_A
+    (NonemptyListOf<a,",">
+      (a (_terminal 'a' 0-1)
+      )
+      (_list (_terminal ',' 1-2)
+        (a (_terminal 'a' 2-3)
+        ) (_terminal ',' 3-4)
+        (a (_terminal 'a' 4-5)
+        )
+      )
+    )
+  )
+)
+-- file1.l.c_and_p --
+(S
+  (S_A
+    (NonemptyListOf<a,",">
+      (a (_terminal 'a' 0-1)
+      ) (_terminal ',' 1-2)
+      (a (_terminal 'a' 2-3)
+      ) (_terminal ',' 3-4)
+      (a (_terminal 'a' 4-5)
+      )
+    )
+  )
+)
+-- grammar.sexpr  --
+(Grammars
+  (_list
+    (Grammar
+      (ident
+        (name
+          (nameFirst
+            (letter
+              (upper (_terminal 'G' 0-1)
+              )
+            )
+          ) _list
+        )
+      ) _opt (_terminal OC 2-3)
+      (_list
+        (Rule
+          (Rule_define
+            (ident
+              (name
+                (nameFirst
+                  (letter
+                    (upper (_terminal 'S' 7-8)
+                    )
+                  )
+                ) _list
+              )
+            ) _opt _opt (_terminal '=' 9-10)
+            (RuleBody _opt
+              (NonemptyListOf<TopLevelTerm,"|">
+                (TopLevelTerm
+                  (TopLevelTerm_inline
+                    (Seq
+                      (_list
+                        (Iter
+                          (Pred
+                            (Lex
+                              (Base
+                                (Base_application
+                                  (ident
+                                    (name
+                                      (nameFirst
+                                        (letter
+                                          (upper (_terminal 'N' 11-12)
+                                          )
+                                        )
+                                      )
+                                      (_list
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 'o' 12-13)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 'n' 13-14)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 'e' 14-15)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 'm' 15-16)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 'p' 16-17)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 't' 17-18)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 'y' 18-19)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (upper (_terminal 'L' 19-20)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 'i' 20-21)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 's' 21-22)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 't' 22-23)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (upper (_terminal 'O' 23-24)
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (nameRest
+                                          (alnum
+                                            (letter
+                                              (lower (_terminal 'f' 24-25)
+                                              )
+                                            )
+                                          )
+                                        )
+                                      )
+                                    )
+                                  )
+                                  (_opt
+                                    (Params (_terminal '<' 25-26)
+                                      (ListOf<Seq,",">
+                                        (NonemptyListOf<Seq,",">
+                                          (Seq
+                                            (_list
+                                              (Iter
+                                                (Pred
+                                                  (Lex
+                                                    (Base
+                                                      (Base_application
+                                                        (ident
+                                                          (name
+                                                            (nameFirst
+                                                              (letter
+                                                                (lower (_terminal 'a' 26-27)
+                                                                )
+                                                              )
+                                                            ) _list
+                                                          )
+                                                        ) _opt
+                                                      )
+                                                    )
+                                                  )
+                                                )
+                                              )
+                                            )
+                                          )
+                                          (_list (_terminal ',' 27-28)
+                                            (Seq
+                                              (_list
+                                                (Iter
+                                                  (Pred
+                                                    (Lex
+                                                      (Base
+                                                        (Base_terminal
+                                                          (terminal (_terminal '"' 29-30)
+                                                            (_list
+                                                              (terminalChar (_terminal ',' 30-31)
+                                                              )
+                                                            ) (_terminal '"' 31-32)
+                                                          )
+                                                        )
+                                                      )
+                                                    )
+                                                  )
+                                                )
+                                              )
+                                            )
+                                          )
+                                        )
+                                      ) (_terminal '>' 32-33)
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                    (caseName (_terminal '--' 34-36)
+                      (_list
+                        (space (_terminal ' ' 36-37)
+                        )
+                      )
+                      (name
+                        (nameFirst
+                          (letter
+                            (upper (_terminal 'A' 37-38)
+                            )
+                          )
+                        ) _list
+                      ) _list (_terminal NL 38-39)
+                    )
+                  )
+                ) _list
+              )
+            )
+          )
+        )
+        (Rule
+          (Rule_define
+            (ident
+              (name
+                (nameFirst
+                  (letter
+                    (lower (_terminal 'a' 41-42)
+                    )
+                  )
+                ) _list
+              )
+            ) _opt _opt (_terminal '=' 43-44)
+            (RuleBody _opt
+              (NonemptyListOf<TopLevelTerm,"|">
+                (TopLevelTerm
+                  (Seq
+                    (_list
+                      (Iter
+                        (Pred
+                          (Lex
+                            (Base
+                              (Base_terminal
+                                (terminal (_terminal '"' 45-46)
+                                  (_list
+                                    (terminalChar (_terminal 'a' 46-47)
+                                    )
+                                  ) (_terminal '"' 47-48)
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                ) _list
+              )
+            )
+          )
+        )
+      ) (_terminal CC 49-50)
+    )
+  )
+)
