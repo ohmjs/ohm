@@ -45,6 +45,21 @@ You can use the Ohm CLI without a local Node.js installation via the Docker imag
 docker run --rm -v $(pwd):/local ohmjs/ohm:latest compile my-grammar.ohm
 ```
 
+The `compile` command also supports:
+
+- **A separate output directory** — mount it at `/dst` and output paths resolve there:
+
+  ```sh
+  docker run --rm -v $(pwd)/src:/local -v $(pwd)/dst:/dst \
+    ohmjs/ohm:latest compile my-grammar.ohm
+  ```
+
+- **Stdin / stdout streaming** — pass `-` as the grammar file to read from stdin; output goes to stdout:
+
+  ```sh
+  cat my-grammar.ohm | docker run --rm -i ohmjs/ohm:latest compile - > my-grammar.wasm
+  ```
+
 For full usage instructions, including how to build the image locally and set up a development container, see [doc/docker.md](doc/docker.md).
 
 ### Installation

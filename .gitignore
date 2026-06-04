@@ -25,3 +25,8 @@ yarn-error.log
 
 # api-extractor temp files
 temp/
+
+# Docker buildx local layer cache
+docker/.buildx-cache
+
+.DS_Store

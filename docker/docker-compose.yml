@@ -19,6 +19,12 @@ services:
         platforms:
           - linux/amd64
           - linux/arm64/v8
+        # # Not specifying cache here as it would just slow down gha builds.
+        # # When doing local development, see docker.md for instructions on how to use it local cache.
+        # cache-from:
+        #   - type=local,src=.buildx-cache
+        # cache-to:
+        #   - type=local,dest=.buildx-cache,mode=max
       target: ${TARGET:-dist}
     volumes:
       - .:/local
