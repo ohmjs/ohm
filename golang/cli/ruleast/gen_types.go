@@ -8,7 +8,7 @@ import (
 
 type genCmd struct {
 	Grammar           string `opts:"mode=arg" help:"Path to .ohm grammar file to generate a visitor for."`
-	GoTypePackage     string `help:"The package name for the generated code"` //, default to lower case of the grammar"`
+	GoTypePackage     string `opts:"short=P" help:"The package name for the generated code, default to lower case of the grammar"`
 	GoRuntimeImport   string
 	GoRuntimePackage  string
 	SuffixOutfLineNos bool `opts:"short=l"`

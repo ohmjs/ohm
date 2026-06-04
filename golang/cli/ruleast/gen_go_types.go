@@ -13,17 +13,19 @@ import (
 
 type genTypesCmd struct {
 	GenCmd     genCmd `opts:"mode=embedded"`
+	NoGenerics bool   `opts:"short=g" help:"Do not generate generic types (ie with [P any, R any])"`
 	OutputFile string
 }
 
 func NewGenTypesCmd() *genTypesCmd {
 	return &genTypesCmd{
 		GenCmd: genCmd{
-			GoRuntimeImport:   "github.com/ohmjs/goohm",
-			GoRuntimePackage:  "goohm",
-			sbldr:             &strings.Builder{},
-			SuffixOutfLineNos: true,
+			GoRuntimeImport:  "github.com/ohmjs/goohm",
+			GoRuntimePackage: "goohm",
+			sbldr:            &strings.Builder{},
+			// SuffixOutfLineNos: true,
 		},
+		OutputFile: "-",
 	}
 }
 
@@ -122,10 +124,15 @@ func (gmr GrammarNode) GenGoTypes(vc *genTypesCmd) {
 				strings.TrimSpace(line),
 			)
 		}
+		generics := "[P, R any]"
+		if vc.NoGenerics {
+			generics = ""
+		}
 		vc.GenCmd.outf(`// ----
-type %[1]s[P any, R any] struct {
+type %[1]s%[2]s struct {
 `,
 			branch.TypeName(),
+			generics,
 		)
 		branch.GenGoTypes(vc)
 		vc.GenCmd.outf(`}

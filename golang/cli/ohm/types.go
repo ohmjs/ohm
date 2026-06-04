@@ -12,7 +12,7 @@ import (
 // Grammars
 // = Grammar*
 // ----
-type Grammars[P any, R any] struct {
+type Grammars[P, R any] struct {
 	Grammar goohm.ListNode
 }
 
@@ -21,7 +21,7 @@ type Grammars[P any, R any] struct {
 // Grammar
 // = ident SuperGrammar? "{" Rule* "}"
 // ----
-type Grammar[P any, R any] struct {
+type Grammar[P, R any] struct {
 	Ident        goohm.RuleNode
 	SuperGrammar goohm.OptNode
 	Term1        goohm.TerminalNode
@@ -34,7 +34,7 @@ type Grammar[P any, R any] struct {
 // SuperGrammar
 // = "<:" ident
 // ----
-type SuperGrammar[P any, R any] struct {
+type SuperGrammar[P, R any] struct {
 	Term  goohm.TerminalNode
 	Ident goohm.RuleNode
 }
@@ -45,9 +45,9 @@ type SuperGrammar[P any, R any] struct {
 // = ident Formals? ruleDescr? "="  RuleBody  -- define
 // | ident Formals?            ":=" OverrideRuleBody  -- override
 // | ident Formals?            "+=" RuleBody  -- extend
-// 
+//
 // ----
-type Rule[P any, R any] struct {
+type Rule[P, R any] struct {
 	Node goohm.Node
 }
 
@@ -55,7 +55,7 @@ type Rule[P any, R any] struct {
 // -- rule --
 // ident Formals? ruleDescr? "="  RuleBody
 // ----
-type RuleDefine[P any, R any] struct {
+type RuleDefine[P, R any] struct {
 	Ident     goohm.RuleNode
 	Formals   goohm.OptNode
 	RuleDescr goohm.OptNode
@@ -67,7 +67,7 @@ type RuleDefine[P any, R any] struct {
 // -- rule --
 // ident Formals?            ":=" OverrideRuleBody
 // ----
-type RuleOverride[P any, R any] struct {
+type RuleOverride[P, R any] struct {
 	Ident            goohm.RuleNode
 	Formals          goohm.OptNode
 	Term             goohm.TerminalNode
@@ -78,7 +78,7 @@ type RuleOverride[P any, R any] struct {
 // -- rule --
 // ident Formals?            "+=" RuleBody
 // ----
-type RuleExtend[P any, R any] struct {
+type RuleExtend[P, R any] struct {
 	Ident    goohm.RuleNode
 	Formals  goohm.OptNode
 	Term     goohm.TerminalNode
@@ -90,7 +90,7 @@ type RuleExtend[P any, R any] struct {
 // RuleBody
 // = "|"? NonemptyListOf<TopLevelTerm, "|">
 // ----
-type RuleBody[P any, R any] struct {
+type RuleBody[P, R any] struct {
 	Term           goohm.OptNode
 	NonemptyListOf goohm.BHorNode
 }
@@ -101,7 +101,7 @@ type RuleBody[P any, R any] struct {
 // = Seq caseName  -- inline
 // | Seq
 // ----
-type TopLevelTerm[P any, R any] struct {
+type TopLevelTerm[P, R any] struct {
 	Node goohm.Node
 }
 
@@ -109,7 +109,7 @@ type TopLevelTerm[P any, R any] struct {
 // -- rule --
 // Seq caseName
 // ----
-type TopLevelTermInline[P any, R any] struct {
+type TopLevelTermInline[P, R any] struct {
 	Seq      goohm.RuleNode
 	CaseName goohm.RuleNode
 }
@@ -119,7 +119,7 @@ type TopLevelTermInline[P any, R any] struct {
 // OverrideRuleBody
 // = "|"? NonemptyListOf<OverrideTopLevelTerm, "|">
 // ----
-type OverrideRuleBody[P any, R any] struct {
+type OverrideRuleBody[P, R any] struct {
 	Term           goohm.OptNode
 	NonemptyListOf goohm.BHorNode
 }
@@ -130,7 +130,7 @@ type OverrideRuleBody[P any, R any] struct {
 // = "..."  -- superSplice
 // | TopLevelTerm
 // ----
-type OverrideTopLevelTerm[P any, R any] struct {
+type OverrideTopLevelTerm[P, R any] struct {
 	Node goohm.Node
 }
 
@@ -138,7 +138,7 @@ type OverrideTopLevelTerm[P any, R any] struct {
 // -- rule --
 // "..."
 // ----
-type OverrideTopLevelTermSuperSplice[P any, R any] struct {
+type OverrideTopLevelTermSuperSplice[P, R any] struct {
 	Term goohm.TerminalNode
 }
 
@@ -147,7 +147,7 @@ type OverrideTopLevelTermSuperSplice[P any, R any] struct {
 // Formals
 // = "<" ListOf<ident, ","> ">"
 // ----
-type Formals[P any, R any] struct {
+type Formals[P, R any] struct {
 	Term1  goohm.TerminalNode
 	ListOf goohm.BHorNode
 	Term2  goohm.TerminalNode
@@ -158,7 +158,7 @@ type Formals[P any, R any] struct {
 // Params
 // = "<" ListOf<Seq, ","> ">"
 // ----
-type Params[P any, R any] struct {
+type Params[P, R any] struct {
 	Term1  goohm.TerminalNode
 	ListOf goohm.BHorNode
 	Term2  goohm.TerminalNode
@@ -169,7 +169,7 @@ type Params[P any, R any] struct {
 // Alt
 // = NonemptyListOf<Seq, "|">
 // ----
-type Alt[P any, R any] struct {
+type Alt[P, R any] struct {
 	NonemptyListOf goohm.BHorNode
 }
 
@@ -178,7 +178,7 @@ type Alt[P any, R any] struct {
 // Seq
 // = Iter*
 // ----
-type Seq[P any, R any] struct {
+type Seq[P, R any] struct {
 	Iter goohm.ListNode
 }
 
@@ -190,7 +190,7 @@ type Seq[P any, R any] struct {
 // | Pred "?"  -- opt
 // | Pred
 // ----
-type Iter[P any, R any] struct {
+type Iter[P, R any] struct {
 	Node goohm.Node
 }
 
@@ -198,7 +198,7 @@ type Iter[P any, R any] struct {
 // -- rule --
 // Pred "*"
 // ----
-type IterStar[P any, R any] struct {
+type IterStar[P, R any] struct {
 	Pred goohm.RuleNode
 	Term goohm.TerminalNode
 }
@@ -207,7 +207,7 @@ type IterStar[P any, R any] struct {
 // -- rule --
 // Pred "+"
 // ----
-type IterPlus[P any, R any] struct {
+type IterPlus[P, R any] struct {
 	Pred goohm.RuleNode
 	Term goohm.TerminalNode
 }
@@ -216,7 +216,7 @@ type IterPlus[P any, R any] struct {
 // -- rule --
 // Pred "?"
 // ----
-type IterOpt[P any, R any] struct {
+type IterOpt[P, R any] struct {
 	Pred goohm.RuleNode
 	Term goohm.TerminalNode
 }
@@ -228,7 +228,7 @@ type IterOpt[P any, R any] struct {
 // | "&" Lex  -- lookahead
 // | Lex
 // ----
-type Pred[P any, R any] struct {
+type Pred[P, R any] struct {
 	Node goohm.Node
 }
 
@@ -236,7 +236,7 @@ type Pred[P any, R any] struct {
 // -- rule --
 // "~" Lex
 // ----
-type PredNot[P any, R any] struct {
+type PredNot[P, R any] struct {
 	Term goohm.TerminalNode
 	Lex  goohm.RuleNode
 }
@@ -245,7 +245,7 @@ type PredNot[P any, R any] struct {
 // -- rule --
 // "&" Lex
 // ----
-type PredLookahead[P any, R any] struct {
+type PredLookahead[P, R any] struct {
 	Term goohm.TerminalNode
 	Lex  goohm.RuleNode
 }
@@ -256,7 +256,7 @@ type PredLookahead[P any, R any] struct {
 // = "#" Base  -- lex
 // | Base
 // ----
-type Lex[P any, R any] struct {
+type Lex[P, R any] struct {
 	Node goohm.Node
 }
 
@@ -264,7 +264,7 @@ type Lex[P any, R any] struct {
 // -- rule --
 // "#" Base
 // ----
-type LexLex[P any, R any] struct {
+type LexLex[P, R any] struct {
 	Term goohm.TerminalNode
 	Base goohm.RuleNode
 }
@@ -276,9 +276,9 @@ type LexLex[P any, R any] struct {
 // | oneCharTerminal ".." oneCharTerminal           -- range
 // | terminal                                       -- terminal
 // | "(" Alt ")"                                    -- paren
-// 
+//
 // ----
-type Base[P any, R any] struct {
+type Base[P, R any] struct {
 	Node goohm.Node
 }
 
@@ -286,7 +286,7 @@ type Base[P any, R any] struct {
 // -- rule --
 // ident Params? ~(ruleDescr? "=" | ":=" | "+=")
 // ----
-type BaseApplication[P any, R any] struct {
+type BaseApplication[P, R any] struct {
 	Ident  goohm.RuleNode
 	Params goohm.OptNode
 }
@@ -295,7 +295,7 @@ type BaseApplication[P any, R any] struct {
 // -- rule --
 // oneCharTerminal ".." oneCharTerminal
 // ----
-type BaseRange[P any, R any] struct {
+type BaseRange[P, R any] struct {
 	OneCharTerminal1 goohm.RuleNode
 	Term             goohm.TerminalNode
 	OneCharTerminal2 goohm.RuleNode
@@ -305,7 +305,7 @@ type BaseRange[P any, R any] struct {
 // -- rule --
 // terminal
 // ----
-type BaseTerminal[P any, R any] struct {
+type BaseTerminal[P, R any] struct {
 	Terminal goohm.RuleNode
 }
 
@@ -313,7 +313,7 @@ type BaseTerminal[P any, R any] struct {
 // -- rule --
 // "(" Alt ")"
 // ----
-type BaseParen[P any, R any] struct {
+type BaseParen[P, R any] struct {
 	Term1 goohm.TerminalNode
 	Alt   goohm.RuleNode
 	Term2 goohm.TerminalNode
@@ -324,7 +324,7 @@ type BaseParen[P any, R any] struct {
 // ruleDescr  (a rule description)
 // = "(" ruleDescrText ")"
 // ----
-type LexRuleDescr[P any, R any] struct {
+type LexRuleDescr[P, R any] struct {
 	Term1         goohm.TerminalNode
 	RuleDescrText goohm.RuleNode
 	Term2         goohm.TerminalNode
@@ -335,7 +335,7 @@ type LexRuleDescr[P any, R any] struct {
 // ruleDescrText
 // = (~")" any)*
 // ----
-type LexRuleDescrText[P any, R any] struct {
+type LexRuleDescrText[P, R any] struct {
 	Alt goohm.ListNode
 }
 
@@ -344,7 +344,7 @@ type LexRuleDescrText[P any, R any] struct {
 // caseName
 // = "--" (~"\n" space)* name (~"\n" space)* ("\n" | &"}")
 // ----
-type LexCaseName[P any, R any] struct {
+type LexCaseName[P, R any] struct {
 	Term goohm.TerminalNode
 	Alt1 goohm.ListNode
 	Name goohm.RuleNode
@@ -357,7 +357,7 @@ type LexCaseName[P any, R any] struct {
 // name  (a name)
 // = nameFirst nameRest*
 // ----
-type LexName[P any, R any] struct {
+type LexName[P, R any] struct {
 	NameFirst goohm.RuleNode
 	NameRest  goohm.ListNode
 }
@@ -368,7 +368,7 @@ type LexName[P any, R any] struct {
 // = "_"
 // | letter
 // ----
-type LexNameFirst[P any, R any] struct {
+type LexNameFirst[P, R any] struct {
 	Arg goohm.Node
 }
 
@@ -378,7 +378,7 @@ type LexNameFirst[P any, R any] struct {
 // = "_"
 // | alnum
 // ----
-type LexNameRest[P any, R any] struct {
+type LexNameRest[P, R any] struct {
 	Arg goohm.Node
 }
 
@@ -387,7 +387,7 @@ type LexNameRest[P any, R any] struct {
 // ident  (an identifier)
 // = name
 // ----
-type LexIdent[P any, R any] struct {
+type LexIdent[P, R any] struct {
 	Name goohm.RuleNode
 }
 
@@ -396,7 +396,7 @@ type LexIdent[P any, R any] struct {
 // terminal
 // = "\"" terminalChar* "\""
 // ----
-type LexTerminal[P any, R any] struct {
+type LexTerminal[P, R any] struct {
 	Term1        goohm.TerminalNode
 	TerminalChar goohm.ListNode
 	Term2        goohm.TerminalNode
@@ -407,7 +407,7 @@ type LexTerminal[P any, R any] struct {
 // oneCharTerminal
 // = "\"" terminalChar "\""
 // ----
-type LexOneCharTerminal[P any, R any] struct {
+type LexOneCharTerminal[P, R any] struct {
 	Term1        goohm.TerminalNode
 	TerminalChar goohm.RuleNode
 	Term2        goohm.TerminalNode
@@ -419,7 +419,7 @@ type LexOneCharTerminal[P any, R any] struct {
 // = escapeChar
 // | ~"\\" ~"\"" ~"\n" "\u{0}".."\u{10FFFF}"
 // ----
-type LexTerminalChar[P any, R any] struct {
+type LexTerminalChar[P, R any] struct {
 	Arg goohm.Node
 }
 
@@ -437,9 +437,9 @@ type LexTerminalChar[P any, R any] struct {
 // hexDigit? hexDigit? hexDigit? "}"   -- unicodeCodePoint
 // | "\\u" hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
 // | "\\x" hexDigit hexDigit                    -- hexEscape
-// 
+//
 // ----
-type LexEscapeChar[P any, R any] struct {
+type LexEscapeChar[P, R any] struct {
 	Node goohm.Node
 }
 
@@ -447,7 +447,7 @@ type LexEscapeChar[P any, R any] struct {
 // -- rule --
 // "\\\\"
 // ----
-type LexEscapeCharBackslash[P any, R any] struct {
+type LexEscapeCharBackslash[P, R any] struct {
 	Term goohm.TerminalNode
 }
 
@@ -455,7 +455,7 @@ type LexEscapeCharBackslash[P any, R any] struct {
 // -- rule --
 // "\\\""
 // ----
-type LexEscapeCharDoubleQuote[P any, R any] struct {
+type LexEscapeCharDoubleQuote[P, R any] struct {
 	Term goohm.TerminalNode
 }
 
@@ -463,7 +463,7 @@ type LexEscapeCharDoubleQuote[P any, R any] struct {
 // -- rule --
 // "\\\'"
 // ----
-type LexEscapeCharSingleQuote[P any, R any] struct {
+type LexEscapeCharSingleQuote[P, R any] struct {
 	Term goohm.TerminalNode
 }
 
@@ -471,7 +471,7 @@ type LexEscapeCharSingleQuote[P any, R any] struct {
 // -- rule --
 // "\\b"
 // ----
-type LexEscapeCharBackspace[P any, R any] struct {
+type LexEscapeCharBackspace[P, R any] struct {
 	Term goohm.TerminalNode
 }
 
@@ -479,7 +479,7 @@ type LexEscapeCharBackspace[P any, R any] struct {
 // -- rule --
 // "\\n"
 // ----
-type LexEscapeCharLineFeed[P any, R any] struct {
+type LexEscapeCharLineFeed[P, R any] struct {
 	Term goohm.TerminalNode
 }
 
@@ -487,7 +487,7 @@ type LexEscapeCharLineFeed[P any, R any] struct {
 // -- rule --
 // "\\r"
 // ----
-type LexEscapeCharCarriageReturn[P any, R any] struct {
+type LexEscapeCharCarriageReturn[P, R any] struct {
 	Term goohm.TerminalNode
 }
 
@@ -495,7 +495,7 @@ type LexEscapeCharCarriageReturn[P any, R any] struct {
 // -- rule --
 // "\\t"
 // ----
-type LexEscapeCharTab[P any, R any] struct {
+type LexEscapeCharTab[P, R any] struct {
 	Term goohm.TerminalNode
 }
 
@@ -504,7 +504,7 @@ type LexEscapeCharTab[P any, R any] struct {
 // "\\u{" hexDigit hexDigit? hexDigit?
 // hexDigit? hexDigit? hexDigit? "}"
 // ----
-type LexEscapeCharUnicodeCodePoint[P any, R any] struct {
+type LexEscapeCharUnicodeCodePoint[P, R any] struct {
 	Term1     goohm.TerminalNode
 	HexDigit1 goohm.RuleNode
 	HexDigit2 goohm.OptNode
@@ -519,7 +519,7 @@ type LexEscapeCharUnicodeCodePoint[P any, R any] struct {
 // -- rule --
 // "\\u" hexDigit hexDigit hexDigit hexDigit
 // ----
-type LexEscapeCharUnicodeEscape[P any, R any] struct {
+type LexEscapeCharUnicodeEscape[P, R any] struct {
 	Term      goohm.TerminalNode
 	HexDigit1 goohm.RuleNode
 	HexDigit2 goohm.RuleNode
@@ -531,7 +531,7 @@ type LexEscapeCharUnicodeEscape[P any, R any] struct {
 // -- rule --
 // "\\x" hexDigit hexDigit
 // ----
-type LexEscapeCharHexEscape[P any, R any] struct {
+type LexEscapeCharHexEscape[P, R any] struct {
 	Term      goohm.TerminalNode
 	HexDigit1 goohm.RuleNode
 	HexDigit2 goohm.RuleNode
@@ -542,7 +542,7 @@ type LexEscapeCharHexEscape[P any, R any] struct {
 // space
 // += comment
 // ----
-type LexSpace[P any, R any] struct {
+type LexSpace[P, R any] struct {
 	Comment goohm.RuleNode
 }
 
@@ -551,9 +551,9 @@ type LexSpace[P any, R any] struct {
 // comment
 // = "//" (~"\n" any)* &("\n" | end)  -- singleLine
 // | "/*" (~"*/" any)* "*/"  -- multiLine
-// 
+//
 // ----
-type LexComment[P any, R any] struct {
+type LexComment[P, R any] struct {
 	Node goohm.Node
 }
 
@@ -561,7 +561,7 @@ type LexComment[P any, R any] struct {
 // -- rule --
 // "//" (~"\n" any)* &("\n" | end)
 // ----
-type LexCommentSingleLine[P any, R any] struct {
+type LexCommentSingleLine[P, R any] struct {
 	Term goohm.TerminalNode
 	Alt  goohm.ListNode
 }
@@ -570,7 +570,7 @@ type LexCommentSingleLine[P any, R any] struct {
 // -- rule --
 // "/*" (~"*/" any)* "*/"
 // ----
-type LexCommentMultiLine[P any, R any] struct {
+type LexCommentMultiLine[P, R any] struct {
 	Term1 goohm.TerminalNode
 	Alt   goohm.ListNode
 	Term2 goohm.TerminalNode
@@ -580,7 +580,7 @@ type LexCommentMultiLine[P any, R any] struct {
 // -- rule --
 // tokens = token*
 // ----
-type LexTokens[P any, R any] struct {
+type LexTokens[P, R any] struct {
 	Token goohm.ListNode
 }
 
@@ -588,7 +588,7 @@ type LexTokens[P any, R any] struct {
 // -- rule --
 // token = caseName | comment | ident | operator | punctuation | terminal | any
 // ----
-type LexToken[P any, R any] struct {
+type LexToken[P, R any] struct {
 	Arg1 goohm.Node
 }
 
@@ -596,7 +596,7 @@ type LexToken[P any, R any] struct {
 // -- rule --
 // operator = "<:" | "=" | ":=" | "+=" | "*" | "+" | "?" | "~" | "&"
 // ----
-type LexOperator[P any, R any] struct {
+type LexOperator[P, R any] struct {
 	Term goohm.TerminalNode
 }
 
@@ -604,7 +604,6 @@ type LexOperator[P any, R any] struct {
 // -- rule --
 // punctuation = "<" | ">" | "," | "--"
 // ----
-type LexPunctuation[P any, R any] struct {
+type LexPunctuation[P, R any] struct {
 	Term goohm.TerminalNode
 }
-

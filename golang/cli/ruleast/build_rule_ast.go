@@ -34,7 +34,7 @@ func (node *Grammars) BuildRuleAst(this goohm.Node) (*GrammarsNode, error) {
 			Ident:        kids[0].(goohm.RuleNode),
 			SuperGrammar: kids[1].(goohm.OptNode),
 			Term1:        kids[2].(goohm.TerminalNode),
-			Rules:        kids[3].(goohm.ListNode),
+			Rule:         kids[3].(goohm.ListNode),
 			Term2:        kids[4].(goohm.TerminalNode),
 		}).BuildRuleAst(n)
 		if err != nil {
@@ -50,9 +50,9 @@ func (node *Grammar) BuildRuleAst(this goohm.Node) (*GrammarNode, error) {
 	AssertName(this, "Grammar")
 	rules := []string{}
 	rmap := map[string]RuleNode{}
-	for _, n := range node.Rules.Children() {
+	for _, n := range node.Rule.Children() {
 		rns, err := (&Rule{
-			Arg1: n.(goohm.RuleNode),
+			Node: n.(goohm.RuleNode),
 		}).BuildRuleAst(n)
 		if err != nil {
 			return nil, err
@@ -72,32 +72,32 @@ func (node *Grammar) BuildRuleAst(this goohm.Node) (*GrammarNode, error) {
 
 func (node *Rule) BuildRuleAst(this goohm.Node) (result []RuleNode, err error) {
 	AssertName(this, "Rule")
-	switch node.Arg1.CtorName() {
+	switch node.Node.CtorName() {
 	case "Rule":
 		return (&Rule{
-			Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
+			Node: node.Node.Children()[0].(goohm.RuleNode),
 		}).BuildRuleAst(this)
 	case "Rule_define":
-		kids := node.Arg1.Children()
+		kids := node.Node.Children()
 		return (&RuleDefine{
 			Ident:     kids[0].(goohm.RuleNode),
 			Formals:   kids[1].(goohm.OptNode),
 			RuleDescr: kids[2].(goohm.OptNode),
-			Term1:     kids[3].(goohm.TerminalNode),
+			Term:      kids[3].(goohm.TerminalNode),
 			RuleBody:  kids[4].(goohm.RuleNode),
-		}).BuildRuleAst(node.Arg1)
+		}).BuildRuleAst(node.Node)
 	case "Rule_override":
 		panic("not implemented")
 	case "Rule_extend":
-		kids := node.Arg1.Children()
+		kids := node.Node.Children()
 		return (&RuleExtend{
 			Ident:    kids[0].(goohm.RuleNode),
 			Formals:  kids[1].(goohm.OptNode),
-			Term1:    kids[2].(goohm.TerminalNode),
+			Term:     kids[2].(goohm.TerminalNode),
 			RuleBody: kids[3].(goohm.RuleNode),
-		}).BuildRuleAst(node.Arg1)
+		}).BuildRuleAst(node.Node)
 	default:
-		panic("unexpected " + node.Arg1.CtorName())
+		panic("unexpected " + node.Node.CtorName())
 	}
 }
 
@@ -106,7 +106,7 @@ func (node *RuleDefine) BuildRuleAst(this goohm.Node) ([]RuleNode, error) {
 	descr := ""
 	if len(node.RuleDescr.Children()) > 0 {
 		descr = (&LexRuleDescr{
-			Arg2: node.RuleDescr.Children()[0].Children()[1].(goohm.RuleNode),
+			RuleDescrText: node.RuleDescr.Children()[0].Children()[1].(goohm.RuleNode),
 		}).BuildRuleAst(node.RuleDescr.Children()[0])
 	}
 	return BuildRuleAstRule(
@@ -120,7 +120,7 @@ func (node *RuleDefine) BuildRuleAst(this goohm.Node) ([]RuleNode, error) {
 
 func (node *LexRuleDescr) BuildRuleAst(this goohm.Node) string {
 	AssertName(this, "ruleDescr")
-	return node.Arg2.SourceString()
+	return node.RuleDescrText.SourceString()
 }
 
 func (node *RuleExtend) BuildRuleAst(this goohm.Node) ([]RuleNode, error) {
@@ -143,8 +143,8 @@ func BuildRuleAstRule(
 ) ([]RuleNode, error) {
 	rb := ruleBody.Children()
 	details, err := (&RuleBody{
-		Arg1: rb[0].(goohm.OptNode),
-		Arg2: rb[1].(goohm.BHorNode),
+		Term:           rb[0].(goohm.OptNode),
+		NonemptyListOf: rb[1].(goohm.BHorNode),
 	}).BuildRuleAst(ruleBody)
 	if err != nil {
 		return nil, err
@@ -235,9 +235,9 @@ func BuildRuleAstRule(
 
 func (node *RuleBody) BuildRuleAst(this goohm.Node) (results []RuleDetailNode, err error) {
 	AssertName(this, "RuleBody")
-	for _, el := range node.Arg2.Elems() {
+	for _, el := range node.NonemptyListOf.Elems() {
 		rdn, err := (&TopLevelTerm{
-			Arg1: el.(goohm.RuleNode),
+			Node: el.(goohm.RuleNode),
 		}).BuildRuleAst(el)
 		if err != nil {
 			return nil, err
@@ -249,33 +249,33 @@ func (node *RuleBody) BuildRuleAst(this goohm.Node) (results []RuleDetailNode, e
 
 func (node *TopLevelTerm) BuildRuleAst(this goohm.Node) (*RuleDetailNode, error) {
 	AssertName(this, "TopLevelTerm")
-	switch node.Arg1.CtorName() {
+	switch node.Node.CtorName() {
 	case "TopLevelTerm":
 		return (&TopLevelTerm{
-			Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
+			Node: node.Node.Children()[0].(goohm.RuleNode),
 		}).BuildRuleAst(this)
 	case "TopLevelTerm_inline":
-		kids := node.Arg1.Children()
+		kids := node.Node.Children()
 		inlineNode, err := (&TopLevelTermInline{
 			Seq:      kids[0].(goohm.RuleNode),
 			CaseName: kids[1].(goohm.RuleNode),
-		}).BuildRuleAst(node.Arg1)
+		}).BuildRuleAst(node.Node)
 		if err != nil {
 			return nil, err
 		}
 		return new(Make_RuleDetailNode_inline(*inlineNode)), nil
 		// Make_RuleDetailNode()
 	case "Seq":
-		kids := node.Arg1.Children()
+		kids := node.Node.Children()
 		bnode, err := (&Seq{
-			Arg1: kids[0].(goohm.ListNode),
-		}).BuildRuleAst(node.Arg1)
+			Iter: kids[0].(goohm.ListNode),
+		}).BuildRuleAst(node.Node)
 		if err != nil {
 			return nil, err
 		}
 		return new(Make_RuleDetailNode_bare(*bnode)), nil
 	default:
-		panic("unexpected " + node.Arg1.CtorName())
+		panic("unexpected " + node.Node.CtorName())
 	}
 }
 
@@ -283,7 +283,7 @@ func (node *TopLevelTermInline) BuildRuleAst(this goohm.Node) (*InlineNode, erro
 	AssertName(this, "TopLevelTerm_inline")
 	name := node.CaseName.Children()[2].SourceString()
 	bnode, err := (&Seq{
-		Arg1: node.Seq.Children()[0].(goohm.ListNode),
+		Iter: node.Seq.Children()[0].(goohm.ListNode),
 	}).BuildRuleAst(node.Seq)
 	if err != nil {
 		return nil, err
@@ -295,9 +295,9 @@ func (node *TopLevelTermInline) BuildRuleAst(this goohm.Node) (*InlineNode, erro
 func (node *Seq) BuildRuleAst(this goohm.Node) (*BareNode, error) {
 	AssertName(this, "Seq")
 	args := []NamedArgNode{}
-	for _, n := range node.Arg1.Children() {
+	for _, n := range node.Iter.Children() {
 		arg, err := (&Iter{
-			Arg1: n.(goohm.RuleNode),
+			Node: n.(goohm.RuleNode),
 		}).BuildRuleAst(n)
 		if err != nil {
 			return nil, err
@@ -312,37 +312,37 @@ func (node *Seq) BuildRuleAst(this goohm.Node) (*BareNode, error) {
 
 func (node *Iter) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 	AssertName(this, "Iter")
-	switch node.Arg1.CtorName() {
+	switch node.Node.CtorName() {
 	case "Iter":
 		return (&Iter{
-			Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
+			Node: node.Node.Children()[0].(goohm.RuleNode),
 		}).BuildRuleAst(this)
 	case "Iter_star":
 		return (&IterStar{
-			Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
-		}).BuildRuleAst(node.Arg1)
+			Pred: node.Node.Children()[0].(goohm.RuleNode),
+		}).BuildRuleAst(node.Node)
 	case "Iter_plus":
 		return (&IterPlus{
-			Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
-		}).BuildRuleAst(node.Arg1)
+			Pred: node.Node.Children()[0].(goohm.RuleNode),
+		}).BuildRuleAst(node.Node)
 	case "Iter_opt":
 		return (&IterOpt{
-			Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
-		}).BuildRuleAst(node.Arg1)
+			Pred: node.Node.Children()[0].(goohm.RuleNode),
+		}).BuildRuleAst(node.Node)
 	case "Pred":
 		return (&Pred{
-			Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
-		}).BuildRuleAst(node.Arg1)
+			Node: node.Node.Children()[0].(goohm.RuleNode),
+		}).BuildRuleAst(node.Node)
 	default:
-		panic("unexpected " + node.Arg1.CtorName())
+		panic("unexpected " + node.Node.CtorName())
 	}
 }
 
 func (node *IterStar) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 	AssertName(this, "Iter_star")
 	arg, err := (&Pred{
-		Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
-	}).BuildRuleAst(node.Arg1)
+		Node: node.Pred.Children()[0].(goohm.RuleNode),
+	}).BuildRuleAst(node.Pred)
 	if arg == nil || err != nil {
 		return nil, err
 	}
@@ -363,8 +363,8 @@ func (node *IterStar) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 func (node *IterPlus) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 	AssertName(this, "Iter_plus")
 	arg, err := (&Pred{
-		Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
-	}).BuildRuleAst(node.Arg1)
+		Node: node.Pred.Children()[0].(goohm.RuleNode),
+	}).BuildRuleAst(node.Pred)
 	if arg == nil || err != nil {
 		return nil, err
 	}
@@ -381,8 +381,8 @@ func (node *IterPlus) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 func (node *IterOpt) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 	AssertName(this, "Iter_opt")
 	arg, err := (&Pred{
-		Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
-	}).BuildRuleAst(node.Arg1)
+		Node: node.Pred.Children()[0].(goohm.RuleNode),
+	}).BuildRuleAst(node.Pred)
 	if arg == nil || err != nil {
 		return nil, err
 	}
@@ -398,10 +398,10 @@ func (node *IterOpt) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 
 func (node *Pred) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 	AssertName(this, "Pred")
-	switch node.Arg1.CtorName() {
+	switch node.Node.CtorName() {
 	case "Pred":
 		return (&Pred{
-			Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
+			Node: node.Node.Children()[0].(goohm.RuleNode),
 		}).BuildRuleAst(this)
 	case "Pred_not":
 		// none thing consumed
@@ -411,74 +411,74 @@ func (node *Pred) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 		return nil, nil
 	case "Lex":
 		return (&Lex{
-			Base: node.Arg1.Children()[0].(goohm.RuleNode),
-		}).BuildRuleAst(node.Arg1)
+			Node: node.Node.Children()[0].(goohm.RuleNode),
+		}).BuildRuleAst(node.Node)
 	default:
-		panic("unexpected " + node.Arg1.CtorName())
+		panic("unexpected " + node.Node.CtorName())
 	}
 }
 
 func (node *Lex) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 	AssertName(this, "Lex")
-	switch node.Base.CtorName() {
+	switch node.Node.CtorName() {
 	case "Lex":
 		return (&Lex{
-			Base: node.Base.Children()[0].(goohm.RuleNode),
+			Node: node.Node.Children()[0].(goohm.RuleNode),
 		}).BuildRuleAst(this)
 	case "Lex_lex":
 		return (&LexLex{
-			Term1: node.Base.Children()[0].(goohm.TerminalNode),
-			Base:  node.Base.Children()[1].(goohm.RuleNode),
-		}).BuildRuleAst(node.Base)
+			Term: node.Node.Children()[0].(goohm.TerminalNode),
+			Base: node.Node.Children()[1].(goohm.RuleNode),
+		}).BuildRuleAst(node.Node)
 	case "Base":
 		return (&Base{
-			Arg1: node.Base.Children()[0].(goohm.RuleNode),
-		}).BuildRuleAst(node.Base)
+			Node: node.Node.Children()[0].(goohm.RuleNode),
+		}).BuildRuleAst(node.Node)
 	default:
-		panic("unexpected " + node.Base.CtorName())
+		panic("unexpected " + node.Node.CtorName())
 	}
 }
 
 func (node *LexLex) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 	return (&Base{
-		Arg1: node.Base,
+		Node: node.Base,
 	}).BuildRuleAst(node.Base)
 }
 
 func (node *Base) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 	AssertName(this, "Base")
-	switch node.Arg1.CtorName() {
+	switch node.Node.CtorName() {
 	case "Base":
 		return (&Base{
-			Arg1: node.Arg1.Children()[0].(goohm.RuleNode),
+			Node: node.Node.Children()[0].(goohm.RuleNode),
 		}).BuildRuleAst(this)
 	case "Base_application":
-		kids := node.Arg1.Children()
+		kids := node.Node.Children()
 		return (&BaseApplication{
 			Ident:  kids[0].(goohm.RuleNode),
 			Params: kids[1].(goohm.OptNode),
-		}).BuildRuleAst(node.Arg1)
+		}).BuildRuleAst(node.Node)
 	case "Base_range":
-		kids := node.Arg1.Children()
+		kids := node.Node.Children()
 		return new((&BaseRange{
 			OneCharTerminal1: kids[0].(goohm.RuleNode),
-			Term1:            kids[1].(goohm.TerminalNode),
+			Term:             kids[1].(goohm.TerminalNode),
 			OneCharTerminal2: kids[2].(goohm.RuleNode),
-		}).BuildRuleAst(node.Arg1)), nil
+		}).BuildRuleAst(node.Node)), nil
 	case "Base_terminal":
-		kids := node.Arg1.Children()
+		kids := node.Node.Children()
 		return new((&BaseTerminal{
 			Terminal: kids[0].(goohm.RuleNode),
-		}).BuildRuleAst(node.Arg1)), nil
+		}).BuildRuleAst(node.Node)), nil
 	case "Base_paren":
-		kids := node.Arg1.Children()
+		kids := node.Node.Children()
 		return new((&BaseParen{
 			Term1: kids[0].(goohm.TerminalNode),
 			Alt:   kids[1].(goohm.RuleNode),
 			Term2: kids[2].(goohm.TerminalNode),
-		}).BuildRuleAst(node.Arg1)), nil
+		}).BuildRuleAst(node.Node)), nil
 	default:
-		panic("unexpected " + node.Arg1.CtorName())
+		panic("unexpected " + node.Node.CtorName())
 	}
 }
 
@@ -496,7 +496,7 @@ func (node *BaseApplication) BuildRuleAst(this goohm.Node) (*NamedArgNode, error
 			nel := listof.Children()[0]
 			seq := nel.Children()[0]
 			elem, err := (&Seq{
-				Arg1: seq.Children()[0].(goohm.ListNode),
+				Iter: seq.Children()[0].(goohm.ListNode),
 			}).BuildRuleAst(seq)
 			if err != nil {
 				return nil, err
@@ -505,7 +505,7 @@ func (node *BaseApplication) BuildRuleAst(this goohm.Node) (*NamedArgNode, error
 			list2 := nel.Children()[1]
 			seq2 := list2.Children()[1]
 			sep, err := (&Seq{
-				Arg1: seq2.Children()[0].(goohm.ListNode),
+				Iter: seq2.Children()[0].(goohm.ListNode),
 			}).BuildRuleAst(seq2)
 			if err != nil {
 				return nil, err
