@@ -1,0 +1,122 @@
+-- grammar.ohm  --
+G { 
+  S = NonemptyListOf<a, ","> 
+  a = "a"
+}
+-- file1.txt --
+a,a,a
+-- file1.c_and_p --
+(S
+  (NonemptyListOf<a,",">
+    (a (_terminal 'a' 0-1)
+    )
+    (_list (_terminal ',' 1-2)
+      (a (_terminal 'a' 2-3)
+      ) (_terminal ',' 3-4)
+      (a (_terminal 'a' 4-5)
+      )
+    )
+  )
+)
+-- file1.l.c_and_p --
+(S
+  (NonemptyListOf<a,",">
+    (a (_terminal 'a' 0-1)
+    ) (_terminal ',' 1-2)
+    (a (_terminal 'a' 2-3)
+    ) (_terminal ',' 3-4)
+    (a (_terminal 'a' 4-5)
+    )
+  )
+)
+-- grammar.S.t.sexpr  --
+(Grammars
+  (_list
+    (Grammar _opt
+      (_list
+        (Rule
+          (Rule_define _opt _opt
+            (RuleBody _opt
+              (NonemptyListOf<TopLevelTerm,"|">
+                (TopLevelTerm
+                  (Seq
+                    (_list
+                      (Iter
+                        (Pred
+                          (Lex
+                            (Base
+                              (Base_application
+                                (_opt
+                                  (Params
+                                    (ListOf<Seq,",">
+                                      (NonemptyListOf<Seq,",">
+                                        (Seq
+                                          (_list
+                                            (Iter
+                                              (Pred
+                                                (Lex
+                                                  (Base
+                                                    (Base_application _opt
+                                                    )
+                                                  )
+                                                )
+                                              )
+                                            )
+                                          )
+                                        )
+                                        (_list
+                                          (Seq
+                                            (_list
+                                              (Iter
+                                                (Pred
+                                                  (Lex
+                                                    (Base Base_terminal
+                                                    )
+                                                  )
+                                                )
+                                              )
+                                            )
+                                          )
+                                        )
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                ) _list
+              )
+            )
+          )
+        )
+        (Rule
+          (Rule_define _opt _opt
+            (RuleBody _opt
+              (NonemptyListOf<TopLevelTerm,"|">
+                (TopLevelTerm
+                  (Seq
+                    (_list
+                      (Iter
+                        (Pred
+                          (Lex
+                            (Base Base_terminal
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                ) _list
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)

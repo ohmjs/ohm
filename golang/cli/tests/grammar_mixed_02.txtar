@@ -1,0 +1,42 @@
+-- grammar.ohm  --
+G { 
+  S = "A" -- A
+    | "B"
+    | "C"
+}
+-- file1.txt --
+B
+-- file1.c_and_p  --
+(S (_terminal 'B' 0-1)
+)
+-- file2.txt --
+C
+-- file2.c_and_p  --
+(S (_terminal 'C' 0-1)
+)
+-- grammar.n.l.S.v.t.sexpr  --
+(Grammars 0-41 'G OC \n  S = "A" -- A\n    | "B"\n   ...'
+  (Grammar 0-41 'G OC \n  S = "A" -- A\n    | "B"\n   ...' _opt
+    (Rule 7-39 'S = "A" -- A\n    | "B"\n    | "C"'
+      (Rule_define 7-39 'S = "A" -- A\n    | "B"\n    | "C"' _opt _opt
+        (RuleBody 11-39 '"A" -- A\n    | "B"\n    | "C"' _opt
+          (NonemptyListOf<TopLevelTerm,"|"> 11-39 '"A" -- A\n    | "B"\n    | "C"'
+            (TopLevelTerm 11-20 '"A" -- A\n'
+              (TopLevelTerm_inline 11-20 '"A" -- A\n'
+                (Seq 11-14 '"A"'
+                  (Iter 11-14 '"A"'
+                    (Pred 11-14 '"A"'
+                      (Lex 11-14 '"A"'
+                        (Base 11-14 '"A"' Base_terminal)))))))
+            (TopLevelTerm 26-29 '"B"'
+              (Seq 26-29 '"B"'
+                (Iter 26-29 '"B"'
+                  (Pred 26-29 '"B"'
+                    (Lex 26-29 '"B"'
+                      (Base 26-29 '"B"' Base_terminal))))))
+            (TopLevelTerm 36-39 '"C"'
+              (Seq 36-39 '"C"'
+                (Iter 36-39 '"C"'
+                  (Pred 36-39 '"C"'
+                    (Lex 36-39 '"C"'
+                      (Base 36-39 '"C"' Base_terminal))))))))))))

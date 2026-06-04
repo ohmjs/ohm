@@ -1,0 +1,87 @@
+-- grammar.ohm  --
+G { 
+  Iter
+    = Pred "*"  -- star
+    | Pred "+"  -- plus
+    | Pred "?"  -- opt
+    | Pred
+  Pred = "a"
+}
+-- file0.txt --
+a
+-- file0.c_and_p  --
+(Iter
+  (Pred (_terminal 'a' 0-1)
+  )
+)
+
+-- file1.txt --
+a*
+-- file1.c_and_p  --
+(Iter
+  (Iter_star
+    (Pred (_terminal 'a' 0-1)
+    ) (_terminal '*' 1-2)
+  )
+)
+
+-- grammar.n.l.S.v.t.sexpr  --
+(Grammars 0-108 'G OC \n  Iter\n    = Pred "*"  -- sta...'
+  (Grammar 0-108 'G OC \n  Iter\n    = Pred "*"  -- sta...' _opt
+    (Rule 7-93 'Iter\n    = Pred "*"  -- star\n    | ...'
+      (Rule_define 7-93 'Iter\n    = Pred "*"  -- star\n    | ...' _opt _opt
+        (RuleBody 18-93 'Pred "*"  -- star\n    | Pred "+"  --...' _opt
+          (NonemptyListOf<TopLevelTerm,"|"> 18-93 'Pred "*"  -- star\n    | Pred "+"  --...'
+            (TopLevelTerm 18-36 'Pred "*"  -- star\n'
+              (TopLevelTerm_inline 18-36 'Pred "*"  -- star\n'
+                (Seq 18-26 'Pred "*"'
+                  (Iter 18-22 'Pred'
+                    (Pred 18-22 'Pred'
+                      (Lex 18-22 'Pred'
+                        (Base 18-22 'Pred'
+                          (Base_application 18-22 'Pred' _opt)))))
+                  (Iter 23-26 '"*"'
+                    (Pred 23-26 '"*"'
+                      (Lex 23-26 '"*"'
+                        (Base 23-26 '"*"' Base_terminal)))))))
+            (TopLevelTerm 42-60 'Pred "+"  -- plus\n'
+              (TopLevelTerm_inline 42-60 'Pred "+"  -- plus\n'
+                (Seq 42-50 'Pred "+"'
+                  (Iter 42-46 'Pred'
+                    (Pred 42-46 'Pred'
+                      (Lex 42-46 'Pred'
+                        (Base 42-46 'Pred'
+                          (Base_application 42-46 'Pred' _opt)))))
+                  (Iter 47-50 '"+"'
+                    (Pred 47-50 '"+"'
+                      (Lex 47-50 '"+"'
+                        (Base 47-50 '"+"' Base_terminal)))))))
+            (TopLevelTerm 66-83 'Pred "?"  -- opt\n'
+              (TopLevelTerm_inline 66-83 'Pred "?"  -- opt\n'
+                (Seq 66-74 'Pred "?"'
+                  (Iter 66-70 'Pred'
+                    (Pred 66-70 'Pred'
+                      (Lex 66-70 'Pred'
+                        (Base 66-70 'Pred'
+                          (Base_application 66-70 'Pred' _opt)))))
+                  (Iter 71-74 '"?"'
+                    (Pred 71-74 '"?"'
+                      (Lex 71-74 '"?"'
+                        (Base 71-74 '"?"' Base_terminal)))))))
+            (TopLevelTerm 89-93 'Pred'
+              (Seq 89-93 'Pred'
+                (Iter 89-93 'Pred'
+                  (Pred 89-93 'Pred'
+                    (Lex 89-93 'Pred'
+                      (Base 89-93 'Pred'
+                        (Base_application 89-93 'Pred' _opt)))))))))))
+    (Rule 96-106 'Pred = "a"'
+      (Rule_define 96-106 'Pred = "a"' _opt _opt
+        (RuleBody 103-106 '"a"' _opt
+          (NonemptyListOf<TopLevelTerm,"|"> 103-106 '"a"'
+            (TopLevelTerm 103-106 '"a"'
+              (Seq 103-106 '"a"'
+                (Iter 103-106 '"a"'
+                  (Pred 103-106 '"a"'
+                    (Lex 103-106 '"a"'
+                      (Base 103-106 '"a"' Base_terminal))))))))))))

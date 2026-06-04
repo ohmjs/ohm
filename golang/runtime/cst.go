@@ -1,6 +1,8 @@
-package main
+package goohm
 
 import (
+	"fmt"
+	"strings"
 	"unicode/utf16"
 	"unsafe"
 
@@ -16,7 +18,6 @@ const (
 	CstNodeTypeList        CstNodeType = 2
 	CstNodeTypeOpt         CstNodeType = 3
 )
-
 const (
 	matchRecordTypeMask = 3
 	cstNodeHeaderSize   = 16
@@ -45,8 +46,149 @@ type CstNode struct {
 	startIdx int // position in the input (UTF-16 code units)
 }
 
-func newCstNode(ctx *cstContext, base uint32, startIdx int) *CstNode {
-	return &CstNode{ctx: ctx, base: base, startIdx: startIdx}
+type cstRuleNode struct {
+	*CstNode
+}
+type cstTerminalNode struct {
+	*CstNode
+}
+type cstListNode struct {
+	*CstNode
+}
+type cstOptNode struct {
+	*CstNode
+}
+type cstSeqNode struct {
+	*CstNode
+}
+
+// type cstBHorNode struct {
+// 	*CstNode
+// }
+
+func (node *cstRuleNode) Elems() []Node {
+	return ListOfElement(node)
+}
+
+func (c *cstRuleNode) Seps() []Node {
+	panic("not implemented")
+	// return []Node{}
+}
+
+func (c *cstRuleNode) bhor() {}
+
+func (n CstNode) String() string { return NodeString(n) }
+
+// func (n cstNonterminalNode) String() string { return NodeString(*n.CstNode) }
+// func (n cstTerminalNode) String() string    { return NodeString(*n.CstNode) }
+// func (n cstListNode) String() string        { return NodeString(*n.CstNode) }
+// func (n cstOptNode) String() string         { return NodeString(*n.CstNode) }
+// func (n cstSeqNode) String() string         { return NodeString(*n.CstNode) }
+
+// func (n cstNonterminalNode) String() string { return n.CtorName() }
+// func (n cstTerminalNode) String() string    { return n.SourceString() }
+
+func NodeString(n CstNode) string {
+	s, f := n.Source()
+	val := n.SourceString()
+	val = strings.ReplaceAll(val, "\n", "\\n")
+	val = strings.ReplaceAll(val, "(", "OP")
+	val = strings.ReplaceAll(val, ")", "CP")
+	val = strings.ReplaceAll(val, "{", "OC")
+	val = strings.ReplaceAll(val, "}", "CC")
+	if len(val) > 100 {
+		val = val[:97] + "..."
+	}
+	return fmt.Sprintf("%s %d-%d '%s'", n.CtorName(), s, f, val)
+}
+
+var (
+	_ Node         = &CstNode{}
+	_ TerminalNode = &cstTerminalNode{}
+	_ RuleNode     = &cstRuleNode{}
+	_ ListNode     = &cstListNode{}
+	_ OptNode      = &cstOptNode{}
+	_ SeqNode      = &cstSeqNode{}
+	_ BHorNode     = &cstRuleNode{}
+)
+
+func (c *cstTerminalNode) terminal() {}
+func (c *cstRuleNode) rule()         {}
+func (c *cstListNode) list()         {}
+func (c *cstOptNode) optional()      {}
+func (c *cstSeqNode) seq()           {}
+
+// func (n *CstNode) NumChildren() int {
+// 	panic("unimplemented")
+// }
+
+func (c *cstOptNode) IsPresent() bool {
+	return c.count() > 0
+}
+
+func (n *CstNode) StartIdx() int {
+	return n.startIdx
+}
+
+func (n *CstNode) CstCtx() *cstContext {
+	return n.ctx
+}
+
+// Children returns the child nodes, with startIdx properly tracked.
+// For children of syntactic rules, implicit leading spaces are accounted
+// for when computing startIdx.
+func (n *CstNode) Children() []Node {
+	if isTerminal(n.base) {
+		return nil
+	}
+	count := n.count()
+	if count == 0 {
+		return nil
+	}
+	children := make([]Node, count)
+	startIdx := n.startIdx
+	endIdx := n.startIdx + n.MatchLength()
+	for i := uint32(0); i < count; i++ {
+		slotOffset := n.base + cstNodeHeaderSize + i*slotSize
+		data, ok := n.ctx.memory.Read(slotOffset, 4)
+		if !ok {
+			return children[:i]
+		}
+		slot := readUint32(data, 0)
+		// Bit 1 is the HAS_LEADING_SPACES edge flag.
+		hasLeadingSpaces := slot&2 != 0
+		// Strip the edge flag to get the actual value.
+		raw := slot & ^uint32(2)
+		// Account for implicit leading spaces.
+		// Only apply if spaces were actually recorded at this position
+		// and the result stays within the parent's span.
+		if hasLeadingSpaces && n.ctx.getSpacesLenAt != nil && n.hasParentSpaces(raw) {
+			spacesLen := n.ctx.getSpacesLenAt(startIdx)
+			if spacesLen > 0 && startIdx+spacesLen <= endIdx {
+				startIdx += spacesLen
+			}
+		}
+		child := newCstNode(n.ctx, raw, startIdx)
+		children[i] = child
+		startIdx += child.MatchLength()
+	}
+	return children
+}
+
+func newCstNode(ctx *cstContext, base uint32, startIdx int) Node {
+	node := &CstNode{ctx: ctx, base: base, startIdx: startIdx}
+	switch node.Type() {
+	case CstNodeTypeNonterminal:
+		return &cstRuleNode{node}
+	case CstNodeTypeTerminal:
+		return &cstTerminalNode{node}
+	case CstNodeTypeList:
+		return &cstListNode{node}
+	case CstNodeTypeOpt:
+		return &cstOptNode{node}
+	default:
+		return node
+	}
 }
 
 func isTerminal(raw uint32) bool {
@@ -54,7 +196,6 @@ func isTerminal(raw uint32) bool {
 }
 
 // --- internal field accessors ---
-
 func (n *CstNode) typeAndDetails() int32 {
 	data, ok := n.ctx.memory.Read(n.base+4, 4)
 	if !ok {
@@ -83,7 +224,6 @@ func (n *CstNode) count() uint32 {
 }
 
 // --- public API (matches the ohm-js CstNode interface) ---
-
 // Type returns the CstNodeType for this node.
 func (n *CstNode) Type() CstNodeType {
 	if isTerminal(n.base) {
@@ -112,6 +252,14 @@ func (n *CstNode) CtorName() string {
 	default:
 		return ""
 	}
+}
+
+func (n *CstNode) RuleName() string {
+	id := n.ruleID()
+	if int(id) < len(n.ctx.ruleNames) {
+		return n.ctx.ruleNames[id]
+	}
+	return ""
 }
 
 // MatchLength returns the number of UTF-16 code units consumed by this node.
@@ -149,7 +297,7 @@ func (n *CstNode) SourceString() string {
 }
 
 // Value returns the matched text.
-func (n *CstNode) Value() string {
+func (n *cstTerminalNode) Value() string {
 	return n.SourceString()
 }
 
@@ -191,50 +339,6 @@ func readNodeType(mem api.Memory, ptr uint32) CstNodeType {
 		return -1
 	}
 	return CstNodeType(readInt32(data, 0) & matchRecordTypeMask)
-}
-
-// Children returns the child nodes, with startIdx properly tracked.
-// For children of syntactic rules, implicit leading spaces are accounted
-// for when computing startIdx.
-func (n *CstNode) Children() []*CstNode {
-	if isTerminal(n.base) {
-		return nil
-	}
-	count := n.count()
-	if count == 0 {
-		return nil
-	}
-	children := make([]*CstNode, count)
-	startIdx := n.startIdx
-	endIdx := n.startIdx + n.MatchLength()
-	for i := uint32(0); i < count; i++ {
-		slotOffset := n.base + cstNodeHeaderSize + i*slotSize
-		data, ok := n.ctx.memory.Read(slotOffset, 4)
-		if !ok {
-			return children[:i]
-		}
-		slot := readUint32(data, 0)
-
-		// Bit 1 is the HAS_LEADING_SPACES edge flag.
-		hasLeadingSpaces := slot&2 != 0
-		// Strip the edge flag to get the actual value.
-		raw := slot & ^uint32(2)
-
-		// Account for implicit leading spaces.
-		// Only apply if spaces were actually recorded at this position
-		// and the result stays within the parent's span.
-		if hasLeadingSpaces && n.ctx.getSpacesLenAt != nil && n.hasParentSpaces(raw) {
-			spacesLen := n.ctx.getSpacesLenAt(startIdx)
-			if spacesLen > 0 && startIdx+spacesLen <= endIdx {
-				startIdx += spacesLen
-			}
-		}
-
-		child := newCstNode(n.ctx, raw, startIdx)
-		children[i] = child
-		startIdx += child.MatchLength()
-	}
-	return children
 }
 
 // Helper functions for reading little-endian values from memory.

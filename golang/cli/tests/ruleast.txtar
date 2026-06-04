@@ -1,0 +1,86 @@
+this grammar is not currently used, and does not match the output of rule_ast
+
+-- ruleast.ohm --
+RuleAst {
+  Grammar =     name #"\n" Rule*
+  Rule =        name ruleDescr? rulecase "{" RuleDetails* "}"
+  RuleDetails = name Nodetype #("\n"|";")
+  Nodetype =
+    | #("node" (" "|"\t")*)             -- node
+    | #("rule" (" "|"\t")+)  name      -- rule
+    | #("term" (" "|"\t")*)             -- term
+    | #("list" (" "|"\t")+)  Nodetype   -- list
+    | #("opt"  (" "|"\t")+)  Nodetype   -- opt
+    | #("hor"  (" "|"\t")+)  hor_id "<" ListOf<Nodetype, ","> ">" -- hor
+
+  rulecase =
+    | "define" ~(alnum)
+    | "override" ~(alnum)
+    | "extend" ~(alnum)
+  ruleDescr  = "(" ruleDescrText ")"
+  ruleDescrText = (~")" any)*
+  name = alnum+
+  hor_id = alnum+
+}
+
+-- file1.txt --
+G
+a (x) define {
+  b rule b
+  c hor nel <rule b, term>
+  d hor nel <hor list <term, term>, term>
+}
+b define {
+  d opt term
+}
+-- file1.b.t.l.n.c_and_p --
+(Grammar
+  (name)
+  (Rule
+    (name)
+    (_opt
+      (ruleDescr
+        (ruleDescrText))) rulecase
+    (RuleDetails
+      (name)
+      (Nodetype
+        (Nodetype_rule
+          (name))))
+    (RuleDetails
+      (name)
+      (Nodetype
+        (Nodetype_hor
+          (hor_id)
+          (ListOf<Nodetype,",">
+            (NonemptyListOf<Nodetype,",">
+              (Nodetype
+                (Nodetype_rule
+                  (name)))
+              (Nodetype
+                (Nodetype_term)))))))
+    (RuleDetails
+      (name)
+      (Nodetype
+        (Nodetype_hor
+          (hor_id)
+          (ListOf<Nodetype,",">
+            (NonemptyListOf<Nodetype,",">
+              (Nodetype
+                (Nodetype_hor
+                  (hor_id)
+                  (ListOf<Nodetype,",">
+                    (NonemptyListOf<Nodetype,",">
+                      (Nodetype
+                        (Nodetype_term))
+                      (Nodetype
+                        (Nodetype_term))))))
+              (Nodetype
+                (Nodetype_term))))))))
+  (Rule
+    (name) _opt rulecase
+    (RuleDetails
+      (name)
+      (Nodetype
+        (Nodetype_opt
+          (Nodetype
+            (Nodetype_term)))))))

@@ -1,0 +1,38 @@
+-- grammar.ohm  --
+G {
+  escapeChar  (an escape sequence)
+    = "\\\\"                                     -- backslash
+    | "\\x" hexDigit hexDigit                    -- hexEscape
+}
+
+-- grammar.n.l.S.v.t.sexpr  --
+(Grammars 0-164 'G OC\n  escapeChar  OPan escape seque...'
+  (Grammar 0-164 'G OC\n  escapeChar  OPan escape seque...' _opt
+    (Rule 6-163 'escapeChar  OPan escape sequenceCP\n ...'
+      (Rule_define 6-163 'escapeChar  OPan escape sequenceCP\n ...' _opt _opt
+        (RuleBody 45-163 '"\\\\"                               ...' _opt
+          (NonemptyListOf<TopLevelTerm,"|"> 45-163 '"\\\\"                               ...'
+            (TopLevelTerm 45-101 '"\\\\"                               ...'
+              (TopLevelTerm_inline 45-101 '"\\\\"                               ...'
+                (Seq 45-51 '"\\\\"'
+                  (Iter 45-51 '"\\\\"'
+                    (Pred 45-51 '"\\\\"'
+                      (Lex 45-51 '"\\\\"'
+                        (Base 45-51 '"\\\\"' Base_terminal)))))))
+            (TopLevelTerm 107-163 '"\\x" hexDigit hexDigit              ...'
+              (TopLevelTerm_inline 107-163 '"\\x" hexDigit hexDigit              ...'
+                (Seq 107-130 '"\\x" hexDigit hexDigit'
+                  (Iter 107-112 '"\\x"'
+                    (Pred 107-112 '"\\x"'
+                      (Lex 107-112 '"\\x"'
+                        (Base 107-112 '"\\x"' Base_terminal))))
+                  (Iter 113-121 'hexDigit'
+                    (Pred 113-121 'hexDigit'
+                      (Lex 113-121 'hexDigit'
+                        (Base 113-121 'hexDigit'
+                          (Base_application 113-121 'hexDigit' _opt)))))
+                  (Iter 122-130 'hexDigit'
+                    (Pred 122-130 'hexDigit'
+                      (Lex 122-130 'hexDigit'
+                        (Base 122-130 'hexDigit'
+                          (Base_application 122-130 'hexDigit' _opt))))))))))))))
