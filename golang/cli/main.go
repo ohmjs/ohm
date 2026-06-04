@@ -11,6 +11,7 @@ import (
 	"github.com/ohmjs/ohmgo/candp"
 	"github.com/ohmjs/ohmgo/gencmd"
 	"github.com/ohmjs/ohmgo/ohm"
+	"github.com/ohmjs/ohmgo/ohm_rules"
 	"github.com/ohmjs/ohmgo/ruleast"
 	"github.com/ohmjs/ohmgo/sexpr"
 	"github.com/ohmjs/ohmgo/tests"
@@ -57,6 +58,9 @@ func init() {
 		AddCommand(c_and_p).
 		AddCommand(to_sexpr).
 		AddCommand(txtar)
+
+	cr := opts.New(ohm_rules.NewBuildRuleAstCmd()).Name("collect_rule")
+	builder.AddCommand(cr)
 
 	builder.AddCommand(test)
 	builder.AddCommand(generate)

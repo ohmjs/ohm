@@ -1,0 +1,127 @@
+module ohm_rules {
+
+struct GrammarsNode {
+    Vector<String> gmr_names;
+    StringMap<GrammarNode> grammars;
+};
+
+struct GrammarNode {
+    String name;
+    Vector<String> rule_names;
+    StringMap<RuleNode> rules;
+};
+
+union RuleNode {
+    BareRuleNode bare_rule;
+    VirtRuleNode virt_rule;
+    CasesRuleNode case_rule;
+};
+
+struct BareRuleNode {
+    String name;
+    RuleType rtype;
+    String descr;
+    String source;
+    Vector<NamedArgNode> args;
+};
+
+newtype VirtRuleNode = Named<BareRuleNode>;
+
+struct CasesRuleNode {
+    String name;
+    RuleType rtype;
+    String descr;
+    String source;
+    // unification of BareNode.args
+    Vector<NamedArgNode> args;
+    Vector<InlineNode> cases;
+};
+
+// struct UnionRuleDetailNode {
+//     Vector<BareNode> details;
+//     Vector<InlineNode> cases;
+// }
+
+union RuleType {
+    Void define;
+    Void override;
+    Void extend;
+};
+
+// used internally as intermediate value
+// returned by TopLevelTerm Accept
+union RuleDetailNode {
+    InlineNode inline;
+    BareNode bare;
+};
+
+struct Named<N> {
+    String name;
+    N node;
+};
+
+struct InlineNode {
+    String case_name;
+    String source;
+    Vector<NamedArgNode> args;
+};
+
+struct BareNode {
+    Vector<NamedArgNode> args;
+};
+
+// union NodeType {
+//     Void nobj;
+//     Void nont;
+//     Void term;
+//     Void list;
+//     Void opt;
+// };
+
+newtype NamedArgNode = Named<ArgNode>;
+
+union ArgNode {
+    NObjNode nobj;
+    NontNode rule;
+    TermNode term;
+    ListNode list;
+    OptNode  opt;
+    BuiltinHOR bhor;
+};
+
+// Super type of all CST Node types
+struct NObjNode {
+    // // todo not sure name make sense here
+    // String name;
+    // // todo not sure rule make sense here
+    // String rule;
+};
+
+struct NontNode {
+    // String name;
+    String rule;
+};
+
+struct ListNode {
+    // String name;
+    ArgNode elem;
+};
+
+struct OptNode {
+    // String name;
+    ArgNode elem;
+};
+
+struct BuiltinHOR {
+    // String name;
+    String list_type;
+    // even though 'Params = "<" ListOf<Seq, ","> ">"' (and   'Seq = Iter*') formal params 'expressions must have arity 1'
+    NamedArgNode elem;
+    NamedArgNode sep;
+};
+
+struct TermNode {
+    // String name;
+};
+
+};

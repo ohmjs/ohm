@@ -13,7 +13,7 @@ import (
 
 type genGoCmd struct {
 	GenCmd    genCmd `opts:"mode=embedded"`
-	OutputDir string `help:"Output directory for generated files.\nDefaults to the lowercase grammar name."`
+	OutputDir string `help:"Output directory for generated files.\nDefaults to go-type-package, which defaults to the lowercase grammar name."`
 }
 
 func NewGenGoCmd() *genGoCmd {
@@ -28,6 +28,9 @@ func NewGenGoCmd() *genGoCmd {
 }
 
 func (vc *genGoCmd) Run() error {
+	if vc.GenCmd.GoTypePackage != "" && vc.OutputDir == "" {
+		vc.OutputDir = vc.GenCmd.GoTypePackage
+	}
 	ctx := context.Background()
 	var (
 		gmr  *goohm.Grammar

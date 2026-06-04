@@ -13,7 +13,8 @@
       }
     ],
     "Files": [
-      "./ruleast.adl"
+      "./ruleast.adl",
+      "./ohm_rules.adl"
     ]
   },
   "Mod": {
