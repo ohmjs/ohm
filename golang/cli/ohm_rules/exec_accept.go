@@ -58,72 +58,70 @@ func (cm *BuildRuleAstCmd) Do() (*GrammarsNode, error) {
 	if root, err = mr.GetCstRoot(); err != nil {
 		return nil, fmt.Errorf("Error getting cst root. %[1]v", err)
 	}
-	gmrs := &Grammars[any, WithError[*GrammarsNode]]{
+	gmrs := &Grammars[any, *GrammarsNode]{
 		Grammar: root.Children()[0].(goohm.ListNode),
 	}
 	v := &ruleAstBuilder{}
-	resp, _ := gmrs.Accept(root, v, nil)
-	return resp.Val, resp.Err
+	resp, err := gmrs.Accept(root, v, nil)
+	return resp, err
 }
 
-type WithError[T any] struct {
-	Val T
-	Err error
-}
+// type WithError[T any] struct {
+// 	Val T
+// 	Err error
+// }
 
 type ruleAstBuilder struct {
 }
 
 // VisitGrammars implements [VisitorGrammars].
-func (r *ruleAstBuilder) VisitGrammars(node *Grammars[any, WithError[*GrammarsNode]], payload any) (result WithError[*GrammarsNode]) {
+func (r *ruleAstBuilder) VisitGrammars(node *Grammars[any, *GrammarsNode]) (result *GrammarsNode, err error) {
 	gmrs := map[string]GrammarNode{}
 	gmr_names := []string{}
 	for _, n := range node.Grammar.Children() {
 		kids := n.Children()
-		resp, _ := (&Grammar[any, WithError[*GrammarNode]]{
+		resp, err := (&Grammar[any, *GrammarNode]{
 			Ident:        kids[0].(goohm.RuleNode),
 			SuperGrammar: kids[1].(goohm.OptNode),
 			Term1:        kids[2].(goohm.TerminalNode),
 			Rule:         kids[3].(goohm.ListNode),
 			Term2:        kids[4].(goohm.TerminalNode),
 		}).Accept(n, r, nil)
-		if resp.Err != nil {
-			return WithError[*GrammarsNode]{
-				Err: resp.Err,
-			}
+		if err != nil {
+			return nil, err
 		}
-		gmr_names = append(gmr_names, resp.Val.Name)
-		gmrs[resp.Val.Name] = *resp.Val
+		gmr_names = append(gmr_names, resp.Name)
+		gmrs[resp.Name] = *resp
 	}
-	return WithError[*GrammarsNode]{Val: new(Make_GrammarsNode(gmr_names, gmrs))}
+	return new(Make_GrammarsNode(gmr_names, gmrs)), nil
 }
 
 // VisitGrammar implements [VisitorGrammar].
-func (r *ruleAstBuilder) VisitGrammar(node *Grammar[any, WithError[*GrammarNode]], payload any) (result WithError[*GrammarNode]) {
+func (r *ruleAstBuilder) VisitGrammar(node *Grammar[any, *GrammarNode]) (result *GrammarNode, err error) {
 	rules := []string{}
 	rmap := map[string]RuleNode{}
 	for _, n := range node.Rule.Children() {
-		rns, _ := (&Rule[string, WithError[[]RuleNode]]{
+		rns, err := (&Rule[string, []RuleNode]{
 			Node: n.(goohm.RuleNode),
 		}).Accept(n, r, n.SourceString())
-		if rns.Err != nil {
-			return WithError[*GrammarNode]{Err: rns.Err}
+		if err != nil {
+			return nil, err
 		}
-		for _, rn := range rns.Val {
+		for _, rn := range rns {
 			name := rn.GetBranch().RuleName()
 			rules = append(rules, name)
 			rmap[name] = rn
 		}
 	}
-	return WithError[*GrammarNode]{Val: new(Make_GrammarNode(
+	return new(Make_GrammarNode(
 		node.Ident.SourceString(),
 		rules,
 		rmap,
-	))}
+	)), nil
 }
 
 // VisitRuleDefine implements [VisitorRuleDefine].
-func (r *ruleAstBuilder) VisitRuleDefine(node *RuleDefine[string, WithError[[]RuleNode]], payload string) (result WithError[[]RuleNode]) {
+func (r *ruleAstBuilder) VisitRuleDefine(node *RuleDefine[string, []RuleNode], payload string) (result []RuleNode, err error) {
 	descr := ""
 	if len(node.RuleDescr.Children()) > 0 {
 		dn := node.RuleDescr.Children()[0]
@@ -143,6 +141,17 @@ func (r *ruleAstBuilder) VisitRuleDefine(node *RuleDefine[string, WithError[[]Ru
 	)
 }
 
+// VisitRuleExtend implements [VisitorRuleExtend].
+func (r *ruleAstBuilder) VisitRuleExtend(node *RuleExtend[string, []RuleNode], payload string) (result []RuleNode, err error) {
+	return r.BuildRuleAstRule(
+		node.RuleBody,
+		Make_RuleType_extend(),
+		node.Ident.SourceString(),
+		payload,
+		"",
+	)
+}
+
 // VisitRuleOverride implements [VisitorPRERuleOverride].
 func (r *ruleAstBuilder) VisitRuleOverride(node *RuleOverride[string, []RuleNode], payload string) (result []RuleNode, err error) {
 	panic("unimplemented")
@@ -154,18 +163,16 @@ func (r *ruleAstBuilder) BuildRuleAstRule(
 	name string,
 	sourceString string,
 	descr string,
-) WithError[[]RuleNode] {
+) ([]RuleNode, error) {
 	rb := ruleBody.Children()
-	details, _ := (&RuleBody[any, WithError[[]RuleDetailNode]]{
+	details, err := (&RuleBody[any, []RuleDetailNode]{
 		Term:           rb[0].(goohm.OptNode),
 		NonemptyListOf: rb[1].(goohm.BHorNode),
 	}).Accept(ruleBody, r, nil)
-	if details.Err != nil {
-		return WithError[[]RuleNode]{
-			Err: details.Err,
-		}
+	if err != nil {
+		return nil, err
 	}
-	cases := lo.FlatMap[RuleDetailNode, InlineNode](details.Val, func(item RuleDetailNode, index int) []InlineNode {
+	cases := lo.FlatMap[RuleDetailNode, InlineNode](details, func(item RuleDetailNode, index int) []InlineNode {
 		if b, ok := item.Cast_inline(); ok {
 			return []InlineNode{
 				Make_InlineNode(
@@ -183,7 +190,7 @@ func (r *ruleAstBuilder) BuildRuleAstRule(
 		return []InlineNode{}
 	})
 	size := 0
-	bare := lo.FlatMap[RuleDetailNode, BareNode](details.Val, func(item RuleDetailNode, index int) []BareNode {
+	bare := lo.FlatMap[RuleDetailNode, BareNode](details, func(item RuleDetailNode, index int) []BareNode {
 		if b, ok := item.Cast_bare(); ok {
 			if size == 0 {
 				size = len(b.Args)
@@ -236,69 +243,53 @@ func (r *ruleAstBuilder) BuildRuleAstRule(
 			)
 			result = append(result, virt_rule)
 		}
-		return WithError[[]RuleNode]{Val: result}
+		return result, nil
 	}
-	return WithError[[]RuleNode]{
-		Val: []RuleNode{Make_RuleNode_bare_rule(
-			Make_BareRuleNode(
-				name,
-				rule_type,
-				descr,
-				sourceString,
-				args,
-			),
-		)},
-	}
+	return []RuleNode{Make_RuleNode_bare_rule(
+		Make_BareRuleNode(
+			name,
+			rule_type,
+			descr,
+			sourceString,
+			args,
+		),
+	)}, nil
 }
 
 // VisitLexRuleDescr implements [VisitorLexRuleDescr].
-func (r *ruleAstBuilder) VisitLexRuleDescr(node *LexRuleDescr[any, string], payload any) (result string) {
+func (r *ruleAstBuilder) VisitLexRuleDescr(node *LexRuleDescr[any, string]) (result string) {
 	return node.RuleDescrText.SourceString()
 }
 
-// VisitRuleExtend implements [VisitorRuleExtend].
-func (r *ruleAstBuilder) VisitRuleExtend(node *RuleExtend[string, WithError[[]RuleNode]], payload string) (result WithError[[]RuleNode]) {
-	resp := r.BuildRuleAstRule(
-		node.RuleBody,
-		Make_RuleType_extend(),
-		node.Ident.SourceString(),
-		payload,
-		"",
-	)
-	return resp
-}
-
 // VisitRuleBody implements [VisitorRuleBody].
-func (r *ruleAstBuilder) VisitRuleBody(node *RuleBody[any, WithError[[]RuleDetailNode]], payload any) (result WithError[[]RuleDetailNode]) {
+func (r *ruleAstBuilder) VisitRuleBody(node *RuleBody[any, []RuleDetailNode]) (result []RuleDetailNode, err error) {
 	resp := []RuleDetailNode{}
 	for _, el := range node.NonemptyListOf.Elems() {
-		rdn, _ := (&TopLevelTerm[any, WithError[*RuleDetailNode]]{
+		rdn, err := (&TopLevelTerm[any, *RuleDetailNode]{
 			Node: el.(goohm.RuleNode),
 		}).Accept(el, r, nil)
-		if rdn.Err != nil {
-			return WithError[[]RuleDetailNode]{Err: rdn.Err}
+		if err != nil {
+			return nil, err
 		}
-		resp = append(resp, *rdn.Val)
+		resp = append(resp, *rdn)
 	}
-	return WithError[[]RuleDetailNode]{
-		Val: resp,
-	}
+	return resp, nil
 }
 
 // VisitTopLevelTermInline implements [VisitorTopLevelTermInline].
-func (r *ruleAstBuilder) VisitTopLevelTermInline(node *TopLevelTermInline[any, WithError[*RuleDetailNode]], payload any) (result WithError[*RuleDetailNode]) {
+func (r *ruleAstBuilder) VisitTopLevelTermInline(node *TopLevelTermInline[any, *RuleDetailNode]) (result *RuleDetailNode, err error) {
 	name := node.CaseName.Children()[2].SourceString()
-	bnode, _ := (&Seq[any, WithError[*RuleDetailNode]]{
+	bnode, err := (&Seq[any, *RuleDetailNode]{
 		Iter: node.Seq.Children()[0].(goohm.ListNode),
 	}).Accept(node.Seq, r, nil)
-	if bnode.Err != nil {
-		return WithError[*RuleDetailNode]{Err: bnode.Err}
+	if err != nil {
+		return nil, err
 	}
 	src := node.Seq.SourceString()
-	bare, _ := bnode.Val.Cast_bare()
-	return WithError[*RuleDetailNode]{Val: new(Make_RuleDetailNode_inline(
+	bare, _ := bnode.Cast_bare()
+	return new(Make_RuleDetailNode_inline(
 		Make_InlineNode(name, src, bare.Args),
-	))}
+	)), nil
 
 	// return WithError[*InlineNode]{
 	// 	Val: new(Make_InlineNode(name, src, bnode.Val.Args)),
@@ -306,23 +297,23 @@ func (r *ruleAstBuilder) VisitTopLevelTermInline(node *TopLevelTermInline[any, W
 }
 
 // VisitSeq implements [VisitorSeq].
-func (r *ruleAstBuilder) VisitSeq(node *Seq[any, WithError[*RuleDetailNode]], payload any) (result WithError[*RuleDetailNode]) {
+func (r *ruleAstBuilder) VisitSeq(node *Seq[any, *RuleDetailNode]) (result *RuleDetailNode, err error) {
 	args := []NamedArgNode{}
 	for _, n := range node.Iter.Children() {
 		arg, err := (&Iter[any, *NamedArgNode]{
 			Node: n.(goohm.RuleNode),
 		}).Accept(n, r, nil)
 		if err != nil {
-			return WithError[*RuleDetailNode]{Err: err}
+			return nil, err
 		}
 		if arg == nil {
 			continue
 		}
 		args = append(args, *arg)
 	}
-	return WithError[*RuleDetailNode]{Val: new(Make_RuleDetailNode_bare(
+	return new(Make_RuleDetailNode_bare(
 		Make_BareNode(args),
-	))}
+	)), nil
 	// return WithError[*BareNode]{Val: new(Make_BareNode(args))}
 }
 
@@ -414,23 +405,23 @@ func (r *ruleAstBuilder) VisitBaseApplication(node *BaseApplication[any, *NamedA
 			listof := params.Children()[1]
 			nel := listof.Children()[0]
 			seq := nel.Children()[0]
-			elem, _ := (&Seq[any, WithError[*RuleDetailNode]]{
+			elem, err := (&Seq[any, *RuleDetailNode]{
 				Iter: seq.Children()[0].(goohm.ListNode),
 			}).Accept(seq, r, nil)
-			if elem.Err != nil {
-				return nil, elem.Err
+			if err != nil {
+				return nil, err
 			}
 			//
 			list2 := nel.Children()[1]
 			seq2 := list2.Children()[1]
-			sep, _ := (&Seq[any, WithError[*RuleDetailNode]]{
+			sep, err := (&Seq[any, *RuleDetailNode]{
 				Iter: seq2.Children()[0].(goohm.ListNode),
 			}).Accept(seq2, r, nil)
-			if sep.Err != nil {
-				return nil, sep.Err
+			if err != nil {
+				return nil, err
 			}
-			ebare, _ := elem.Val.Cast_bare()
-			sbare, _ := sep.Val.Cast_bare()
+			ebare, _ := elem.Cast_bare()
+			sbare, _ := sep.Cast_bare()
 			if len(ebare.Args) != 1 || len(sbare.Args) != 1 {
 				return nil, fmt.Errorf(
 					"expected exactly one argument for elem and sep in builtin hor. got %d and %d",
@@ -510,25 +501,34 @@ func (r *ruleAstBuilder) VisitBaseParen(node *BaseParen[any, *NamedArgNode]) (re
 // }
 
 var (
-	_ VisitorPR_Grammars[any, WithError[*GrammarsNode]]             = (*ruleAstBuilder)(nil)
-	_ VisitorPR_Grammar[any, WithError[*GrammarNode]]               = (*ruleAstBuilder)(nil)
-	_ VisitorPR_LexRuleDescr[any, string]                           = (*ruleAstBuilder)(nil)
-	_ VisitorPR_RuleDefine[string, WithError[[]RuleNode]]           = (*ruleAstBuilder)(nil)
-	_ VisitorPR_RuleExtend[string, WithError[[]RuleNode]]           = (*ruleAstBuilder)(nil)
-	_ VisitorPRE_RuleOverride[string, []RuleNode]                   = (*ruleAstBuilder)(nil)
-	_ VisitorPR_RuleBody[any, WithError[[]RuleDetailNode]]          = (*ruleAstBuilder)(nil)
-	_ VisitorPR_TopLevelTermInline[any, WithError[*RuleDetailNode]] = (*ruleAstBuilder)(nil)
-	_ VisitorPR_Seq[any, WithError[*RuleDetailNode]]                = (*ruleAstBuilder)(nil)
-	_ VisitorRE_IterStar[any, *NamedArgNode]                        = (*ruleAstBuilder)(nil)
-	_ VisitorRE_IterPlus[any, *NamedArgNode]                        = (*ruleAstBuilder)(nil)
-	_ VisitorRE_IterOpt[any, *NamedArgNode]                         = (*ruleAstBuilder)(nil)
-	_ VisitorRE_PredNot[any, *NamedArgNode]                         = (*ruleAstBuilder)(nil)
-	_ VisitorRE_PredLookahead[any, *NamedArgNode]                   = (*ruleAstBuilder)(nil)
-	_ VisitorRE_LexLex[any, *NamedArgNode]                          = (*ruleAstBuilder)(nil)
-	_ VisitorRE_BaseApplication[any, *NamedArgNode]                 = (*ruleAstBuilder)(nil)
-	_ VisitorRE_BaseRange[any, *NamedArgNode]                       = (*ruleAstBuilder)(nil)
-	_ VisitorRE_BaseTerminal[any, *NamedArgNode]                    = (*ruleAstBuilder)(nil)
-	_ VisitorRE_BaseParen[any, *NamedArgNode]                       = (*ruleAstBuilder)(nil)
+	// Grammars
+	_ VisitorRE_Grammars[any, *GrammarsNode] = (*ruleAstBuilder)(nil)
+	// Grammar
+	_ VisitorRE_Grammar[any, *GrammarNode] = (*ruleAstBuilder)(nil)
+	// RuleDescr
+	_ VisitorR_LexRuleDescr[any, string] = (*ruleAstBuilder)(nil)
+	// Rule
+	_ VisitorPRE_RuleDefine[string, []RuleNode]   = (*ruleAstBuilder)(nil)
+	_ VisitorPRE_RuleExtend[string, []RuleNode]   = (*ruleAstBuilder)(nil)
+	_ VisitorPRE_RuleOverride[string, []RuleNode] = (*ruleAstBuilder)(nil)
+	// RuleBody
+	_ VisitorRE_RuleBody[any, []RuleDetailNode] = (*ruleAstBuilder)(nil)
+	// TopLevelTerm
+	_ VisitorRE_TopLevelTermInline[any, *RuleDetailNode] = (*ruleAstBuilder)(nil)
+	_ VisitorRE_Seq[any, *RuleDetailNode]                = (*ruleAstBuilder)(nil)
+	// Iter
+	_ VisitorRE_IterStar[any, *NamedArgNode] = (*ruleAstBuilder)(nil)
+	_ VisitorRE_IterPlus[any, *NamedArgNode] = (*ruleAstBuilder)(nil)
+	_ VisitorRE_IterOpt[any, *NamedArgNode]  = (*ruleAstBuilder)(nil)
+	// Pred
+	_ VisitorRE_PredNot[any, *NamedArgNode]       = (*ruleAstBuilder)(nil)
+	_ VisitorRE_PredLookahead[any, *NamedArgNode] = (*ruleAstBuilder)(nil)
+	_ VisitorRE_LexLex[any, *NamedArgNode]        = (*ruleAstBuilder)(nil)
+	// Base
+	_ VisitorRE_BaseApplication[any, *NamedArgNode] = (*ruleAstBuilder)(nil)
+	_ VisitorRE_BaseRange[any, *NamedArgNode]       = (*ruleAstBuilder)(nil)
+	_ VisitorRE_BaseTerminal[any, *NamedArgNode]    = (*ruleAstBuilder)(nil)
+	_ VisitorRE_BaseParen[any, *NamedArgNode]       = (*ruleAstBuilder)(nil)
 )
 
 // var (
