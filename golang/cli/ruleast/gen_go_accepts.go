@@ -149,38 +149,44 @@ func (gmr GrammarNode) GenGoAccepts(vc *genAcceptsCmd) {
 				line,
 			)
 		}
+		type_prefix := "Visitor"
+		method_prefix := "Visit"
+		if _, is_case := rule.Cast_case_rule(); is_case {
+			type_prefix = "Switcher"
+			method_prefix = "Switch"
+		}
 		vc.outf(`func (node *%[1]s[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	%[2]s.AssertName(this, "%[3]s")
-	if v, ok := visitor.(Visitor_%[1]s[P, R]); ok {
-		v.Visit%[1]s(node)
+	if v, ok := visitor.(%[4]s_%[1]s[P, R]); ok {
+		v.%[5]s%[1]s(node)
 		return
 	}
-	if v, ok := visitor.(VisitorE_%[1]s[P, R]); ok {
-		err = v.Visit%[1]s(node)
+	if v, ok := visitor.(%[4]sE_%[1]s[P, R]); ok {
+		err = v.%[5]s%[1]s(node)
 		return
 	}
-	if v, ok := visitor.(VisitorP_%[1]s[P, R]); ok {
-		v.Visit%[1]s(node, payload)
+	if v, ok := visitor.(%[4]sP_%[1]s[P, R]); ok {
+		v.%[5]s%[1]s(node, payload)
 		return
 	}
-	if v, ok := visitor.(VisitorPE_%[1]s[P, R]); ok {
-		err = v.Visit%[1]s(node, payload)
+	if v, ok := visitor.(%[4]sPE_%[1]s[P, R]); ok {
+		err = v.%[5]s%[1]s(node, payload)
 		return
 	}
-	if v, ok := visitor.(VisitorR_%[1]s[P, R]); ok {
-		result = v.Visit%[1]s(node)
+	if v, ok := visitor.(%[4]sR_%[1]s[P, R]); ok {
+		result = v.%[5]s%[1]s(node)
 		return
 	}
-	if v, ok := visitor.(VisitorRE_%[1]s[P, R]); ok {
-		result, err = v.Visit%[1]s(node)
+	if v, ok := visitor.(%[4]sRE_%[1]s[P, R]); ok {
+		result, err = v.%[5]s%[1]s(node)
 		return
 	}
-	if v, ok := visitor.(VisitorPR_%[1]s[P, R]); ok {
-		result = v.Visit%[1]s(node, payload)
+	if v, ok := visitor.(%[4]sPR_%[1]s[P, R]); ok {
+		result = v.%[5]s%[1]s(node, payload)
 		return
 	}
-	if v, ok := visitor.(VisitorPRE_%[1]s[P, R]); ok {
-		result, err = v.Visit%[1]s(node, payload)
+	if v, ok := visitor.(%[4]sPRE_%[1]s[P, R]); ok {
+		result, err = v.%[5]s%[1]s(node, payload)
 		return
 	}
 	goohm.TypeCheckMethod[P, R](visitor, "%[1]s")
@@ -191,6 +197,8 @@ func (gmr GrammarNode) GenGoAccepts(vc *genAcceptsCmd) {
 			branch.TypeName(),
 			vc.GenCmd.GoRuntimePackage,
 			branch.RuleName(),
+			type_prefix,
+			method_prefix,
 		)
 		branch.GenGoAccepts(vc, gmr.Name)
 	}

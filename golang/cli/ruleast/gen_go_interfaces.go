@@ -116,34 +116,42 @@ func (gmr GrammarNode) GenGoInterfaces(vc *genInterfaceCmd) {
 				strings.TrimSpace(line),
 			)
 		}
+		type_prefix := "Visitor"
+		method_prefix := "Visit"
+		if _, is_case := rule.Cast_case_rule(); is_case {
+			type_prefix = "Switcher"
+			method_prefix = "Switch"
+		}
 		vc.GenCmd.outf(`// ----
-type Visitor_%[1]s[P, R any] interface {
-	Visit%[1]s(node *%[1]s[P, R])
+type %[2]s_%[1]s[P, R any] interface {
+	%[3]s%[1]s(node *%[1]s[P, R])
 }
-type VisitorE_%[1]s[P, R any] interface {
-	Visit%[1]s(node *%[1]s[P, R]) error
+type %[2]sE_%[1]s[P, R any] interface {
+	%[3]s%[1]s(node *%[1]s[P, R]) error
 }
-type VisitorP_%[1]s[P, R any] interface {
-	Visit%[1]s(node *%[1]s[P, R], payload P)
+type %[2]sP_%[1]s[P, R any] interface {
+	%[3]s%[1]s(node *%[1]s[P, R], payload P)
 }
-type VisitorPE_%[1]s[P, R any] interface {
-	Visit%[1]s(node *%[1]s[P, R], payload P) error
+type %[2]sPE_%[1]s[P, R any] interface {
+	%[3]s%[1]s(node *%[1]s[P, R], payload P) error
 }
-type VisitorR_%[1]s[P, R any] interface {
-	Visit%[1]s(node *%[1]s[P, R]) (result R)
+type %[2]sR_%[1]s[P, R any] interface {
+	%[3]s%[1]s(node *%[1]s[P, R]) (result R)
 }
-type VisitorRE_%[1]s[P, R any] interface {
-	Visit%[1]s(node *%[1]s[P, R]) (result R, err error)
+type %[2]sRE_%[1]s[P, R any] interface {
+	%[3]s%[1]s(node *%[1]s[P, R]) (result R, err error)
 }
-type VisitorPR_%[1]s[P, R any] interface {
-	Visit%[1]s(node *%[1]s[P, R], payload P) (result R)
+type %[2]sPR_%[1]s[P, R any] interface {
+	%[3]s%[1]s(node *%[1]s[P, R], payload P) (result R)
 }
-type VisitorPRE_%[1]s[P, R any] interface {
-	Visit%[1]s(node *%[1]s[P, R], payload P) (result R, err error)
+type %[2]sPRE_%[1]s[P, R any] interface {
+	%[3]s%[1]s(node *%[1]s[P, R], payload P) (result R, err error)
 }
 
 `,
 			branch.TypeName(),
+			type_prefix,
+			method_prefix,
 		)
 	}
 }
