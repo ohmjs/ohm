@@ -117,8 +117,29 @@ func (gmr GrammarNode) GenGoInterfaces(vc *genInterfaceCmd) {
 			)
 		}
 		vc.GenCmd.outf(`// ----
-type Visitor%[1]s[P, R any] interface {
+type Visitor_%[1]s[P, R any] interface {
+	Visit%[1]s(node *%[1]s[P, R])
+}
+type VisitorE_%[1]s[P, R any] interface {
+	Visit%[1]s(node *%[1]s[P, R]) error
+}
+type VisitorP_%[1]s[P, R any] interface {
+	Visit%[1]s(node *%[1]s[P, R], payload P)
+}
+type VisitorPE_%[1]s[P, R any] interface {
+	Visit%[1]s(node *%[1]s[P, R], payload P) error
+}
+type VisitorR_%[1]s[P, R any] interface {
+	Visit%[1]s(node *%[1]s[P, R]) (result R)
+}
+type VisitorRE_%[1]s[P, R any] interface {
+	Visit%[1]s(node *%[1]s[P, R]) (result R, err error)
+}
+type VisitorPR_%[1]s[P, R any] interface {
 	Visit%[1]s(node *%[1]s[P, R], payload P) (result R)
+}
+type VisitorPRE_%[1]s[P, R any] interface {
+	Visit%[1]s(node *%[1]s[P, R], payload P) (result R, err error)
 }
 
 `,

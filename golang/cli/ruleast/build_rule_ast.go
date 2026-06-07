@@ -151,18 +151,11 @@ func BuildRuleAstRule(
 	}
 	cases := lo.FlatMap[RuleDetailNode, InlineNode](details, func(item RuleDetailNode, index int) []InlineNode {
 		if b, ok := item.Cast_inline(); ok {
-			return []InlineNode{
-				Make_InlineNode(
-					b.Case_name,
-					b.Source,
-					UnifyBranches2Args(
-						[]BareNode{
-							Make_BareNode(b.Args),
-						},
-						len(b.Args),
-					),
-				),
-			}
+			return []InlineNode{Make_InlineNode(
+				b.Case_name,
+				b.Source,
+				UnifyBranches2Args([]BareNode{Make_BareNode(b.Args)}, len(b.Args)),
+			)}
 		}
 		return []InlineNode{}
 	})
@@ -186,12 +179,6 @@ func BuildRuleAstRule(
 		return []BareNode{}
 	})
 	args := UnifyBranches2Args(bare, size)
-	// cases_args := lo.Map[InlineNode, InlineNode](cases, func(item InlineNode, index int) InlineNode {
-	// 	return Make_InlineNode(
-	// 		item.Case_name,
-	// 		unifyBranches2Args(bare, size),
-	// 	)
-	// })
 	if len(cases) > 0 {
 		result := []RuleNode{Make_RuleNode_case_rule(
 			Make_CasesRuleNode(

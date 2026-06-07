@@ -162,7 +162,7 @@ func Handle_ArgNode[T any](
 	if _default != nil {
 		return _default()
 	}
-	panic("unhandled branch in : ArgNode")
+	panic("unhandled branch in : ArgNode " + fmt.Sprintf("%T", _in.Branch))
 }
 
 func HandleWithErr_ArgNode[T any](

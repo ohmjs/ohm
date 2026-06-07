@@ -2,6 +2,7 @@ package goohm
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"runtime"
 	"strings"
@@ -166,6 +167,7 @@ func CheckName[T any](v any) {
 	} else {
 		panic("unable to extract method name a signature from type. " + typeStr)
 	}
+	fmt.Fprintf(os.Stderr, "methodName '%s' typeStr '%s'\n", methodName, typeStr)
 	if meth, exist := reflect.TypeOf(v).MethodByName(methodName); exist {
 		var (
 			signature string
@@ -194,6 +196,41 @@ func CheckName[T any](v any) {
   **To skip this check**, which is not advised, the visitor can implement the SkipCheckName interface.
   ie implement the method SkipCheckName().
   `, methodName, received, payload, result, rule, see))
+	}
+}
+
+func TypeCheckMethod[P, R any](v any, type_name string) {
+	if _, skip := v.(SkipCheckName); skip {
+		return
+	}
+	if v == nil {
+		return
+	}
+	methodName := "Visit" + type_name
+	if meth, exist := reflect.TypeOf(v).MethodByName(methodName); exist {
+		// signature = typeStr[osbIdx+1 : csbIdx]
+		// payload, result = getTypeNames(signature)
+		payload_type := fmt.Sprintf("%v", reflect.TypeFor[P]())
+		result_type := fmt.Sprintf("%v", reflect.TypeFor[R]())
+		received := fmt.Sprintf("%v", meth.Type)
+		// get the stack trace and add the 4th frame to the error message to help debugging
+		_, file, line, _ := runtime.Caller(3)
+		see := fmt.Sprintf("%s:%d", file, line)
+		panic(fmt.Sprintf(`%[1]s. Found method by name match, but incompatibles types.
+  expected func(<visitor>, %[5]s[%[3]s,%[4]s], %[3]s) %[4]s
+  received %[2]s
+  For the likely call sight see:
+    %[6]s
+
+  Note:
+  **For advanced use-cases** with a heterogeneous set of visitor methods a cast of the node can be useful.
+  Note that the cast is generally on the parent node in the CST, and a specific Accept<specific-child> method will be called.
+  eg from the collect_vast visitor code:
+    ((*RuleDefine[any, string])(unsafe.Pointer(node))).AcceptRuleDescr(c, payload)
+
+  **To skip this check**, which is not advised, the visitor can implement the SkipCheckName interface.
+  ie implement the method SkipCheckName().
+  `, methodName, received, payload_type, result_type, type_name, see))
 	}
 }
 

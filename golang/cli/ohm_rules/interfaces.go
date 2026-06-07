@@ -8,8 +8,29 @@ package ohm_rules
 // Grammars
 // = Grammar*
 // ----
-type VisitorGrammars[P, R any] interface {
+type Visitor_Grammars[P, R any] interface {
+	VisitGrammars(node *Grammars[P, R])
+}
+type VisitorE_Grammars[P, R any] interface {
+	VisitGrammars(node *Grammars[P, R]) error
+}
+type VisitorP_Grammars[P, R any] interface {
+	VisitGrammars(node *Grammars[P, R], payload P)
+}
+type VisitorPE_Grammars[P, R any] interface {
+	VisitGrammars(node *Grammars[P, R], payload P) error
+}
+type VisitorR_Grammars[P, R any] interface {
+	VisitGrammars(node *Grammars[P, R]) (result R)
+}
+type VisitorRE_Grammars[P, R any] interface {
+	VisitGrammars(node *Grammars[P, R]) (result R, err error)
+}
+type VisitorPR_Grammars[P, R any] interface {
 	VisitGrammars(node *Grammars[P, R], payload P) (result R)
+}
+type VisitorPRE_Grammars[P, R any] interface {
+	VisitGrammars(node *Grammars[P, R], payload P) (result R, err error)
 }
 
 // Grammar
@@ -17,8 +38,29 @@ type VisitorGrammars[P, R any] interface {
 // Grammar
 // = ident SuperGrammar? "{" Rule* "}"
 // ----
-type VisitorGrammar[P, R any] interface {
+type Visitor_Grammar[P, R any] interface {
+	VisitGrammar(node *Grammar[P, R])
+}
+type VisitorE_Grammar[P, R any] interface {
+	VisitGrammar(node *Grammar[P, R]) error
+}
+type VisitorP_Grammar[P, R any] interface {
+	VisitGrammar(node *Grammar[P, R], payload P)
+}
+type VisitorPE_Grammar[P, R any] interface {
+	VisitGrammar(node *Grammar[P, R], payload P) error
+}
+type VisitorR_Grammar[P, R any] interface {
+	VisitGrammar(node *Grammar[P, R]) (result R)
+}
+type VisitorRE_Grammar[P, R any] interface {
+	VisitGrammar(node *Grammar[P, R]) (result R, err error)
+}
+type VisitorPR_Grammar[P, R any] interface {
 	VisitGrammar(node *Grammar[P, R], payload P) (result R)
+}
+type VisitorPRE_Grammar[P, R any] interface {
+	VisitGrammar(node *Grammar[P, R], payload P) (result R, err error)
 }
 
 // SuperGrammar
@@ -26,8 +68,29 @@ type VisitorGrammar[P, R any] interface {
 // SuperGrammar
 // = "<:" ident
 // ----
-type VisitorSuperGrammar[P, R any] interface {
+type Visitor_SuperGrammar[P, R any] interface {
+	VisitSuperGrammar(node *SuperGrammar[P, R])
+}
+type VisitorE_SuperGrammar[P, R any] interface {
+	VisitSuperGrammar(node *SuperGrammar[P, R]) error
+}
+type VisitorP_SuperGrammar[P, R any] interface {
+	VisitSuperGrammar(node *SuperGrammar[P, R], payload P)
+}
+type VisitorPE_SuperGrammar[P, R any] interface {
+	VisitSuperGrammar(node *SuperGrammar[P, R], payload P) error
+}
+type VisitorR_SuperGrammar[P, R any] interface {
+	VisitSuperGrammar(node *SuperGrammar[P, R]) (result R)
+}
+type VisitorRE_SuperGrammar[P, R any] interface {
+	VisitSuperGrammar(node *SuperGrammar[P, R]) (result R, err error)
+}
+type VisitorPR_SuperGrammar[P, R any] interface {
 	VisitSuperGrammar(node *SuperGrammar[P, R], payload P) (result R)
+}
+type VisitorPRE_SuperGrammar[P, R any] interface {
+	VisitSuperGrammar(node *SuperGrammar[P, R], payload P) (result R, err error)
 }
 
 // Rule
@@ -38,32 +101,116 @@ type VisitorSuperGrammar[P, R any] interface {
 // | ident Formals?            "+=" RuleBody  -- extend
 // 
 // ----
-type VisitorRule[P, R any] interface {
+type Visitor_Rule[P, R any] interface {
+	VisitRule(node *Rule[P, R])
+}
+type VisitorE_Rule[P, R any] interface {
+	VisitRule(node *Rule[P, R]) error
+}
+type VisitorP_Rule[P, R any] interface {
+	VisitRule(node *Rule[P, R], payload P)
+}
+type VisitorPE_Rule[P, R any] interface {
+	VisitRule(node *Rule[P, R], payload P) error
+}
+type VisitorR_Rule[P, R any] interface {
+	VisitRule(node *Rule[P, R]) (result R)
+}
+type VisitorRE_Rule[P, R any] interface {
+	VisitRule(node *Rule[P, R]) (result R, err error)
+}
+type VisitorPR_Rule[P, R any] interface {
 	VisitRule(node *Rule[P, R], payload P) (result R)
+}
+type VisitorPRE_Rule[P, R any] interface {
+	VisitRule(node *Rule[P, R], payload P) (result R, err error)
 }
 
 // Rule_define
 // -- rule --
 // ident Formals? ruleDescr? "="  RuleBody
 // ----
-type VisitorRuleDefine[P, R any] interface {
+type Visitor_RuleDefine[P, R any] interface {
+	VisitRuleDefine(node *RuleDefine[P, R])
+}
+type VisitorE_RuleDefine[P, R any] interface {
+	VisitRuleDefine(node *RuleDefine[P, R]) error
+}
+type VisitorP_RuleDefine[P, R any] interface {
+	VisitRuleDefine(node *RuleDefine[P, R], payload P)
+}
+type VisitorPE_RuleDefine[P, R any] interface {
+	VisitRuleDefine(node *RuleDefine[P, R], payload P) error
+}
+type VisitorR_RuleDefine[P, R any] interface {
+	VisitRuleDefine(node *RuleDefine[P, R]) (result R)
+}
+type VisitorRE_RuleDefine[P, R any] interface {
+	VisitRuleDefine(node *RuleDefine[P, R]) (result R, err error)
+}
+type VisitorPR_RuleDefine[P, R any] interface {
 	VisitRuleDefine(node *RuleDefine[P, R], payload P) (result R)
+}
+type VisitorPRE_RuleDefine[P, R any] interface {
+	VisitRuleDefine(node *RuleDefine[P, R], payload P) (result R, err error)
 }
 
 // Rule_override
 // -- rule --
 // ident Formals?            ":=" OverrideRuleBody
 // ----
-type VisitorRuleOverride[P, R any] interface {
+type Visitor_RuleOverride[P, R any] interface {
+	VisitRuleOverride(node *RuleOverride[P, R])
+}
+type VisitorE_RuleOverride[P, R any] interface {
+	VisitRuleOverride(node *RuleOverride[P, R]) error
+}
+type VisitorP_RuleOverride[P, R any] interface {
+	VisitRuleOverride(node *RuleOverride[P, R], payload P)
+}
+type VisitorPE_RuleOverride[P, R any] interface {
+	VisitRuleOverride(node *RuleOverride[P, R], payload P) error
+}
+type VisitorR_RuleOverride[P, R any] interface {
+	VisitRuleOverride(node *RuleOverride[P, R]) (result R)
+}
+type VisitorRE_RuleOverride[P, R any] interface {
+	VisitRuleOverride(node *RuleOverride[P, R]) (result R, err error)
+}
+type VisitorPR_RuleOverride[P, R any] interface {
 	VisitRuleOverride(node *RuleOverride[P, R], payload P) (result R)
+}
+type VisitorPRE_RuleOverride[P, R any] interface {
+	VisitRuleOverride(node *RuleOverride[P, R], payload P) (result R, err error)
 }
 
 // Rule_extend
 // -- rule --
 // ident Formals?            "+=" RuleBody
 // ----
-type VisitorRuleExtend[P, R any] interface {
+type Visitor_RuleExtend[P, R any] interface {
+	VisitRuleExtend(node *RuleExtend[P, R])
+}
+type VisitorE_RuleExtend[P, R any] interface {
+	VisitRuleExtend(node *RuleExtend[P, R]) error
+}
+type VisitorP_RuleExtend[P, R any] interface {
+	VisitRuleExtend(node *RuleExtend[P, R], payload P)
+}
+type VisitorPE_RuleExtend[P, R any] interface {
+	VisitRuleExtend(node *RuleExtend[P, R], payload P) error
+}
+type VisitorR_RuleExtend[P, R any] interface {
+	VisitRuleExtend(node *RuleExtend[P, R]) (result R)
+}
+type VisitorRE_RuleExtend[P, R any] interface {
+	VisitRuleExtend(node *RuleExtend[P, R]) (result R, err error)
+}
+type VisitorPR_RuleExtend[P, R any] interface {
 	VisitRuleExtend(node *RuleExtend[P, R], payload P) (result R)
+}
+type VisitorPRE_RuleExtend[P, R any] interface {
+	VisitRuleExtend(node *RuleExtend[P, R], payload P) (result R, err error)
 }
 
 // RuleBody
@@ -71,8 +218,29 @@ type VisitorRuleExtend[P, R any] interface {
 // RuleBody
 // = "|"? NonemptyListOf<TopLevelTerm, "|">
 // ----
-type VisitorRuleBody[P, R any] interface {
+type Visitor_RuleBody[P, R any] interface {
+	VisitRuleBody(node *RuleBody[P, R])
+}
+type VisitorE_RuleBody[P, R any] interface {
+	VisitRuleBody(node *RuleBody[P, R]) error
+}
+type VisitorP_RuleBody[P, R any] interface {
+	VisitRuleBody(node *RuleBody[P, R], payload P)
+}
+type VisitorPE_RuleBody[P, R any] interface {
+	VisitRuleBody(node *RuleBody[P, R], payload P) error
+}
+type VisitorR_RuleBody[P, R any] interface {
+	VisitRuleBody(node *RuleBody[P, R]) (result R)
+}
+type VisitorRE_RuleBody[P, R any] interface {
+	VisitRuleBody(node *RuleBody[P, R]) (result R, err error)
+}
+type VisitorPR_RuleBody[P, R any] interface {
 	VisitRuleBody(node *RuleBody[P, R], payload P) (result R)
+}
+type VisitorPRE_RuleBody[P, R any] interface {
+	VisitRuleBody(node *RuleBody[P, R], payload P) (result R, err error)
 }
 
 // TopLevelTerm
@@ -81,16 +249,58 @@ type VisitorRuleBody[P, R any] interface {
 // = Seq caseName  -- inline
 // | Seq
 // ----
-type VisitorTopLevelTerm[P, R any] interface {
+type Visitor_TopLevelTerm[P, R any] interface {
+	VisitTopLevelTerm(node *TopLevelTerm[P, R])
+}
+type VisitorE_TopLevelTerm[P, R any] interface {
+	VisitTopLevelTerm(node *TopLevelTerm[P, R]) error
+}
+type VisitorP_TopLevelTerm[P, R any] interface {
+	VisitTopLevelTerm(node *TopLevelTerm[P, R], payload P)
+}
+type VisitorPE_TopLevelTerm[P, R any] interface {
+	VisitTopLevelTerm(node *TopLevelTerm[P, R], payload P) error
+}
+type VisitorR_TopLevelTerm[P, R any] interface {
+	VisitTopLevelTerm(node *TopLevelTerm[P, R]) (result R)
+}
+type VisitorRE_TopLevelTerm[P, R any] interface {
+	VisitTopLevelTerm(node *TopLevelTerm[P, R]) (result R, err error)
+}
+type VisitorPR_TopLevelTerm[P, R any] interface {
 	VisitTopLevelTerm(node *TopLevelTerm[P, R], payload P) (result R)
+}
+type VisitorPRE_TopLevelTerm[P, R any] interface {
+	VisitTopLevelTerm(node *TopLevelTerm[P, R], payload P) (result R, err error)
 }
 
 // TopLevelTerm_inline
 // -- rule --
 // Seq caseName
 // ----
-type VisitorTopLevelTermInline[P, R any] interface {
+type Visitor_TopLevelTermInline[P, R any] interface {
+	VisitTopLevelTermInline(node *TopLevelTermInline[P, R])
+}
+type VisitorE_TopLevelTermInline[P, R any] interface {
+	VisitTopLevelTermInline(node *TopLevelTermInline[P, R]) error
+}
+type VisitorP_TopLevelTermInline[P, R any] interface {
+	VisitTopLevelTermInline(node *TopLevelTermInline[P, R], payload P)
+}
+type VisitorPE_TopLevelTermInline[P, R any] interface {
+	VisitTopLevelTermInline(node *TopLevelTermInline[P, R], payload P) error
+}
+type VisitorR_TopLevelTermInline[P, R any] interface {
+	VisitTopLevelTermInline(node *TopLevelTermInline[P, R]) (result R)
+}
+type VisitorRE_TopLevelTermInline[P, R any] interface {
+	VisitTopLevelTermInline(node *TopLevelTermInline[P, R]) (result R, err error)
+}
+type VisitorPR_TopLevelTermInline[P, R any] interface {
 	VisitTopLevelTermInline(node *TopLevelTermInline[P, R], payload P) (result R)
+}
+type VisitorPRE_TopLevelTermInline[P, R any] interface {
+	VisitTopLevelTermInline(node *TopLevelTermInline[P, R], payload P) (result R, err error)
 }
 
 // OverrideRuleBody
@@ -98,8 +308,29 @@ type VisitorTopLevelTermInline[P, R any] interface {
 // OverrideRuleBody
 // = "|"? NonemptyListOf<OverrideTopLevelTerm, "|">
 // ----
-type VisitorOverrideRuleBody[P, R any] interface {
+type Visitor_OverrideRuleBody[P, R any] interface {
+	VisitOverrideRuleBody(node *OverrideRuleBody[P, R])
+}
+type VisitorE_OverrideRuleBody[P, R any] interface {
+	VisitOverrideRuleBody(node *OverrideRuleBody[P, R]) error
+}
+type VisitorP_OverrideRuleBody[P, R any] interface {
+	VisitOverrideRuleBody(node *OverrideRuleBody[P, R], payload P)
+}
+type VisitorPE_OverrideRuleBody[P, R any] interface {
+	VisitOverrideRuleBody(node *OverrideRuleBody[P, R], payload P) error
+}
+type VisitorR_OverrideRuleBody[P, R any] interface {
+	VisitOverrideRuleBody(node *OverrideRuleBody[P, R]) (result R)
+}
+type VisitorRE_OverrideRuleBody[P, R any] interface {
+	VisitOverrideRuleBody(node *OverrideRuleBody[P, R]) (result R, err error)
+}
+type VisitorPR_OverrideRuleBody[P, R any] interface {
 	VisitOverrideRuleBody(node *OverrideRuleBody[P, R], payload P) (result R)
+}
+type VisitorPRE_OverrideRuleBody[P, R any] interface {
+	VisitOverrideRuleBody(node *OverrideRuleBody[P, R], payload P) (result R, err error)
 }
 
 // OverrideTopLevelTerm
@@ -108,16 +339,58 @@ type VisitorOverrideRuleBody[P, R any] interface {
 // = "..."  -- superSplice
 // | TopLevelTerm
 // ----
-type VisitorOverrideTopLevelTerm[P, R any] interface {
+type Visitor_OverrideTopLevelTerm[P, R any] interface {
+	VisitOverrideTopLevelTerm(node *OverrideTopLevelTerm[P, R])
+}
+type VisitorE_OverrideTopLevelTerm[P, R any] interface {
+	VisitOverrideTopLevelTerm(node *OverrideTopLevelTerm[P, R]) error
+}
+type VisitorP_OverrideTopLevelTerm[P, R any] interface {
+	VisitOverrideTopLevelTerm(node *OverrideTopLevelTerm[P, R], payload P)
+}
+type VisitorPE_OverrideTopLevelTerm[P, R any] interface {
+	VisitOverrideTopLevelTerm(node *OverrideTopLevelTerm[P, R], payload P) error
+}
+type VisitorR_OverrideTopLevelTerm[P, R any] interface {
+	VisitOverrideTopLevelTerm(node *OverrideTopLevelTerm[P, R]) (result R)
+}
+type VisitorRE_OverrideTopLevelTerm[P, R any] interface {
+	VisitOverrideTopLevelTerm(node *OverrideTopLevelTerm[P, R]) (result R, err error)
+}
+type VisitorPR_OverrideTopLevelTerm[P, R any] interface {
 	VisitOverrideTopLevelTerm(node *OverrideTopLevelTerm[P, R], payload P) (result R)
+}
+type VisitorPRE_OverrideTopLevelTerm[P, R any] interface {
+	VisitOverrideTopLevelTerm(node *OverrideTopLevelTerm[P, R], payload P) (result R, err error)
 }
 
 // OverrideTopLevelTerm_superSplice
 // -- rule --
 // "..."
 // ----
-type VisitorOverrideTopLevelTermSuperSplice[P, R any] interface {
+type Visitor_OverrideTopLevelTermSuperSplice[P, R any] interface {
+	VisitOverrideTopLevelTermSuperSplice(node *OverrideTopLevelTermSuperSplice[P, R])
+}
+type VisitorE_OverrideTopLevelTermSuperSplice[P, R any] interface {
+	VisitOverrideTopLevelTermSuperSplice(node *OverrideTopLevelTermSuperSplice[P, R]) error
+}
+type VisitorP_OverrideTopLevelTermSuperSplice[P, R any] interface {
+	VisitOverrideTopLevelTermSuperSplice(node *OverrideTopLevelTermSuperSplice[P, R], payload P)
+}
+type VisitorPE_OverrideTopLevelTermSuperSplice[P, R any] interface {
+	VisitOverrideTopLevelTermSuperSplice(node *OverrideTopLevelTermSuperSplice[P, R], payload P) error
+}
+type VisitorR_OverrideTopLevelTermSuperSplice[P, R any] interface {
+	VisitOverrideTopLevelTermSuperSplice(node *OverrideTopLevelTermSuperSplice[P, R]) (result R)
+}
+type VisitorRE_OverrideTopLevelTermSuperSplice[P, R any] interface {
+	VisitOverrideTopLevelTermSuperSplice(node *OverrideTopLevelTermSuperSplice[P, R]) (result R, err error)
+}
+type VisitorPR_OverrideTopLevelTermSuperSplice[P, R any] interface {
 	VisitOverrideTopLevelTermSuperSplice(node *OverrideTopLevelTermSuperSplice[P, R], payload P) (result R)
+}
+type VisitorPRE_OverrideTopLevelTermSuperSplice[P, R any] interface {
+	VisitOverrideTopLevelTermSuperSplice(node *OverrideTopLevelTermSuperSplice[P, R], payload P) (result R, err error)
 }
 
 // Formals
@@ -125,8 +398,29 @@ type VisitorOverrideTopLevelTermSuperSplice[P, R any] interface {
 // Formals
 // = "<" ListOf<ident, ","> ">"
 // ----
-type VisitorFormals[P, R any] interface {
+type Visitor_Formals[P, R any] interface {
+	VisitFormals(node *Formals[P, R])
+}
+type VisitorE_Formals[P, R any] interface {
+	VisitFormals(node *Formals[P, R]) error
+}
+type VisitorP_Formals[P, R any] interface {
+	VisitFormals(node *Formals[P, R], payload P)
+}
+type VisitorPE_Formals[P, R any] interface {
+	VisitFormals(node *Formals[P, R], payload P) error
+}
+type VisitorR_Formals[P, R any] interface {
+	VisitFormals(node *Formals[P, R]) (result R)
+}
+type VisitorRE_Formals[P, R any] interface {
+	VisitFormals(node *Formals[P, R]) (result R, err error)
+}
+type VisitorPR_Formals[P, R any] interface {
 	VisitFormals(node *Formals[P, R], payload P) (result R)
+}
+type VisitorPRE_Formals[P, R any] interface {
+	VisitFormals(node *Formals[P, R], payload P) (result R, err error)
 }
 
 // Params
@@ -134,8 +428,29 @@ type VisitorFormals[P, R any] interface {
 // Params
 // = "<" ListOf<Seq, ","> ">"
 // ----
-type VisitorParams[P, R any] interface {
+type Visitor_Params[P, R any] interface {
+	VisitParams(node *Params[P, R])
+}
+type VisitorE_Params[P, R any] interface {
+	VisitParams(node *Params[P, R]) error
+}
+type VisitorP_Params[P, R any] interface {
+	VisitParams(node *Params[P, R], payload P)
+}
+type VisitorPE_Params[P, R any] interface {
+	VisitParams(node *Params[P, R], payload P) error
+}
+type VisitorR_Params[P, R any] interface {
+	VisitParams(node *Params[P, R]) (result R)
+}
+type VisitorRE_Params[P, R any] interface {
+	VisitParams(node *Params[P, R]) (result R, err error)
+}
+type VisitorPR_Params[P, R any] interface {
 	VisitParams(node *Params[P, R], payload P) (result R)
+}
+type VisitorPRE_Params[P, R any] interface {
+	VisitParams(node *Params[P, R], payload P) (result R, err error)
 }
 
 // Alt
@@ -143,8 +458,29 @@ type VisitorParams[P, R any] interface {
 // Alt
 // = NonemptyListOf<Seq, "|">
 // ----
-type VisitorAlt[P, R any] interface {
+type Visitor_Alt[P, R any] interface {
+	VisitAlt(node *Alt[P, R])
+}
+type VisitorE_Alt[P, R any] interface {
+	VisitAlt(node *Alt[P, R]) error
+}
+type VisitorP_Alt[P, R any] interface {
+	VisitAlt(node *Alt[P, R], payload P)
+}
+type VisitorPE_Alt[P, R any] interface {
+	VisitAlt(node *Alt[P, R], payload P) error
+}
+type VisitorR_Alt[P, R any] interface {
+	VisitAlt(node *Alt[P, R]) (result R)
+}
+type VisitorRE_Alt[P, R any] interface {
+	VisitAlt(node *Alt[P, R]) (result R, err error)
+}
+type VisitorPR_Alt[P, R any] interface {
 	VisitAlt(node *Alt[P, R], payload P) (result R)
+}
+type VisitorPRE_Alt[P, R any] interface {
+	VisitAlt(node *Alt[P, R], payload P) (result R, err error)
 }
 
 // Seq
@@ -152,8 +488,29 @@ type VisitorAlt[P, R any] interface {
 // Seq
 // = Iter*
 // ----
-type VisitorSeq[P, R any] interface {
+type Visitor_Seq[P, R any] interface {
+	VisitSeq(node *Seq[P, R])
+}
+type VisitorE_Seq[P, R any] interface {
+	VisitSeq(node *Seq[P, R]) error
+}
+type VisitorP_Seq[P, R any] interface {
+	VisitSeq(node *Seq[P, R], payload P)
+}
+type VisitorPE_Seq[P, R any] interface {
+	VisitSeq(node *Seq[P, R], payload P) error
+}
+type VisitorR_Seq[P, R any] interface {
+	VisitSeq(node *Seq[P, R]) (result R)
+}
+type VisitorRE_Seq[P, R any] interface {
+	VisitSeq(node *Seq[P, R]) (result R, err error)
+}
+type VisitorPR_Seq[P, R any] interface {
 	VisitSeq(node *Seq[P, R], payload P) (result R)
+}
+type VisitorPRE_Seq[P, R any] interface {
+	VisitSeq(node *Seq[P, R], payload P) (result R, err error)
 }
 
 // Iter
@@ -164,32 +521,116 @@ type VisitorSeq[P, R any] interface {
 // | Pred "?"  -- opt
 // | Pred
 // ----
-type VisitorIter[P, R any] interface {
+type Visitor_Iter[P, R any] interface {
+	VisitIter(node *Iter[P, R])
+}
+type VisitorE_Iter[P, R any] interface {
+	VisitIter(node *Iter[P, R]) error
+}
+type VisitorP_Iter[P, R any] interface {
+	VisitIter(node *Iter[P, R], payload P)
+}
+type VisitorPE_Iter[P, R any] interface {
+	VisitIter(node *Iter[P, R], payload P) error
+}
+type VisitorR_Iter[P, R any] interface {
+	VisitIter(node *Iter[P, R]) (result R)
+}
+type VisitorRE_Iter[P, R any] interface {
+	VisitIter(node *Iter[P, R]) (result R, err error)
+}
+type VisitorPR_Iter[P, R any] interface {
 	VisitIter(node *Iter[P, R], payload P) (result R)
+}
+type VisitorPRE_Iter[P, R any] interface {
+	VisitIter(node *Iter[P, R], payload P) (result R, err error)
 }
 
 // Iter_star
 // -- rule --
 // Pred "*"
 // ----
-type VisitorIterStar[P, R any] interface {
+type Visitor_IterStar[P, R any] interface {
+	VisitIterStar(node *IterStar[P, R])
+}
+type VisitorE_IterStar[P, R any] interface {
+	VisitIterStar(node *IterStar[P, R]) error
+}
+type VisitorP_IterStar[P, R any] interface {
+	VisitIterStar(node *IterStar[P, R], payload P)
+}
+type VisitorPE_IterStar[P, R any] interface {
+	VisitIterStar(node *IterStar[P, R], payload P) error
+}
+type VisitorR_IterStar[P, R any] interface {
+	VisitIterStar(node *IterStar[P, R]) (result R)
+}
+type VisitorRE_IterStar[P, R any] interface {
+	VisitIterStar(node *IterStar[P, R]) (result R, err error)
+}
+type VisitorPR_IterStar[P, R any] interface {
 	VisitIterStar(node *IterStar[P, R], payload P) (result R)
+}
+type VisitorPRE_IterStar[P, R any] interface {
+	VisitIterStar(node *IterStar[P, R], payload P) (result R, err error)
 }
 
 // Iter_plus
 // -- rule --
 // Pred "+"
 // ----
-type VisitorIterPlus[P, R any] interface {
+type Visitor_IterPlus[P, R any] interface {
+	VisitIterPlus(node *IterPlus[P, R])
+}
+type VisitorE_IterPlus[P, R any] interface {
+	VisitIterPlus(node *IterPlus[P, R]) error
+}
+type VisitorP_IterPlus[P, R any] interface {
+	VisitIterPlus(node *IterPlus[P, R], payload P)
+}
+type VisitorPE_IterPlus[P, R any] interface {
+	VisitIterPlus(node *IterPlus[P, R], payload P) error
+}
+type VisitorR_IterPlus[P, R any] interface {
+	VisitIterPlus(node *IterPlus[P, R]) (result R)
+}
+type VisitorRE_IterPlus[P, R any] interface {
+	VisitIterPlus(node *IterPlus[P, R]) (result R, err error)
+}
+type VisitorPR_IterPlus[P, R any] interface {
 	VisitIterPlus(node *IterPlus[P, R], payload P) (result R)
+}
+type VisitorPRE_IterPlus[P, R any] interface {
+	VisitIterPlus(node *IterPlus[P, R], payload P) (result R, err error)
 }
 
 // Iter_opt
 // -- rule --
 // Pred "?"
 // ----
-type VisitorIterOpt[P, R any] interface {
+type Visitor_IterOpt[P, R any] interface {
+	VisitIterOpt(node *IterOpt[P, R])
+}
+type VisitorE_IterOpt[P, R any] interface {
+	VisitIterOpt(node *IterOpt[P, R]) error
+}
+type VisitorP_IterOpt[P, R any] interface {
+	VisitIterOpt(node *IterOpt[P, R], payload P)
+}
+type VisitorPE_IterOpt[P, R any] interface {
+	VisitIterOpt(node *IterOpt[P, R], payload P) error
+}
+type VisitorR_IterOpt[P, R any] interface {
+	VisitIterOpt(node *IterOpt[P, R]) (result R)
+}
+type VisitorRE_IterOpt[P, R any] interface {
+	VisitIterOpt(node *IterOpt[P, R]) (result R, err error)
+}
+type VisitorPR_IterOpt[P, R any] interface {
 	VisitIterOpt(node *IterOpt[P, R], payload P) (result R)
+}
+type VisitorPRE_IterOpt[P, R any] interface {
+	VisitIterOpt(node *IterOpt[P, R], payload P) (result R, err error)
 }
 
 // Pred
@@ -199,24 +640,87 @@ type VisitorIterOpt[P, R any] interface {
 // | "&" Lex  -- lookahead
 // | Lex
 // ----
-type VisitorPred[P, R any] interface {
+type Visitor_Pred[P, R any] interface {
+	VisitPred(node *Pred[P, R])
+}
+type VisitorE_Pred[P, R any] interface {
+	VisitPred(node *Pred[P, R]) error
+}
+type VisitorP_Pred[P, R any] interface {
+	VisitPred(node *Pred[P, R], payload P)
+}
+type VisitorPE_Pred[P, R any] interface {
+	VisitPred(node *Pred[P, R], payload P) error
+}
+type VisitorR_Pred[P, R any] interface {
+	VisitPred(node *Pred[P, R]) (result R)
+}
+type VisitorRE_Pred[P, R any] interface {
+	VisitPred(node *Pred[P, R]) (result R, err error)
+}
+type VisitorPR_Pred[P, R any] interface {
 	VisitPred(node *Pred[P, R], payload P) (result R)
+}
+type VisitorPRE_Pred[P, R any] interface {
+	VisitPred(node *Pred[P, R], payload P) (result R, err error)
 }
 
 // Pred_not
 // -- rule --
 // "~" Lex
 // ----
-type VisitorPredNot[P, R any] interface {
+type Visitor_PredNot[P, R any] interface {
+	VisitPredNot(node *PredNot[P, R])
+}
+type VisitorE_PredNot[P, R any] interface {
+	VisitPredNot(node *PredNot[P, R]) error
+}
+type VisitorP_PredNot[P, R any] interface {
+	VisitPredNot(node *PredNot[P, R], payload P)
+}
+type VisitorPE_PredNot[P, R any] interface {
+	VisitPredNot(node *PredNot[P, R], payload P) error
+}
+type VisitorR_PredNot[P, R any] interface {
+	VisitPredNot(node *PredNot[P, R]) (result R)
+}
+type VisitorRE_PredNot[P, R any] interface {
+	VisitPredNot(node *PredNot[P, R]) (result R, err error)
+}
+type VisitorPR_PredNot[P, R any] interface {
 	VisitPredNot(node *PredNot[P, R], payload P) (result R)
+}
+type VisitorPRE_PredNot[P, R any] interface {
+	VisitPredNot(node *PredNot[P, R], payload P) (result R, err error)
 }
 
 // Pred_lookahead
 // -- rule --
 // "&" Lex
 // ----
-type VisitorPredLookahead[P, R any] interface {
+type Visitor_PredLookahead[P, R any] interface {
+	VisitPredLookahead(node *PredLookahead[P, R])
+}
+type VisitorE_PredLookahead[P, R any] interface {
+	VisitPredLookahead(node *PredLookahead[P, R]) error
+}
+type VisitorP_PredLookahead[P, R any] interface {
+	VisitPredLookahead(node *PredLookahead[P, R], payload P)
+}
+type VisitorPE_PredLookahead[P, R any] interface {
+	VisitPredLookahead(node *PredLookahead[P, R], payload P) error
+}
+type VisitorR_PredLookahead[P, R any] interface {
+	VisitPredLookahead(node *PredLookahead[P, R]) (result R)
+}
+type VisitorRE_PredLookahead[P, R any] interface {
+	VisitPredLookahead(node *PredLookahead[P, R]) (result R, err error)
+}
+type VisitorPR_PredLookahead[P, R any] interface {
 	VisitPredLookahead(node *PredLookahead[P, R], payload P) (result R)
+}
+type VisitorPRE_PredLookahead[P, R any] interface {
+	VisitPredLookahead(node *PredLookahead[P, R], payload P) (result R, err error)
 }
 
 // Lex
@@ -225,16 +729,58 @@ type VisitorPredLookahead[P, R any] interface {
 // = "#" Base  -- lex
 // | Base
 // ----
-type VisitorLex[P, R any] interface {
+type Visitor_Lex[P, R any] interface {
+	VisitLex(node *Lex[P, R])
+}
+type VisitorE_Lex[P, R any] interface {
+	VisitLex(node *Lex[P, R]) error
+}
+type VisitorP_Lex[P, R any] interface {
+	VisitLex(node *Lex[P, R], payload P)
+}
+type VisitorPE_Lex[P, R any] interface {
+	VisitLex(node *Lex[P, R], payload P) error
+}
+type VisitorR_Lex[P, R any] interface {
+	VisitLex(node *Lex[P, R]) (result R)
+}
+type VisitorRE_Lex[P, R any] interface {
+	VisitLex(node *Lex[P, R]) (result R, err error)
+}
+type VisitorPR_Lex[P, R any] interface {
 	VisitLex(node *Lex[P, R], payload P) (result R)
+}
+type VisitorPRE_Lex[P, R any] interface {
+	VisitLex(node *Lex[P, R], payload P) (result R, err error)
 }
 
 // Lex_lex
 // -- rule --
 // "#" Base
 // ----
-type VisitorLexLex[P, R any] interface {
+type Visitor_LexLex[P, R any] interface {
+	VisitLexLex(node *LexLex[P, R])
+}
+type VisitorE_LexLex[P, R any] interface {
+	VisitLexLex(node *LexLex[P, R]) error
+}
+type VisitorP_LexLex[P, R any] interface {
+	VisitLexLex(node *LexLex[P, R], payload P)
+}
+type VisitorPE_LexLex[P, R any] interface {
+	VisitLexLex(node *LexLex[P, R], payload P) error
+}
+type VisitorR_LexLex[P, R any] interface {
+	VisitLexLex(node *LexLex[P, R]) (result R)
+}
+type VisitorRE_LexLex[P, R any] interface {
+	VisitLexLex(node *LexLex[P, R]) (result R, err error)
+}
+type VisitorPR_LexLex[P, R any] interface {
 	VisitLexLex(node *LexLex[P, R], payload P) (result R)
+}
+type VisitorPRE_LexLex[P, R any] interface {
+	VisitLexLex(node *LexLex[P, R], payload P) (result R, err error)
 }
 
 // Base
@@ -246,40 +792,145 @@ type VisitorLexLex[P, R any] interface {
 // | "(" Alt ")"                                    -- paren
 // 
 // ----
-type VisitorBase[P, R any] interface {
+type Visitor_Base[P, R any] interface {
+	VisitBase(node *Base[P, R])
+}
+type VisitorE_Base[P, R any] interface {
+	VisitBase(node *Base[P, R]) error
+}
+type VisitorP_Base[P, R any] interface {
+	VisitBase(node *Base[P, R], payload P)
+}
+type VisitorPE_Base[P, R any] interface {
+	VisitBase(node *Base[P, R], payload P) error
+}
+type VisitorR_Base[P, R any] interface {
+	VisitBase(node *Base[P, R]) (result R)
+}
+type VisitorRE_Base[P, R any] interface {
+	VisitBase(node *Base[P, R]) (result R, err error)
+}
+type VisitorPR_Base[P, R any] interface {
 	VisitBase(node *Base[P, R], payload P) (result R)
+}
+type VisitorPRE_Base[P, R any] interface {
+	VisitBase(node *Base[P, R], payload P) (result R, err error)
 }
 
 // Base_application
 // -- rule --
 // ident Params? ~(ruleDescr? "=" | ":=" | "+=")
 // ----
-type VisitorBaseApplication[P, R any] interface {
+type Visitor_BaseApplication[P, R any] interface {
+	VisitBaseApplication(node *BaseApplication[P, R])
+}
+type VisitorE_BaseApplication[P, R any] interface {
+	VisitBaseApplication(node *BaseApplication[P, R]) error
+}
+type VisitorP_BaseApplication[P, R any] interface {
+	VisitBaseApplication(node *BaseApplication[P, R], payload P)
+}
+type VisitorPE_BaseApplication[P, R any] interface {
+	VisitBaseApplication(node *BaseApplication[P, R], payload P) error
+}
+type VisitorR_BaseApplication[P, R any] interface {
+	VisitBaseApplication(node *BaseApplication[P, R]) (result R)
+}
+type VisitorRE_BaseApplication[P, R any] interface {
+	VisitBaseApplication(node *BaseApplication[P, R]) (result R, err error)
+}
+type VisitorPR_BaseApplication[P, R any] interface {
 	VisitBaseApplication(node *BaseApplication[P, R], payload P) (result R)
+}
+type VisitorPRE_BaseApplication[P, R any] interface {
+	VisitBaseApplication(node *BaseApplication[P, R], payload P) (result R, err error)
 }
 
 // Base_range
 // -- rule --
 // oneCharTerminal ".." oneCharTerminal
 // ----
-type VisitorBaseRange[P, R any] interface {
+type Visitor_BaseRange[P, R any] interface {
+	VisitBaseRange(node *BaseRange[P, R])
+}
+type VisitorE_BaseRange[P, R any] interface {
+	VisitBaseRange(node *BaseRange[P, R]) error
+}
+type VisitorP_BaseRange[P, R any] interface {
+	VisitBaseRange(node *BaseRange[P, R], payload P)
+}
+type VisitorPE_BaseRange[P, R any] interface {
+	VisitBaseRange(node *BaseRange[P, R], payload P) error
+}
+type VisitorR_BaseRange[P, R any] interface {
+	VisitBaseRange(node *BaseRange[P, R]) (result R)
+}
+type VisitorRE_BaseRange[P, R any] interface {
+	VisitBaseRange(node *BaseRange[P, R]) (result R, err error)
+}
+type VisitorPR_BaseRange[P, R any] interface {
 	VisitBaseRange(node *BaseRange[P, R], payload P) (result R)
+}
+type VisitorPRE_BaseRange[P, R any] interface {
+	VisitBaseRange(node *BaseRange[P, R], payload P) (result R, err error)
 }
 
 // Base_terminal
 // -- rule --
 // terminal
 // ----
-type VisitorBaseTerminal[P, R any] interface {
+type Visitor_BaseTerminal[P, R any] interface {
+	VisitBaseTerminal(node *BaseTerminal[P, R])
+}
+type VisitorE_BaseTerminal[P, R any] interface {
+	VisitBaseTerminal(node *BaseTerminal[P, R]) error
+}
+type VisitorP_BaseTerminal[P, R any] interface {
+	VisitBaseTerminal(node *BaseTerminal[P, R], payload P)
+}
+type VisitorPE_BaseTerminal[P, R any] interface {
+	VisitBaseTerminal(node *BaseTerminal[P, R], payload P) error
+}
+type VisitorR_BaseTerminal[P, R any] interface {
+	VisitBaseTerminal(node *BaseTerminal[P, R]) (result R)
+}
+type VisitorRE_BaseTerminal[P, R any] interface {
+	VisitBaseTerminal(node *BaseTerminal[P, R]) (result R, err error)
+}
+type VisitorPR_BaseTerminal[P, R any] interface {
 	VisitBaseTerminal(node *BaseTerminal[P, R], payload P) (result R)
+}
+type VisitorPRE_BaseTerminal[P, R any] interface {
+	VisitBaseTerminal(node *BaseTerminal[P, R], payload P) (result R, err error)
 }
 
 // Base_paren
 // -- rule --
 // "(" Alt ")"
 // ----
-type VisitorBaseParen[P, R any] interface {
+type Visitor_BaseParen[P, R any] interface {
+	VisitBaseParen(node *BaseParen[P, R])
+}
+type VisitorE_BaseParen[P, R any] interface {
+	VisitBaseParen(node *BaseParen[P, R]) error
+}
+type VisitorP_BaseParen[P, R any] interface {
+	VisitBaseParen(node *BaseParen[P, R], payload P)
+}
+type VisitorPE_BaseParen[P, R any] interface {
+	VisitBaseParen(node *BaseParen[P, R], payload P) error
+}
+type VisitorR_BaseParen[P, R any] interface {
+	VisitBaseParen(node *BaseParen[P, R]) (result R)
+}
+type VisitorRE_BaseParen[P, R any] interface {
+	VisitBaseParen(node *BaseParen[P, R]) (result R, err error)
+}
+type VisitorPR_BaseParen[P, R any] interface {
 	VisitBaseParen(node *BaseParen[P, R], payload P) (result R)
+}
+type VisitorPRE_BaseParen[P, R any] interface {
+	VisitBaseParen(node *BaseParen[P, R], payload P) (result R, err error)
 }
 
 // ruleDescr - a rule description
@@ -287,8 +938,29 @@ type VisitorBaseParen[P, R any] interface {
 // ruleDescr  (a rule description)
 // = "(" ruleDescrText ")"
 // ----
-type VisitorLexRuleDescr[P, R any] interface {
+type Visitor_LexRuleDescr[P, R any] interface {
+	VisitLexRuleDescr(node *LexRuleDescr[P, R])
+}
+type VisitorE_LexRuleDescr[P, R any] interface {
+	VisitLexRuleDescr(node *LexRuleDescr[P, R]) error
+}
+type VisitorP_LexRuleDescr[P, R any] interface {
+	VisitLexRuleDescr(node *LexRuleDescr[P, R], payload P)
+}
+type VisitorPE_LexRuleDescr[P, R any] interface {
+	VisitLexRuleDescr(node *LexRuleDescr[P, R], payload P) error
+}
+type VisitorR_LexRuleDescr[P, R any] interface {
+	VisitLexRuleDescr(node *LexRuleDescr[P, R]) (result R)
+}
+type VisitorRE_LexRuleDescr[P, R any] interface {
+	VisitLexRuleDescr(node *LexRuleDescr[P, R]) (result R, err error)
+}
+type VisitorPR_LexRuleDescr[P, R any] interface {
 	VisitLexRuleDescr(node *LexRuleDescr[P, R], payload P) (result R)
+}
+type VisitorPRE_LexRuleDescr[P, R any] interface {
+	VisitLexRuleDescr(node *LexRuleDescr[P, R], payload P) (result R, err error)
 }
 
 // ruleDescrText
@@ -296,8 +968,29 @@ type VisitorLexRuleDescr[P, R any] interface {
 // ruleDescrText
 // = (~")" any)*
 // ----
-type VisitorLexRuleDescrText[P, R any] interface {
+type Visitor_LexRuleDescrText[P, R any] interface {
+	VisitLexRuleDescrText(node *LexRuleDescrText[P, R])
+}
+type VisitorE_LexRuleDescrText[P, R any] interface {
+	VisitLexRuleDescrText(node *LexRuleDescrText[P, R]) error
+}
+type VisitorP_LexRuleDescrText[P, R any] interface {
+	VisitLexRuleDescrText(node *LexRuleDescrText[P, R], payload P)
+}
+type VisitorPE_LexRuleDescrText[P, R any] interface {
+	VisitLexRuleDescrText(node *LexRuleDescrText[P, R], payload P) error
+}
+type VisitorR_LexRuleDescrText[P, R any] interface {
+	VisitLexRuleDescrText(node *LexRuleDescrText[P, R]) (result R)
+}
+type VisitorRE_LexRuleDescrText[P, R any] interface {
+	VisitLexRuleDescrText(node *LexRuleDescrText[P, R]) (result R, err error)
+}
+type VisitorPR_LexRuleDescrText[P, R any] interface {
 	VisitLexRuleDescrText(node *LexRuleDescrText[P, R], payload P) (result R)
+}
+type VisitorPRE_LexRuleDescrText[P, R any] interface {
+	VisitLexRuleDescrText(node *LexRuleDescrText[P, R], payload P) (result R, err error)
 }
 
 // caseName
@@ -305,8 +998,29 @@ type VisitorLexRuleDescrText[P, R any] interface {
 // caseName
 // = "--" (~"\n" space)* name (~"\n" space)* ("\n" | &"}")
 // ----
-type VisitorLexCaseName[P, R any] interface {
+type Visitor_LexCaseName[P, R any] interface {
+	VisitLexCaseName(node *LexCaseName[P, R])
+}
+type VisitorE_LexCaseName[P, R any] interface {
+	VisitLexCaseName(node *LexCaseName[P, R]) error
+}
+type VisitorP_LexCaseName[P, R any] interface {
+	VisitLexCaseName(node *LexCaseName[P, R], payload P)
+}
+type VisitorPE_LexCaseName[P, R any] interface {
+	VisitLexCaseName(node *LexCaseName[P, R], payload P) error
+}
+type VisitorR_LexCaseName[P, R any] interface {
+	VisitLexCaseName(node *LexCaseName[P, R]) (result R)
+}
+type VisitorRE_LexCaseName[P, R any] interface {
+	VisitLexCaseName(node *LexCaseName[P, R]) (result R, err error)
+}
+type VisitorPR_LexCaseName[P, R any] interface {
 	VisitLexCaseName(node *LexCaseName[P, R], payload P) (result R)
+}
+type VisitorPRE_LexCaseName[P, R any] interface {
+	VisitLexCaseName(node *LexCaseName[P, R], payload P) (result R, err error)
 }
 
 // name - a name
@@ -314,8 +1028,29 @@ type VisitorLexCaseName[P, R any] interface {
 // name  (a name)
 // = nameFirst nameRest*
 // ----
-type VisitorLexName[P, R any] interface {
+type Visitor_LexName[P, R any] interface {
+	VisitLexName(node *LexName[P, R])
+}
+type VisitorE_LexName[P, R any] interface {
+	VisitLexName(node *LexName[P, R]) error
+}
+type VisitorP_LexName[P, R any] interface {
+	VisitLexName(node *LexName[P, R], payload P)
+}
+type VisitorPE_LexName[P, R any] interface {
+	VisitLexName(node *LexName[P, R], payload P) error
+}
+type VisitorR_LexName[P, R any] interface {
+	VisitLexName(node *LexName[P, R]) (result R)
+}
+type VisitorRE_LexName[P, R any] interface {
+	VisitLexName(node *LexName[P, R]) (result R, err error)
+}
+type VisitorPR_LexName[P, R any] interface {
 	VisitLexName(node *LexName[P, R], payload P) (result R)
+}
+type VisitorPRE_LexName[P, R any] interface {
+	VisitLexName(node *LexName[P, R], payload P) (result R, err error)
 }
 
 // nameFirst
@@ -324,8 +1059,29 @@ type VisitorLexName[P, R any] interface {
 // = "_"
 // | letter
 // ----
-type VisitorLexNameFirst[P, R any] interface {
+type Visitor_LexNameFirst[P, R any] interface {
+	VisitLexNameFirst(node *LexNameFirst[P, R])
+}
+type VisitorE_LexNameFirst[P, R any] interface {
+	VisitLexNameFirst(node *LexNameFirst[P, R]) error
+}
+type VisitorP_LexNameFirst[P, R any] interface {
+	VisitLexNameFirst(node *LexNameFirst[P, R], payload P)
+}
+type VisitorPE_LexNameFirst[P, R any] interface {
+	VisitLexNameFirst(node *LexNameFirst[P, R], payload P) error
+}
+type VisitorR_LexNameFirst[P, R any] interface {
+	VisitLexNameFirst(node *LexNameFirst[P, R]) (result R)
+}
+type VisitorRE_LexNameFirst[P, R any] interface {
+	VisitLexNameFirst(node *LexNameFirst[P, R]) (result R, err error)
+}
+type VisitorPR_LexNameFirst[P, R any] interface {
 	VisitLexNameFirst(node *LexNameFirst[P, R], payload P) (result R)
+}
+type VisitorPRE_LexNameFirst[P, R any] interface {
+	VisitLexNameFirst(node *LexNameFirst[P, R], payload P) (result R, err error)
 }
 
 // nameRest
@@ -334,8 +1090,29 @@ type VisitorLexNameFirst[P, R any] interface {
 // = "_"
 // | alnum
 // ----
-type VisitorLexNameRest[P, R any] interface {
+type Visitor_LexNameRest[P, R any] interface {
+	VisitLexNameRest(node *LexNameRest[P, R])
+}
+type VisitorE_LexNameRest[P, R any] interface {
+	VisitLexNameRest(node *LexNameRest[P, R]) error
+}
+type VisitorP_LexNameRest[P, R any] interface {
+	VisitLexNameRest(node *LexNameRest[P, R], payload P)
+}
+type VisitorPE_LexNameRest[P, R any] interface {
+	VisitLexNameRest(node *LexNameRest[P, R], payload P) error
+}
+type VisitorR_LexNameRest[P, R any] interface {
+	VisitLexNameRest(node *LexNameRest[P, R]) (result R)
+}
+type VisitorRE_LexNameRest[P, R any] interface {
+	VisitLexNameRest(node *LexNameRest[P, R]) (result R, err error)
+}
+type VisitorPR_LexNameRest[P, R any] interface {
 	VisitLexNameRest(node *LexNameRest[P, R], payload P) (result R)
+}
+type VisitorPRE_LexNameRest[P, R any] interface {
+	VisitLexNameRest(node *LexNameRest[P, R], payload P) (result R, err error)
 }
 
 // ident - an identifier
@@ -343,8 +1120,29 @@ type VisitorLexNameRest[P, R any] interface {
 // ident  (an identifier)
 // = name
 // ----
-type VisitorLexIdent[P, R any] interface {
+type Visitor_LexIdent[P, R any] interface {
+	VisitLexIdent(node *LexIdent[P, R])
+}
+type VisitorE_LexIdent[P, R any] interface {
+	VisitLexIdent(node *LexIdent[P, R]) error
+}
+type VisitorP_LexIdent[P, R any] interface {
+	VisitLexIdent(node *LexIdent[P, R], payload P)
+}
+type VisitorPE_LexIdent[P, R any] interface {
+	VisitLexIdent(node *LexIdent[P, R], payload P) error
+}
+type VisitorR_LexIdent[P, R any] interface {
+	VisitLexIdent(node *LexIdent[P, R]) (result R)
+}
+type VisitorRE_LexIdent[P, R any] interface {
+	VisitLexIdent(node *LexIdent[P, R]) (result R, err error)
+}
+type VisitorPR_LexIdent[P, R any] interface {
 	VisitLexIdent(node *LexIdent[P, R], payload P) (result R)
+}
+type VisitorPRE_LexIdent[P, R any] interface {
+	VisitLexIdent(node *LexIdent[P, R], payload P) (result R, err error)
 }
 
 // terminal
@@ -352,8 +1150,29 @@ type VisitorLexIdent[P, R any] interface {
 // terminal
 // = "\"" terminalChar* "\""
 // ----
-type VisitorLexTerminal[P, R any] interface {
+type Visitor_LexTerminal[P, R any] interface {
+	VisitLexTerminal(node *LexTerminal[P, R])
+}
+type VisitorE_LexTerminal[P, R any] interface {
+	VisitLexTerminal(node *LexTerminal[P, R]) error
+}
+type VisitorP_LexTerminal[P, R any] interface {
+	VisitLexTerminal(node *LexTerminal[P, R], payload P)
+}
+type VisitorPE_LexTerminal[P, R any] interface {
+	VisitLexTerminal(node *LexTerminal[P, R], payload P) error
+}
+type VisitorR_LexTerminal[P, R any] interface {
+	VisitLexTerminal(node *LexTerminal[P, R]) (result R)
+}
+type VisitorRE_LexTerminal[P, R any] interface {
+	VisitLexTerminal(node *LexTerminal[P, R]) (result R, err error)
+}
+type VisitorPR_LexTerminal[P, R any] interface {
 	VisitLexTerminal(node *LexTerminal[P, R], payload P) (result R)
+}
+type VisitorPRE_LexTerminal[P, R any] interface {
+	VisitLexTerminal(node *LexTerminal[P, R], payload P) (result R, err error)
 }
 
 // oneCharTerminal
@@ -361,8 +1180,29 @@ type VisitorLexTerminal[P, R any] interface {
 // oneCharTerminal
 // = "\"" terminalChar "\""
 // ----
-type VisitorLexOneCharTerminal[P, R any] interface {
+type Visitor_LexOneCharTerminal[P, R any] interface {
+	VisitLexOneCharTerminal(node *LexOneCharTerminal[P, R])
+}
+type VisitorE_LexOneCharTerminal[P, R any] interface {
+	VisitLexOneCharTerminal(node *LexOneCharTerminal[P, R]) error
+}
+type VisitorP_LexOneCharTerminal[P, R any] interface {
+	VisitLexOneCharTerminal(node *LexOneCharTerminal[P, R], payload P)
+}
+type VisitorPE_LexOneCharTerminal[P, R any] interface {
+	VisitLexOneCharTerminal(node *LexOneCharTerminal[P, R], payload P) error
+}
+type VisitorR_LexOneCharTerminal[P, R any] interface {
+	VisitLexOneCharTerminal(node *LexOneCharTerminal[P, R]) (result R)
+}
+type VisitorRE_LexOneCharTerminal[P, R any] interface {
+	VisitLexOneCharTerminal(node *LexOneCharTerminal[P, R]) (result R, err error)
+}
+type VisitorPR_LexOneCharTerminal[P, R any] interface {
 	VisitLexOneCharTerminal(node *LexOneCharTerminal[P, R], payload P) (result R)
+}
+type VisitorPRE_LexOneCharTerminal[P, R any] interface {
+	VisitLexOneCharTerminal(node *LexOneCharTerminal[P, R], payload P) (result R, err error)
 }
 
 // terminalChar
@@ -371,8 +1211,29 @@ type VisitorLexOneCharTerminal[P, R any] interface {
 // = escapeChar
 // | ~"\\" ~"\"" ~"\n" "\u{0}".."\u{10FFFF}"
 // ----
-type VisitorLexTerminalChar[P, R any] interface {
+type Visitor_LexTerminalChar[P, R any] interface {
+	VisitLexTerminalChar(node *LexTerminalChar[P, R])
+}
+type VisitorE_LexTerminalChar[P, R any] interface {
+	VisitLexTerminalChar(node *LexTerminalChar[P, R]) error
+}
+type VisitorP_LexTerminalChar[P, R any] interface {
+	VisitLexTerminalChar(node *LexTerminalChar[P, R], payload P)
+}
+type VisitorPE_LexTerminalChar[P, R any] interface {
+	VisitLexTerminalChar(node *LexTerminalChar[P, R], payload P) error
+}
+type VisitorR_LexTerminalChar[P, R any] interface {
+	VisitLexTerminalChar(node *LexTerminalChar[P, R]) (result R)
+}
+type VisitorRE_LexTerminalChar[P, R any] interface {
+	VisitLexTerminalChar(node *LexTerminalChar[P, R]) (result R, err error)
+}
+type VisitorPR_LexTerminalChar[P, R any] interface {
 	VisitLexTerminalChar(node *LexTerminalChar[P, R], payload P) (result R)
+}
+type VisitorPRE_LexTerminalChar[P, R any] interface {
+	VisitLexTerminalChar(node *LexTerminalChar[P, R], payload P) (result R, err error)
 }
 
 // escapeChar - an escape sequence
@@ -391,64 +1252,232 @@ type VisitorLexTerminalChar[P, R any] interface {
 // | "\\x" hexDigit hexDigit                    -- hexEscape
 // 
 // ----
-type VisitorLexEscapeChar[P, R any] interface {
+type Visitor_LexEscapeChar[P, R any] interface {
+	VisitLexEscapeChar(node *LexEscapeChar[P, R])
+}
+type VisitorE_LexEscapeChar[P, R any] interface {
+	VisitLexEscapeChar(node *LexEscapeChar[P, R]) error
+}
+type VisitorP_LexEscapeChar[P, R any] interface {
+	VisitLexEscapeChar(node *LexEscapeChar[P, R], payload P)
+}
+type VisitorPE_LexEscapeChar[P, R any] interface {
+	VisitLexEscapeChar(node *LexEscapeChar[P, R], payload P) error
+}
+type VisitorR_LexEscapeChar[P, R any] interface {
+	VisitLexEscapeChar(node *LexEscapeChar[P, R]) (result R)
+}
+type VisitorRE_LexEscapeChar[P, R any] interface {
+	VisitLexEscapeChar(node *LexEscapeChar[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeChar[P, R any] interface {
 	VisitLexEscapeChar(node *LexEscapeChar[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeChar[P, R any] interface {
+	VisitLexEscapeChar(node *LexEscapeChar[P, R], payload P) (result R, err error)
 }
 
 // escapeChar_backslash
 // -- rule --
 // "\\\\"
 // ----
-type VisitorLexEscapeCharBackslash[P, R any] interface {
+type Visitor_LexEscapeCharBackslash[P, R any] interface {
+	VisitLexEscapeCharBackslash(node *LexEscapeCharBackslash[P, R])
+}
+type VisitorE_LexEscapeCharBackslash[P, R any] interface {
+	VisitLexEscapeCharBackslash(node *LexEscapeCharBackslash[P, R]) error
+}
+type VisitorP_LexEscapeCharBackslash[P, R any] interface {
+	VisitLexEscapeCharBackslash(node *LexEscapeCharBackslash[P, R], payload P)
+}
+type VisitorPE_LexEscapeCharBackslash[P, R any] interface {
+	VisitLexEscapeCharBackslash(node *LexEscapeCharBackslash[P, R], payload P) error
+}
+type VisitorR_LexEscapeCharBackslash[P, R any] interface {
+	VisitLexEscapeCharBackslash(node *LexEscapeCharBackslash[P, R]) (result R)
+}
+type VisitorRE_LexEscapeCharBackslash[P, R any] interface {
+	VisitLexEscapeCharBackslash(node *LexEscapeCharBackslash[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeCharBackslash[P, R any] interface {
 	VisitLexEscapeCharBackslash(node *LexEscapeCharBackslash[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeCharBackslash[P, R any] interface {
+	VisitLexEscapeCharBackslash(node *LexEscapeCharBackslash[P, R], payload P) (result R, err error)
 }
 
 // escapeChar_doubleQuote
 // -- rule --
 // "\\\""
 // ----
-type VisitorLexEscapeCharDoubleQuote[P, R any] interface {
+type Visitor_LexEscapeCharDoubleQuote[P, R any] interface {
+	VisitLexEscapeCharDoubleQuote(node *LexEscapeCharDoubleQuote[P, R])
+}
+type VisitorE_LexEscapeCharDoubleQuote[P, R any] interface {
+	VisitLexEscapeCharDoubleQuote(node *LexEscapeCharDoubleQuote[P, R]) error
+}
+type VisitorP_LexEscapeCharDoubleQuote[P, R any] interface {
+	VisitLexEscapeCharDoubleQuote(node *LexEscapeCharDoubleQuote[P, R], payload P)
+}
+type VisitorPE_LexEscapeCharDoubleQuote[P, R any] interface {
+	VisitLexEscapeCharDoubleQuote(node *LexEscapeCharDoubleQuote[P, R], payload P) error
+}
+type VisitorR_LexEscapeCharDoubleQuote[P, R any] interface {
+	VisitLexEscapeCharDoubleQuote(node *LexEscapeCharDoubleQuote[P, R]) (result R)
+}
+type VisitorRE_LexEscapeCharDoubleQuote[P, R any] interface {
+	VisitLexEscapeCharDoubleQuote(node *LexEscapeCharDoubleQuote[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeCharDoubleQuote[P, R any] interface {
 	VisitLexEscapeCharDoubleQuote(node *LexEscapeCharDoubleQuote[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeCharDoubleQuote[P, R any] interface {
+	VisitLexEscapeCharDoubleQuote(node *LexEscapeCharDoubleQuote[P, R], payload P) (result R, err error)
 }
 
 // escapeChar_singleQuote
 // -- rule --
 // "\\\'"
 // ----
-type VisitorLexEscapeCharSingleQuote[P, R any] interface {
+type Visitor_LexEscapeCharSingleQuote[P, R any] interface {
+	VisitLexEscapeCharSingleQuote(node *LexEscapeCharSingleQuote[P, R])
+}
+type VisitorE_LexEscapeCharSingleQuote[P, R any] interface {
+	VisitLexEscapeCharSingleQuote(node *LexEscapeCharSingleQuote[P, R]) error
+}
+type VisitorP_LexEscapeCharSingleQuote[P, R any] interface {
+	VisitLexEscapeCharSingleQuote(node *LexEscapeCharSingleQuote[P, R], payload P)
+}
+type VisitorPE_LexEscapeCharSingleQuote[P, R any] interface {
+	VisitLexEscapeCharSingleQuote(node *LexEscapeCharSingleQuote[P, R], payload P) error
+}
+type VisitorR_LexEscapeCharSingleQuote[P, R any] interface {
+	VisitLexEscapeCharSingleQuote(node *LexEscapeCharSingleQuote[P, R]) (result R)
+}
+type VisitorRE_LexEscapeCharSingleQuote[P, R any] interface {
+	VisitLexEscapeCharSingleQuote(node *LexEscapeCharSingleQuote[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeCharSingleQuote[P, R any] interface {
 	VisitLexEscapeCharSingleQuote(node *LexEscapeCharSingleQuote[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeCharSingleQuote[P, R any] interface {
+	VisitLexEscapeCharSingleQuote(node *LexEscapeCharSingleQuote[P, R], payload P) (result R, err error)
 }
 
 // escapeChar_backspace
 // -- rule --
 // "\\b"
 // ----
-type VisitorLexEscapeCharBackspace[P, R any] interface {
+type Visitor_LexEscapeCharBackspace[P, R any] interface {
+	VisitLexEscapeCharBackspace(node *LexEscapeCharBackspace[P, R])
+}
+type VisitorE_LexEscapeCharBackspace[P, R any] interface {
+	VisitLexEscapeCharBackspace(node *LexEscapeCharBackspace[P, R]) error
+}
+type VisitorP_LexEscapeCharBackspace[P, R any] interface {
+	VisitLexEscapeCharBackspace(node *LexEscapeCharBackspace[P, R], payload P)
+}
+type VisitorPE_LexEscapeCharBackspace[P, R any] interface {
+	VisitLexEscapeCharBackspace(node *LexEscapeCharBackspace[P, R], payload P) error
+}
+type VisitorR_LexEscapeCharBackspace[P, R any] interface {
+	VisitLexEscapeCharBackspace(node *LexEscapeCharBackspace[P, R]) (result R)
+}
+type VisitorRE_LexEscapeCharBackspace[P, R any] interface {
+	VisitLexEscapeCharBackspace(node *LexEscapeCharBackspace[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeCharBackspace[P, R any] interface {
 	VisitLexEscapeCharBackspace(node *LexEscapeCharBackspace[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeCharBackspace[P, R any] interface {
+	VisitLexEscapeCharBackspace(node *LexEscapeCharBackspace[P, R], payload P) (result R, err error)
 }
 
 // escapeChar_lineFeed
 // -- rule --
 // "\\n"
 // ----
-type VisitorLexEscapeCharLineFeed[P, R any] interface {
+type Visitor_LexEscapeCharLineFeed[P, R any] interface {
+	VisitLexEscapeCharLineFeed(node *LexEscapeCharLineFeed[P, R])
+}
+type VisitorE_LexEscapeCharLineFeed[P, R any] interface {
+	VisitLexEscapeCharLineFeed(node *LexEscapeCharLineFeed[P, R]) error
+}
+type VisitorP_LexEscapeCharLineFeed[P, R any] interface {
+	VisitLexEscapeCharLineFeed(node *LexEscapeCharLineFeed[P, R], payload P)
+}
+type VisitorPE_LexEscapeCharLineFeed[P, R any] interface {
+	VisitLexEscapeCharLineFeed(node *LexEscapeCharLineFeed[P, R], payload P) error
+}
+type VisitorR_LexEscapeCharLineFeed[P, R any] interface {
+	VisitLexEscapeCharLineFeed(node *LexEscapeCharLineFeed[P, R]) (result R)
+}
+type VisitorRE_LexEscapeCharLineFeed[P, R any] interface {
+	VisitLexEscapeCharLineFeed(node *LexEscapeCharLineFeed[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeCharLineFeed[P, R any] interface {
 	VisitLexEscapeCharLineFeed(node *LexEscapeCharLineFeed[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeCharLineFeed[P, R any] interface {
+	VisitLexEscapeCharLineFeed(node *LexEscapeCharLineFeed[P, R], payload P) (result R, err error)
 }
 
 // escapeChar_carriageReturn
 // -- rule --
 // "\\r"
 // ----
-type VisitorLexEscapeCharCarriageReturn[P, R any] interface {
+type Visitor_LexEscapeCharCarriageReturn[P, R any] interface {
+	VisitLexEscapeCharCarriageReturn(node *LexEscapeCharCarriageReturn[P, R])
+}
+type VisitorE_LexEscapeCharCarriageReturn[P, R any] interface {
+	VisitLexEscapeCharCarriageReturn(node *LexEscapeCharCarriageReturn[P, R]) error
+}
+type VisitorP_LexEscapeCharCarriageReturn[P, R any] interface {
+	VisitLexEscapeCharCarriageReturn(node *LexEscapeCharCarriageReturn[P, R], payload P)
+}
+type VisitorPE_LexEscapeCharCarriageReturn[P, R any] interface {
+	VisitLexEscapeCharCarriageReturn(node *LexEscapeCharCarriageReturn[P, R], payload P) error
+}
+type VisitorR_LexEscapeCharCarriageReturn[P, R any] interface {
+	VisitLexEscapeCharCarriageReturn(node *LexEscapeCharCarriageReturn[P, R]) (result R)
+}
+type VisitorRE_LexEscapeCharCarriageReturn[P, R any] interface {
+	VisitLexEscapeCharCarriageReturn(node *LexEscapeCharCarriageReturn[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeCharCarriageReturn[P, R any] interface {
 	VisitLexEscapeCharCarriageReturn(node *LexEscapeCharCarriageReturn[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeCharCarriageReturn[P, R any] interface {
+	VisitLexEscapeCharCarriageReturn(node *LexEscapeCharCarriageReturn[P, R], payload P) (result R, err error)
 }
 
 // escapeChar_tab
 // -- rule --
 // "\\t"
 // ----
-type VisitorLexEscapeCharTab[P, R any] interface {
+type Visitor_LexEscapeCharTab[P, R any] interface {
+	VisitLexEscapeCharTab(node *LexEscapeCharTab[P, R])
+}
+type VisitorE_LexEscapeCharTab[P, R any] interface {
+	VisitLexEscapeCharTab(node *LexEscapeCharTab[P, R]) error
+}
+type VisitorP_LexEscapeCharTab[P, R any] interface {
+	VisitLexEscapeCharTab(node *LexEscapeCharTab[P, R], payload P)
+}
+type VisitorPE_LexEscapeCharTab[P, R any] interface {
+	VisitLexEscapeCharTab(node *LexEscapeCharTab[P, R], payload P) error
+}
+type VisitorR_LexEscapeCharTab[P, R any] interface {
+	VisitLexEscapeCharTab(node *LexEscapeCharTab[P, R]) (result R)
+}
+type VisitorRE_LexEscapeCharTab[P, R any] interface {
+	VisitLexEscapeCharTab(node *LexEscapeCharTab[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeCharTab[P, R any] interface {
 	VisitLexEscapeCharTab(node *LexEscapeCharTab[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeCharTab[P, R any] interface {
+	VisitLexEscapeCharTab(node *LexEscapeCharTab[P, R], payload P) (result R, err error)
 }
 
 // escapeChar_unicodeCodePoint
@@ -456,24 +1485,87 @@ type VisitorLexEscapeCharTab[P, R any] interface {
 // "\\u{" hexDigit hexDigit? hexDigit?
 // hexDigit? hexDigit? hexDigit? "}"
 // ----
-type VisitorLexEscapeCharUnicodeCodePoint[P, R any] interface {
+type Visitor_LexEscapeCharUnicodeCodePoint[P, R any] interface {
+	VisitLexEscapeCharUnicodeCodePoint(node *LexEscapeCharUnicodeCodePoint[P, R])
+}
+type VisitorE_LexEscapeCharUnicodeCodePoint[P, R any] interface {
+	VisitLexEscapeCharUnicodeCodePoint(node *LexEscapeCharUnicodeCodePoint[P, R]) error
+}
+type VisitorP_LexEscapeCharUnicodeCodePoint[P, R any] interface {
+	VisitLexEscapeCharUnicodeCodePoint(node *LexEscapeCharUnicodeCodePoint[P, R], payload P)
+}
+type VisitorPE_LexEscapeCharUnicodeCodePoint[P, R any] interface {
+	VisitLexEscapeCharUnicodeCodePoint(node *LexEscapeCharUnicodeCodePoint[P, R], payload P) error
+}
+type VisitorR_LexEscapeCharUnicodeCodePoint[P, R any] interface {
+	VisitLexEscapeCharUnicodeCodePoint(node *LexEscapeCharUnicodeCodePoint[P, R]) (result R)
+}
+type VisitorRE_LexEscapeCharUnicodeCodePoint[P, R any] interface {
+	VisitLexEscapeCharUnicodeCodePoint(node *LexEscapeCharUnicodeCodePoint[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeCharUnicodeCodePoint[P, R any] interface {
 	VisitLexEscapeCharUnicodeCodePoint(node *LexEscapeCharUnicodeCodePoint[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeCharUnicodeCodePoint[P, R any] interface {
+	VisitLexEscapeCharUnicodeCodePoint(node *LexEscapeCharUnicodeCodePoint[P, R], payload P) (result R, err error)
 }
 
 // escapeChar_unicodeEscape
 // -- rule --
 // "\\u" hexDigit hexDigit hexDigit hexDigit
 // ----
-type VisitorLexEscapeCharUnicodeEscape[P, R any] interface {
+type Visitor_LexEscapeCharUnicodeEscape[P, R any] interface {
+	VisitLexEscapeCharUnicodeEscape(node *LexEscapeCharUnicodeEscape[P, R])
+}
+type VisitorE_LexEscapeCharUnicodeEscape[P, R any] interface {
+	VisitLexEscapeCharUnicodeEscape(node *LexEscapeCharUnicodeEscape[P, R]) error
+}
+type VisitorP_LexEscapeCharUnicodeEscape[P, R any] interface {
+	VisitLexEscapeCharUnicodeEscape(node *LexEscapeCharUnicodeEscape[P, R], payload P)
+}
+type VisitorPE_LexEscapeCharUnicodeEscape[P, R any] interface {
+	VisitLexEscapeCharUnicodeEscape(node *LexEscapeCharUnicodeEscape[P, R], payload P) error
+}
+type VisitorR_LexEscapeCharUnicodeEscape[P, R any] interface {
+	VisitLexEscapeCharUnicodeEscape(node *LexEscapeCharUnicodeEscape[P, R]) (result R)
+}
+type VisitorRE_LexEscapeCharUnicodeEscape[P, R any] interface {
+	VisitLexEscapeCharUnicodeEscape(node *LexEscapeCharUnicodeEscape[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeCharUnicodeEscape[P, R any] interface {
 	VisitLexEscapeCharUnicodeEscape(node *LexEscapeCharUnicodeEscape[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeCharUnicodeEscape[P, R any] interface {
+	VisitLexEscapeCharUnicodeEscape(node *LexEscapeCharUnicodeEscape[P, R], payload P) (result R, err error)
 }
 
 // escapeChar_hexEscape
 // -- rule --
 // "\\x" hexDigit hexDigit
 // ----
-type VisitorLexEscapeCharHexEscape[P, R any] interface {
+type Visitor_LexEscapeCharHexEscape[P, R any] interface {
+	VisitLexEscapeCharHexEscape(node *LexEscapeCharHexEscape[P, R])
+}
+type VisitorE_LexEscapeCharHexEscape[P, R any] interface {
+	VisitLexEscapeCharHexEscape(node *LexEscapeCharHexEscape[P, R]) error
+}
+type VisitorP_LexEscapeCharHexEscape[P, R any] interface {
+	VisitLexEscapeCharHexEscape(node *LexEscapeCharHexEscape[P, R], payload P)
+}
+type VisitorPE_LexEscapeCharHexEscape[P, R any] interface {
+	VisitLexEscapeCharHexEscape(node *LexEscapeCharHexEscape[P, R], payload P) error
+}
+type VisitorR_LexEscapeCharHexEscape[P, R any] interface {
+	VisitLexEscapeCharHexEscape(node *LexEscapeCharHexEscape[P, R]) (result R)
+}
+type VisitorRE_LexEscapeCharHexEscape[P, R any] interface {
+	VisitLexEscapeCharHexEscape(node *LexEscapeCharHexEscape[P, R]) (result R, err error)
+}
+type VisitorPR_LexEscapeCharHexEscape[P, R any] interface {
 	VisitLexEscapeCharHexEscape(node *LexEscapeCharHexEscape[P, R], payload P) (result R)
+}
+type VisitorPRE_LexEscapeCharHexEscape[P, R any] interface {
+	VisitLexEscapeCharHexEscape(node *LexEscapeCharHexEscape[P, R], payload P) (result R, err error)
 }
 
 // space
@@ -481,8 +1573,29 @@ type VisitorLexEscapeCharHexEscape[P, R any] interface {
 // space
 // += comment
 // ----
-type VisitorLexSpace[P, R any] interface {
+type Visitor_LexSpace[P, R any] interface {
+	VisitLexSpace(node *LexSpace[P, R])
+}
+type VisitorE_LexSpace[P, R any] interface {
+	VisitLexSpace(node *LexSpace[P, R]) error
+}
+type VisitorP_LexSpace[P, R any] interface {
+	VisitLexSpace(node *LexSpace[P, R], payload P)
+}
+type VisitorPE_LexSpace[P, R any] interface {
+	VisitLexSpace(node *LexSpace[P, R], payload P) error
+}
+type VisitorR_LexSpace[P, R any] interface {
+	VisitLexSpace(node *LexSpace[P, R]) (result R)
+}
+type VisitorRE_LexSpace[P, R any] interface {
+	VisitLexSpace(node *LexSpace[P, R]) (result R, err error)
+}
+type VisitorPR_LexSpace[P, R any] interface {
 	VisitLexSpace(node *LexSpace[P, R], payload P) (result R)
+}
+type VisitorPRE_LexSpace[P, R any] interface {
+	VisitLexSpace(node *LexSpace[P, R], payload P) (result R, err error)
 }
 
 // comment
@@ -492,55 +1605,202 @@ type VisitorLexSpace[P, R any] interface {
 // | "/*" (~"*/" any)* "*/"  -- multiLine
 // 
 // ----
-type VisitorLexComment[P, R any] interface {
+type Visitor_LexComment[P, R any] interface {
+	VisitLexComment(node *LexComment[P, R])
+}
+type VisitorE_LexComment[P, R any] interface {
+	VisitLexComment(node *LexComment[P, R]) error
+}
+type VisitorP_LexComment[P, R any] interface {
+	VisitLexComment(node *LexComment[P, R], payload P)
+}
+type VisitorPE_LexComment[P, R any] interface {
+	VisitLexComment(node *LexComment[P, R], payload P) error
+}
+type VisitorR_LexComment[P, R any] interface {
+	VisitLexComment(node *LexComment[P, R]) (result R)
+}
+type VisitorRE_LexComment[P, R any] interface {
+	VisitLexComment(node *LexComment[P, R]) (result R, err error)
+}
+type VisitorPR_LexComment[P, R any] interface {
 	VisitLexComment(node *LexComment[P, R], payload P) (result R)
+}
+type VisitorPRE_LexComment[P, R any] interface {
+	VisitLexComment(node *LexComment[P, R], payload P) (result R, err error)
 }
 
 // comment_singleLine
 // -- rule --
 // "//" (~"\n" any)* &("\n" | end)
 // ----
-type VisitorLexCommentSingleLine[P, R any] interface {
+type Visitor_LexCommentSingleLine[P, R any] interface {
+	VisitLexCommentSingleLine(node *LexCommentSingleLine[P, R])
+}
+type VisitorE_LexCommentSingleLine[P, R any] interface {
+	VisitLexCommentSingleLine(node *LexCommentSingleLine[P, R]) error
+}
+type VisitorP_LexCommentSingleLine[P, R any] interface {
+	VisitLexCommentSingleLine(node *LexCommentSingleLine[P, R], payload P)
+}
+type VisitorPE_LexCommentSingleLine[P, R any] interface {
+	VisitLexCommentSingleLine(node *LexCommentSingleLine[P, R], payload P) error
+}
+type VisitorR_LexCommentSingleLine[P, R any] interface {
+	VisitLexCommentSingleLine(node *LexCommentSingleLine[P, R]) (result R)
+}
+type VisitorRE_LexCommentSingleLine[P, R any] interface {
+	VisitLexCommentSingleLine(node *LexCommentSingleLine[P, R]) (result R, err error)
+}
+type VisitorPR_LexCommentSingleLine[P, R any] interface {
 	VisitLexCommentSingleLine(node *LexCommentSingleLine[P, R], payload P) (result R)
+}
+type VisitorPRE_LexCommentSingleLine[P, R any] interface {
+	VisitLexCommentSingleLine(node *LexCommentSingleLine[P, R], payload P) (result R, err error)
 }
 
 // comment_multiLine
 // -- rule --
 // "/*" (~"*/" any)* "*/"
 // ----
-type VisitorLexCommentMultiLine[P, R any] interface {
+type Visitor_LexCommentMultiLine[P, R any] interface {
+	VisitLexCommentMultiLine(node *LexCommentMultiLine[P, R])
+}
+type VisitorE_LexCommentMultiLine[P, R any] interface {
+	VisitLexCommentMultiLine(node *LexCommentMultiLine[P, R]) error
+}
+type VisitorP_LexCommentMultiLine[P, R any] interface {
+	VisitLexCommentMultiLine(node *LexCommentMultiLine[P, R], payload P)
+}
+type VisitorPE_LexCommentMultiLine[P, R any] interface {
+	VisitLexCommentMultiLine(node *LexCommentMultiLine[P, R], payload P) error
+}
+type VisitorR_LexCommentMultiLine[P, R any] interface {
+	VisitLexCommentMultiLine(node *LexCommentMultiLine[P, R]) (result R)
+}
+type VisitorRE_LexCommentMultiLine[P, R any] interface {
+	VisitLexCommentMultiLine(node *LexCommentMultiLine[P, R]) (result R, err error)
+}
+type VisitorPR_LexCommentMultiLine[P, R any] interface {
 	VisitLexCommentMultiLine(node *LexCommentMultiLine[P, R], payload P) (result R)
+}
+type VisitorPRE_LexCommentMultiLine[P, R any] interface {
+	VisitLexCommentMultiLine(node *LexCommentMultiLine[P, R], payload P) (result R, err error)
 }
 
 // tokens
 // -- rule --
 // tokens = token*
 // ----
-type VisitorLexTokens[P, R any] interface {
+type Visitor_LexTokens[P, R any] interface {
+	VisitLexTokens(node *LexTokens[P, R])
+}
+type VisitorE_LexTokens[P, R any] interface {
+	VisitLexTokens(node *LexTokens[P, R]) error
+}
+type VisitorP_LexTokens[P, R any] interface {
+	VisitLexTokens(node *LexTokens[P, R], payload P)
+}
+type VisitorPE_LexTokens[P, R any] interface {
+	VisitLexTokens(node *LexTokens[P, R], payload P) error
+}
+type VisitorR_LexTokens[P, R any] interface {
+	VisitLexTokens(node *LexTokens[P, R]) (result R)
+}
+type VisitorRE_LexTokens[P, R any] interface {
+	VisitLexTokens(node *LexTokens[P, R]) (result R, err error)
+}
+type VisitorPR_LexTokens[P, R any] interface {
 	VisitLexTokens(node *LexTokens[P, R], payload P) (result R)
+}
+type VisitorPRE_LexTokens[P, R any] interface {
+	VisitLexTokens(node *LexTokens[P, R], payload P) (result R, err error)
 }
 
 // token
 // -- rule --
 // token = caseName | comment | ident | operator | punctuation | terminal | any
 // ----
-type VisitorLexToken[P, R any] interface {
+type Visitor_LexToken[P, R any] interface {
+	VisitLexToken(node *LexToken[P, R])
+}
+type VisitorE_LexToken[P, R any] interface {
+	VisitLexToken(node *LexToken[P, R]) error
+}
+type VisitorP_LexToken[P, R any] interface {
+	VisitLexToken(node *LexToken[P, R], payload P)
+}
+type VisitorPE_LexToken[P, R any] interface {
+	VisitLexToken(node *LexToken[P, R], payload P) error
+}
+type VisitorR_LexToken[P, R any] interface {
+	VisitLexToken(node *LexToken[P, R]) (result R)
+}
+type VisitorRE_LexToken[P, R any] interface {
+	VisitLexToken(node *LexToken[P, R]) (result R, err error)
+}
+type VisitorPR_LexToken[P, R any] interface {
 	VisitLexToken(node *LexToken[P, R], payload P) (result R)
+}
+type VisitorPRE_LexToken[P, R any] interface {
+	VisitLexToken(node *LexToken[P, R], payload P) (result R, err error)
 }
 
 // operator
 // -- rule --
 // operator = "<:" | "=" | ":=" | "+=" | "*" | "+" | "?" | "~" | "&"
 // ----
-type VisitorLexOperator[P, R any] interface {
+type Visitor_LexOperator[P, R any] interface {
+	VisitLexOperator(node *LexOperator[P, R])
+}
+type VisitorE_LexOperator[P, R any] interface {
+	VisitLexOperator(node *LexOperator[P, R]) error
+}
+type VisitorP_LexOperator[P, R any] interface {
+	VisitLexOperator(node *LexOperator[P, R], payload P)
+}
+type VisitorPE_LexOperator[P, R any] interface {
+	VisitLexOperator(node *LexOperator[P, R], payload P) error
+}
+type VisitorR_LexOperator[P, R any] interface {
+	VisitLexOperator(node *LexOperator[P, R]) (result R)
+}
+type VisitorRE_LexOperator[P, R any] interface {
+	VisitLexOperator(node *LexOperator[P, R]) (result R, err error)
+}
+type VisitorPR_LexOperator[P, R any] interface {
 	VisitLexOperator(node *LexOperator[P, R], payload P) (result R)
+}
+type VisitorPRE_LexOperator[P, R any] interface {
+	VisitLexOperator(node *LexOperator[P, R], payload P) (result R, err error)
 }
 
 // punctuation
 // -- rule --
 // punctuation = "<" | ">" | "," | "--"
 // ----
-type VisitorLexPunctuation[P, R any] interface {
+type Visitor_LexPunctuation[P, R any] interface {
+	VisitLexPunctuation(node *LexPunctuation[P, R])
+}
+type VisitorE_LexPunctuation[P, R any] interface {
+	VisitLexPunctuation(node *LexPunctuation[P, R]) error
+}
+type VisitorP_LexPunctuation[P, R any] interface {
+	VisitLexPunctuation(node *LexPunctuation[P, R], payload P)
+}
+type VisitorPE_LexPunctuation[P, R any] interface {
+	VisitLexPunctuation(node *LexPunctuation[P, R], payload P) error
+}
+type VisitorR_LexPunctuation[P, R any] interface {
+	VisitLexPunctuation(node *LexPunctuation[P, R]) (result R)
+}
+type VisitorRE_LexPunctuation[P, R any] interface {
+	VisitLexPunctuation(node *LexPunctuation[P, R]) (result R, err error)
+}
+type VisitorPR_LexPunctuation[P, R any] interface {
 	VisitLexPunctuation(node *LexPunctuation[P, R], payload P) (result R)
+}
+type VisitorPRE_LexPunctuation[P, R any] interface {
+	VisitLexPunctuation(node *LexPunctuation[P, R], payload P) (result R, err error)
 }
 

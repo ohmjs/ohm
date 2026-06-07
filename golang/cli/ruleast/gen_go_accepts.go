@@ -149,12 +149,41 @@ func (gmr GrammarNode) GenGoAccepts(vc *genAcceptsCmd) {
 				line,
 			)
 		}
-		vc.outf(`func (node *%[1]s[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+		vc.outf(`func (node *%[1]s[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	%[2]s.AssertName(this, "%[3]s")
-	if v, ok := visitor.(Visitor%[1]s[P, R]); ok {
-		return v.Visit%[1]s(node, payload)
+	if v, ok := visitor.(Visitor_%[1]s[P, R]); ok {
+		v.Visit%[1]s(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_%[1]s[P, R]); ok {
+		err = v.Visit%[1]s(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_%[1]s[P, R]); ok {
+		v.Visit%[1]s(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_%[1]s[P, R]); ok {
+		err = v.Visit%[1]s(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_%[1]s[P, R]); ok {
+		result = v.Visit%[1]s(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_%[1]s[P, R]); ok {
+		result, err = v.Visit%[1]s(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_%[1]s[P, R]); ok {
+		result = v.Visit%[1]s(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_%[1]s[P, R]); ok {
+		result, err = v.Visit%[1]s(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "%[1]s")
 	return node.DefaultAccept(visitor, payload)
 }
 
@@ -174,7 +203,7 @@ func (node VirtRuleNode) GenGoAccepts(vc *genAcceptsCmd, gmr_name string) {
 }
 
 func (node BareRuleNode) GenGoAccepts(vc *genAcceptsCmd, gmr_name string) {
-	vc.outf(`func (node *%[1]s[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+	vc.outf(`func (node *%[1]s[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 `,
 		node.TypeName(),
 	)
@@ -183,7 +212,7 @@ func (node BareRuleNode) GenGoAccepts(vc *genAcceptsCmd, gmr_name string) {
 	})
 	for _, arg := range node.Args {
 		padding := strings.Repeat(" ", len(longest.Name)-len(arg.Name))
-		vc.outf(`	result = node.Accept%[1]s(visitor, payload)
+		vc.outf(`	result, err =node.Accept%[1]s(visitor, payload)
 `,
 			r2name(arg.Name),
 			padding,
@@ -195,7 +224,7 @@ func (node BareRuleNode) GenGoAccepts(vc *genAcceptsCmd, gmr_name string) {
 
 `)
 	for _, arg := range node.Args {
-		vc.outf(`func (node *%[1]s[P, R]) Accept%[2]s(visitor any, payload P) (result R) {
+		vc.outf(`func (node *%[1]s[P, R]) Accept%[2]s(visitor any, payload P) (result R, err error) {
 `,
 			node.TypeName(),
 			r2name(arg.Name),
@@ -209,7 +238,7 @@ func (node BareRuleNode) GenGoAccepts(vc *genAcceptsCmd, gmr_name string) {
 }
 
 func (node CasesRuleNode) GenGoAccepts(vc *genAcceptsCmd, gmr_name string) {
-	vc.outf(`func (node *%[1]s[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+	vc.outf(`func (node *%[1]s[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 	switch node.Node.CtorName() {
 	case "%[1]s":
 		return (&%[1]s[P, R]{
@@ -321,7 +350,7 @@ func (n NontNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name stri
 		return
 	}
 	vc.outf(`	kids := node.%[1]s.Children()
-	result = (&%[2]s[P, R]{
+	result, err = (&%[2]s[P, R]{
 `,
 		upper1st(name),
 		rule.GetBranch().TypeName(),
@@ -378,7 +407,7 @@ func (n ListNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name stri
 				rule,
 				func(bare_rule BareRuleNode) any {
 					vc.outf(`		kids := n.Children()
-		result = (&%[1]s[P, R]{
+		result, err = (&%[1]s[P, R]{
 `,
 						bare_rule.TypeName(),
 					)
@@ -393,7 +422,7 @@ func (n ListNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name stri
 					panic("shouldn't get here")
 				},
 				func(case_rule CasesRuleNode) any {
-					vc.outf(`		result = (&%[1]s[P, R]{
+					vc.outf(`		result, err =(&%[1]s[P, R]{
 			Node: n,
 				}).Accept(n, visitor, payload)
 `,
@@ -474,7 +503,7 @@ func (n OptNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name strin
 				rule,
 				func(bare_rule BareRuleNode) any {
 					vc.outf(`		kids := n.Children()
-		result = (&%[1]s[P, R]{
+		result, err =(&%[1]s[P, R]{
 `,
 						bare_rule.TypeName(),
 					)
@@ -489,7 +518,7 @@ func (n OptNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name strin
 					panic("shouldn't get here")
 				},
 				func(case_rule CasesRuleNode) any {
-					vc.outf(`		result = (&%[1]s[P, R]{
+					vc.outf(`		result, err =(&%[1]s[P, R]{
 			Node: n,
 				}).Accept(n, visitor, payload)
 `,
@@ -577,7 +606,7 @@ func (rulenode NontNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, f
 	}
 	vc.outf(`	%[1]s := func(n %[2]s.Node) (result R) {
 		kids := n.Children()
-		result = (&%[3]s[P, R]{
+		result, err =(&%[3]s[P, R]{
 `,
 		fname,
 		vc.GenCmd.GoRuntimePackage,

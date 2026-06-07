@@ -13,24 +13,53 @@ import (
 //
 // Grammars
 // = Grammar*
-func (node *Grammars[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Grammars[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Grammars")
-	if v, ok := visitor.(VisitorGrammars[P, R]); ok {
-		return v.VisitGrammars(node, payload)
+	if v, ok := visitor.(Visitor_Grammars[P, R]); ok {
+		v.VisitGrammars(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Grammars[P, R]); ok {
+		err = v.VisitGrammars(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Grammars[P, R]); ok {
+		v.VisitGrammars(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Grammars[P, R]); ok {
+		err = v.VisitGrammars(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Grammars[P, R]); ok {
+		result = v.VisitGrammars(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Grammars[P, R]); ok {
+		result, err = v.VisitGrammars(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Grammars[P, R]); ok {
+		result = v.VisitGrammars(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Grammars[P, R]); ok {
+		result, err = v.VisitGrammars(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Grammars")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Grammars[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptGrammar(visitor, payload)
+func (node *Grammars[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptGrammar(visitor, payload)
 	return
 }
 
-func (node *Grammars[P, R]) AcceptGrammar(visitor any, payload P) (result R) {
+func (node *Grammars[P, R]) AcceptGrammar(visitor any, payload P) (result R, err error) {
 	for _, n := range node.Grammar.Children() {
 		kids := n.Children()
-		result = (&Grammar[P, R]{
+		result, err = (&Grammar[P, R]{
 			Ident:        kids[0].(goohm.RuleNode),
 			SuperGrammar: kids[1].(goohm.OptNode),
 			Term1:        kids[2].(goohm.TerminalNode),
@@ -45,39 +74,68 @@ func (node *Grammars[P, R]) AcceptGrammar(visitor any, payload P) (result R) {
 //
 // Grammar
 // = ident SuperGrammar? "{" Rule* "}"
-func (node *Grammar[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Grammar[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Grammar")
-	if v, ok := visitor.(VisitorGrammar[P, R]); ok {
-		return v.VisitGrammar(node, payload)
+	if v, ok := visitor.(Visitor_Grammar[P, R]); ok {
+		v.VisitGrammar(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Grammar[P, R]); ok {
+		err = v.VisitGrammar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Grammar[P, R]); ok {
+		v.VisitGrammar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Grammar[P, R]); ok {
+		err = v.VisitGrammar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Grammar[P, R]); ok {
+		result = v.VisitGrammar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Grammar[P, R]); ok {
+		result, err = v.VisitGrammar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Grammar[P, R]); ok {
+		result = v.VisitGrammar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Grammar[P, R]); ok {
+		result, err = v.VisitGrammar(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Grammar")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Grammar[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexIdent(visitor, payload)
-	result = node.AcceptSuperGrammar(visitor, payload)
-	result = node.AcceptLexTerm1(visitor, payload)
-	result = node.AcceptRule(visitor, payload)
-	result = node.AcceptLexTerm2(visitor, payload)
+func (node *Grammar[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexIdent(visitor, payload)
+	result, err = node.AcceptSuperGrammar(visitor, payload)
+	result, err = node.AcceptLexTerm1(visitor, payload)
+	result, err = node.AcceptRule(visitor, payload)
+	result, err = node.AcceptLexTerm2(visitor, payload)
 	return
 }
 
-func (node *Grammar[P, R]) AcceptLexIdent(visitor any, payload P) (result R) {
+func (node *Grammar[P, R]) AcceptLexIdent(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Ident.Children()
-	result = (&LexIdent[P, R]{
+	result, err = (&LexIdent[P, R]{
 		Name: kids[0].(goohm.RuleNode),
 	}).Accept(node.Ident, visitor, payload)
 	return
 }
 
-func (node *Grammar[P, R]) AcceptSuperGrammar(visitor any, payload P) (result R) {
+func (node *Grammar[P, R]) AcceptSuperGrammar(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.SuperGrammar.Children()) > 0 {
 		n := node.SuperGrammar.Children()[0]
 		kids := n.Children()
-		result = (&SuperGrammar[P, R]{
+		result, err = (&SuperGrammar[P, R]{
 			Term:  kids[0].(goohm.TerminalNode),
 			Ident: kids[1].(goohm.RuleNode),
 		}).Accept(n, visitor, payload)
@@ -85,7 +143,7 @@ func (node *Grammar[P, R]) AcceptSuperGrammar(visitor any, payload P) (result R)
 	return
 }
 
-func (node *Grammar[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
+func (node *Grammar[P, R]) AcceptLexTerm1(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term1)
@@ -93,16 +151,16 @@ func (node *Grammar[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *Grammar[P, R]) AcceptRule(visitor any, payload P) (result R) {
+func (node *Grammar[P, R]) AcceptRule(visitor any, payload P) (result R, err error) {
 	for _, n := range node.Rule.Children() {
-		result = (&Rule[P, R]{
+		result, err = (&Rule[P, R]{
 			Node: n,
-				}).Accept(n, visitor, payload)
+		}).Accept(n, visitor, payload)
 	}
 	return
 }
 
-func (node *Grammar[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
+func (node *Grammar[P, R]) AcceptLexTerm2(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term2)
@@ -114,22 +172,51 @@ func (node *Grammar[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
 //
 // SuperGrammar
 // = "<:" ident
-func (node *SuperGrammar[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *SuperGrammar[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "SuperGrammar")
-	if v, ok := visitor.(VisitorSuperGrammar[P, R]); ok {
-		return v.VisitSuperGrammar(node, payload)
+	if v, ok := visitor.(Visitor_SuperGrammar[P, R]); ok {
+		v.VisitSuperGrammar(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_SuperGrammar[P, R]); ok {
+		err = v.VisitSuperGrammar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_SuperGrammar[P, R]); ok {
+		v.VisitSuperGrammar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_SuperGrammar[P, R]); ok {
+		err = v.VisitSuperGrammar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_SuperGrammar[P, R]); ok {
+		result = v.VisitSuperGrammar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_SuperGrammar[P, R]); ok {
+		result, err = v.VisitSuperGrammar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_SuperGrammar[P, R]); ok {
+		result = v.VisitSuperGrammar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_SuperGrammar[P, R]); ok {
+		result, err = v.VisitSuperGrammar(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "SuperGrammar")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *SuperGrammar[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptLexIdent(visitor, payload)
+func (node *SuperGrammar[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptLexIdent(visitor, payload)
 	return
 }
 
-func (node *SuperGrammar[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *SuperGrammar[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -137,10 +224,10 @@ func (node *SuperGrammar[P, R]) AcceptLexTerm(visitor any, payload P) (result R)
 	return
 }
 
-func (node *SuperGrammar[P, R]) AcceptLexIdent(visitor any, payload P) (result R) {
+func (node *SuperGrammar[P, R]) AcceptLexIdent(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Ident.Children()
-	result = (&LexIdent[P, R]{
+	result, err = (&LexIdent[P, R]{
 		Name: kids[0].(goohm.RuleNode),
 	}).Accept(node.Ident, visitor, payload)
 	return
@@ -152,16 +239,45 @@ func (node *SuperGrammar[P, R]) AcceptLexIdent(visitor any, payload P) (result R
 // = ident Formals? ruleDescr? "="  RuleBody  -- define
 // | ident Formals?            ":=" OverrideRuleBody  -- override
 // | ident Formals?            "+=" RuleBody  -- extend
-func (node *Rule[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Rule[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Rule")
-	if v, ok := visitor.(VisitorRule[P, R]); ok {
-		return v.VisitRule(node, payload)
+	if v, ok := visitor.(Visitor_Rule[P, R]); ok {
+		v.VisitRule(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Rule[P, R]); ok {
+		err = v.VisitRule(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Rule[P, R]); ok {
+		v.VisitRule(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Rule[P, R]); ok {
+		err = v.VisitRule(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Rule[P, R]); ok {
+		result = v.VisitRule(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Rule[P, R]); ok {
+		result, err = v.VisitRule(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Rule[P, R]); ok {
+		result = v.VisitRule(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Rule[P, R]); ok {
+		result, err = v.VisitRule(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Rule")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Rule[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+func (node *Rule[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 	switch node.Node.CtorName() {
 	case "Rule":
 		return (&Rule[P, R]{
@@ -200,39 +316,68 @@ func (node *Rule[P, R]) DefaultAccept(visitor any, payload P) (result R) {
 // Accept implementation for Rule_define
 //
 // ident Formals? ruleDescr? "="  RuleBody
-func (node *RuleDefine[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *RuleDefine[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Rule_define")
-	if v, ok := visitor.(VisitorRuleDefine[P, R]); ok {
-		return v.VisitRuleDefine(node, payload)
+	if v, ok := visitor.(Visitor_RuleDefine[P, R]); ok {
+		v.VisitRuleDefine(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_RuleDefine[P, R]); ok {
+		err = v.VisitRuleDefine(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_RuleDefine[P, R]); ok {
+		v.VisitRuleDefine(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_RuleDefine[P, R]); ok {
+		err = v.VisitRuleDefine(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_RuleDefine[P, R]); ok {
+		result = v.VisitRuleDefine(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_RuleDefine[P, R]); ok {
+		result, err = v.VisitRuleDefine(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_RuleDefine[P, R]); ok {
+		result = v.VisitRuleDefine(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_RuleDefine[P, R]); ok {
+		result, err = v.VisitRuleDefine(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "RuleDefine")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *RuleDefine[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexIdent(visitor, payload)
-	result = node.AcceptFormals(visitor, payload)
-	result = node.AcceptLexRuleDescr(visitor, payload)
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptRuleBody(visitor, payload)
+func (node *RuleDefine[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexIdent(visitor, payload)
+	result, err = node.AcceptFormals(visitor, payload)
+	result, err = node.AcceptLexRuleDescr(visitor, payload)
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptRuleBody(visitor, payload)
 	return
 }
 
-func (node *RuleDefine[P, R]) AcceptLexIdent(visitor any, payload P) (result R) {
+func (node *RuleDefine[P, R]) AcceptLexIdent(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Ident.Children()
-	result = (&LexIdent[P, R]{
+	result, err = (&LexIdent[P, R]{
 		Name: kids[0].(goohm.RuleNode),
 	}).Accept(node.Ident, visitor, payload)
 	return
 }
 
-func (node *RuleDefine[P, R]) AcceptFormals(visitor any, payload P) (result R) {
+func (node *RuleDefine[P, R]) AcceptFormals(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.Formals.Children()) > 0 {
 		n := node.Formals.Children()[0]
 		kids := n.Children()
-		result = (&Formals[P, R]{
+		result, err = (&Formals[P, R]{
 			Term1:  kids[0].(goohm.TerminalNode),
 			ListOf: kids[1].(goohm.BHorNode),
 			Term2:  kids[2].(goohm.TerminalNode),
@@ -241,12 +386,12 @@ func (node *RuleDefine[P, R]) AcceptFormals(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *RuleDefine[P, R]) AcceptLexRuleDescr(visitor any, payload P) (result R) {
+func (node *RuleDefine[P, R]) AcceptLexRuleDescr(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.RuleDescr.Children()) > 0 {
 		n := node.RuleDescr.Children()[0]
 		kids := n.Children()
-		result = (&LexRuleDescr[P, R]{
+		result, err = (&LexRuleDescr[P, R]{
 			Term1:         kids[0].(goohm.TerminalNode),
 			RuleDescrText: kids[1].(goohm.RuleNode),
 			Term2:         kids[2].(goohm.TerminalNode),
@@ -255,7 +400,7 @@ func (node *RuleDefine[P, R]) AcceptLexRuleDescr(visitor any, payload P) (result
 	return
 }
 
-func (node *RuleDefine[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *RuleDefine[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -263,10 +408,10 @@ func (node *RuleDefine[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *RuleDefine[P, R]) AcceptRuleBody(visitor any, payload P) (result R) {
+func (node *RuleDefine[P, R]) AcceptRuleBody(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.RuleBody.Children()
-	result = (&RuleBody[P, R]{
+	result, err = (&RuleBody[P, R]{
 		Term:           kids[0].(goohm.OptNode),
 		NonemptyListOf: kids[1].(goohm.BHorNode),
 	}).Accept(node.RuleBody, visitor, payload)
@@ -276,38 +421,67 @@ func (node *RuleDefine[P, R]) AcceptRuleBody(visitor any, payload P) (result R) 
 // Accept implementation for Rule_override
 //
 // ident Formals?            ":=" OverrideRuleBody
-func (node *RuleOverride[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *RuleOverride[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Rule_override")
-	if v, ok := visitor.(VisitorRuleOverride[P, R]); ok {
-		return v.VisitRuleOverride(node, payload)
+	if v, ok := visitor.(Visitor_RuleOverride[P, R]); ok {
+		v.VisitRuleOverride(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_RuleOverride[P, R]); ok {
+		err = v.VisitRuleOverride(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_RuleOverride[P, R]); ok {
+		v.VisitRuleOverride(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_RuleOverride[P, R]); ok {
+		err = v.VisitRuleOverride(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_RuleOverride[P, R]); ok {
+		result = v.VisitRuleOverride(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_RuleOverride[P, R]); ok {
+		result, err = v.VisitRuleOverride(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_RuleOverride[P, R]); ok {
+		result = v.VisitRuleOverride(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_RuleOverride[P, R]); ok {
+		result, err = v.VisitRuleOverride(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "RuleOverride")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *RuleOverride[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexIdent(visitor, payload)
-	result = node.AcceptFormals(visitor, payload)
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptOverrideRuleBody(visitor, payload)
+func (node *RuleOverride[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexIdent(visitor, payload)
+	result, err = node.AcceptFormals(visitor, payload)
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptOverrideRuleBody(visitor, payload)
 	return
 }
 
-func (node *RuleOverride[P, R]) AcceptLexIdent(visitor any, payload P) (result R) {
+func (node *RuleOverride[P, R]) AcceptLexIdent(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Ident.Children()
-	result = (&LexIdent[P, R]{
+	result, err = (&LexIdent[P, R]{
 		Name: kids[0].(goohm.RuleNode),
 	}).Accept(node.Ident, visitor, payload)
 	return
 }
 
-func (node *RuleOverride[P, R]) AcceptFormals(visitor any, payload P) (result R) {
+func (node *RuleOverride[P, R]) AcceptFormals(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.Formals.Children()) > 0 {
 		n := node.Formals.Children()[0]
 		kids := n.Children()
-		result = (&Formals[P, R]{
+		result, err = (&Formals[P, R]{
 			Term1:  kids[0].(goohm.TerminalNode),
 			ListOf: kids[1].(goohm.BHorNode),
 			Term2:  kids[2].(goohm.TerminalNode),
@@ -316,7 +490,7 @@ func (node *RuleOverride[P, R]) AcceptFormals(visitor any, payload P) (result R)
 	return
 }
 
-func (node *RuleOverride[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *RuleOverride[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -324,10 +498,10 @@ func (node *RuleOverride[P, R]) AcceptLexTerm(visitor any, payload P) (result R)
 	return
 }
 
-func (node *RuleOverride[P, R]) AcceptOverrideRuleBody(visitor any, payload P) (result R) {
+func (node *RuleOverride[P, R]) AcceptOverrideRuleBody(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.OverrideRuleBody.Children()
-	result = (&OverrideRuleBody[P, R]{
+	result, err = (&OverrideRuleBody[P, R]{
 		Term:           kids[0].(goohm.OptNode),
 		NonemptyListOf: kids[1].(goohm.BHorNode),
 	}).Accept(node.OverrideRuleBody, visitor, payload)
@@ -337,38 +511,67 @@ func (node *RuleOverride[P, R]) AcceptOverrideRuleBody(visitor any, payload P) (
 // Accept implementation for Rule_extend
 //
 // ident Formals?            "+=" RuleBody
-func (node *RuleExtend[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *RuleExtend[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Rule_extend")
-	if v, ok := visitor.(VisitorRuleExtend[P, R]); ok {
-		return v.VisitRuleExtend(node, payload)
+	if v, ok := visitor.(Visitor_RuleExtend[P, R]); ok {
+		v.VisitRuleExtend(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_RuleExtend[P, R]); ok {
+		err = v.VisitRuleExtend(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_RuleExtend[P, R]); ok {
+		v.VisitRuleExtend(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_RuleExtend[P, R]); ok {
+		err = v.VisitRuleExtend(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_RuleExtend[P, R]); ok {
+		result = v.VisitRuleExtend(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_RuleExtend[P, R]); ok {
+		result, err = v.VisitRuleExtend(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_RuleExtend[P, R]); ok {
+		result = v.VisitRuleExtend(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_RuleExtend[P, R]); ok {
+		result, err = v.VisitRuleExtend(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "RuleExtend")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *RuleExtend[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexIdent(visitor, payload)
-	result = node.AcceptFormals(visitor, payload)
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptRuleBody(visitor, payload)
+func (node *RuleExtend[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexIdent(visitor, payload)
+	result, err = node.AcceptFormals(visitor, payload)
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptRuleBody(visitor, payload)
 	return
 }
 
-func (node *RuleExtend[P, R]) AcceptLexIdent(visitor any, payload P) (result R) {
+func (node *RuleExtend[P, R]) AcceptLexIdent(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Ident.Children()
-	result = (&LexIdent[P, R]{
+	result, err = (&LexIdent[P, R]{
 		Name: kids[0].(goohm.RuleNode),
 	}).Accept(node.Ident, visitor, payload)
 	return
 }
 
-func (node *RuleExtend[P, R]) AcceptFormals(visitor any, payload P) (result R) {
+func (node *RuleExtend[P, R]) AcceptFormals(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.Formals.Children()) > 0 {
 		n := node.Formals.Children()[0]
 		kids := n.Children()
-		result = (&Formals[P, R]{
+		result, err = (&Formals[P, R]{
 			Term1:  kids[0].(goohm.TerminalNode),
 			ListOf: kids[1].(goohm.BHorNode),
 			Term2:  kids[2].(goohm.TerminalNode),
@@ -377,7 +580,7 @@ func (node *RuleExtend[P, R]) AcceptFormals(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *RuleExtend[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *RuleExtend[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -385,10 +588,10 @@ func (node *RuleExtend[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *RuleExtend[P, R]) AcceptRuleBody(visitor any, payload P) (result R) {
+func (node *RuleExtend[P, R]) AcceptRuleBody(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.RuleBody.Children()
-	result = (&RuleBody[P, R]{
+	result, err = (&RuleBody[P, R]{
 		Term:           kids[0].(goohm.OptNode),
 		NonemptyListOf: kids[1].(goohm.BHorNode),
 	}).Accept(node.RuleBody, visitor, payload)
@@ -399,22 +602,51 @@ func (node *RuleExtend[P, R]) AcceptRuleBody(visitor any, payload P) (result R) 
 //
 // RuleBody
 // = "|"? NonemptyListOf<TopLevelTerm, "|">
-func (node *RuleBody[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *RuleBody[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "RuleBody")
-	if v, ok := visitor.(VisitorRuleBody[P, R]); ok {
-		return v.VisitRuleBody(node, payload)
+	if v, ok := visitor.(Visitor_RuleBody[P, R]); ok {
+		v.VisitRuleBody(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_RuleBody[P, R]); ok {
+		err = v.VisitRuleBody(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_RuleBody[P, R]); ok {
+		v.VisitRuleBody(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_RuleBody[P, R]); ok {
+		err = v.VisitRuleBody(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_RuleBody[P, R]); ok {
+		result = v.VisitRuleBody(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_RuleBody[P, R]); ok {
+		result, err = v.VisitRuleBody(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_RuleBody[P, R]); ok {
+		result = v.VisitRuleBody(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_RuleBody[P, R]); ok {
+		result, err = v.VisitRuleBody(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "RuleBody")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *RuleBody[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptNonemptyListOf(visitor, payload)
+func (node *RuleBody[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptNonemptyListOf(visitor, payload)
 	return
 }
 
-func (node *RuleBody[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *RuleBody[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.Term.Children()) > 0 {
 		n := node.Term.Children()[0]
@@ -425,12 +657,12 @@ func (node *RuleBody[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *RuleBody[P, R]) AcceptNonemptyListOf(visitor any, payload P) (result R) {
+func (node *RuleBody[P, R]) AcceptNonemptyListOf(visitor any, payload P) (result R, err error) {
 	// BuiltinHOR
 	// TopLevelTerm
 	fn_elem := func(n goohm.Node) (result R) {
 		kids := n.Children()
-		result = (&TopLevelTerm[P, R]{
+		result, err = (&TopLevelTerm[P, R]{
 			Node: kids[0],
 		}).Accept(n, visitor, payload)
 		return
@@ -450,16 +682,45 @@ func (node *RuleBody[P, R]) AcceptNonemptyListOf(visitor any, payload P) (result
 // TopLevelTerm
 // = Seq caseName  -- inline
 // | Seq
-func (node *TopLevelTerm[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *TopLevelTerm[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "TopLevelTerm")
-	if v, ok := visitor.(VisitorTopLevelTerm[P, R]); ok {
-		return v.VisitTopLevelTerm(node, payload)
+	if v, ok := visitor.(Visitor_TopLevelTerm[P, R]); ok {
+		v.VisitTopLevelTerm(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_TopLevelTerm[P, R]); ok {
+		err = v.VisitTopLevelTerm(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_TopLevelTerm[P, R]); ok {
+		v.VisitTopLevelTerm(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_TopLevelTerm[P, R]); ok {
+		err = v.VisitTopLevelTerm(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_TopLevelTerm[P, R]); ok {
+		result = v.VisitTopLevelTerm(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_TopLevelTerm[P, R]); ok {
+		result, err = v.VisitTopLevelTerm(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_TopLevelTerm[P, R]); ok {
+		result = v.VisitTopLevelTerm(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_TopLevelTerm[P, R]); ok {
+		result, err = v.VisitTopLevelTerm(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "TopLevelTerm")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *TopLevelTerm[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+func (node *TopLevelTerm[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 	switch node.Node.CtorName() {
 	case "TopLevelTerm":
 		return (&TopLevelTerm[P, R]{
@@ -484,34 +745,63 @@ func (node *TopLevelTerm[P, R]) DefaultAccept(visitor any, payload P) (result R)
 // Accept implementation for TopLevelTerm_inline
 //
 // Seq caseName
-func (node *TopLevelTermInline[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *TopLevelTermInline[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "TopLevelTerm_inline")
-	if v, ok := visitor.(VisitorTopLevelTermInline[P, R]); ok {
-		return v.VisitTopLevelTermInline(node, payload)
+	if v, ok := visitor.(Visitor_TopLevelTermInline[P, R]); ok {
+		v.VisitTopLevelTermInline(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_TopLevelTermInline[P, R]); ok {
+		err = v.VisitTopLevelTermInline(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_TopLevelTermInline[P, R]); ok {
+		v.VisitTopLevelTermInline(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_TopLevelTermInline[P, R]); ok {
+		err = v.VisitTopLevelTermInline(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_TopLevelTermInline[P, R]); ok {
+		result = v.VisitTopLevelTermInline(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_TopLevelTermInline[P, R]); ok {
+		result, err = v.VisitTopLevelTermInline(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_TopLevelTermInline[P, R]); ok {
+		result = v.VisitTopLevelTermInline(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_TopLevelTermInline[P, R]); ok {
+		result, err = v.VisitTopLevelTermInline(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "TopLevelTermInline")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *TopLevelTermInline[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptSeq(visitor, payload)
-	result = node.AcceptLexCaseName(visitor, payload)
+func (node *TopLevelTermInline[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptSeq(visitor, payload)
+	result, err = node.AcceptLexCaseName(visitor, payload)
 	return
 }
 
-func (node *TopLevelTermInline[P, R]) AcceptSeq(visitor any, payload P) (result R) {
+func (node *TopLevelTermInline[P, R]) AcceptSeq(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Seq.Children()
-	result = (&Seq[P, R]{
+	result, err = (&Seq[P, R]{
 		Iter: kids[0].(goohm.ListNode),
 	}).Accept(node.Seq, visitor, payload)
 	return
 }
 
-func (node *TopLevelTermInline[P, R]) AcceptLexCaseName(visitor any, payload P) (result R) {
+func (node *TopLevelTermInline[P, R]) AcceptLexCaseName(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.CaseName.Children()
-	result = (&LexCaseName[P, R]{
+	result, err = (&LexCaseName[P, R]{
 		Term: kids[0].(goohm.TerminalNode),
 		Alt1: kids[1].(goohm.ListNode),
 		Name: kids[2].(goohm.RuleNode),
@@ -525,22 +815,51 @@ func (node *TopLevelTermInline[P, R]) AcceptLexCaseName(visitor any, payload P) 
 //
 // OverrideRuleBody
 // = "|"? NonemptyListOf<OverrideTopLevelTerm, "|">
-func (node *OverrideRuleBody[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *OverrideRuleBody[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "OverrideRuleBody")
-	if v, ok := visitor.(VisitorOverrideRuleBody[P, R]); ok {
-		return v.VisitOverrideRuleBody(node, payload)
+	if v, ok := visitor.(Visitor_OverrideRuleBody[P, R]); ok {
+		v.VisitOverrideRuleBody(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_OverrideRuleBody[P, R]); ok {
+		err = v.VisitOverrideRuleBody(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_OverrideRuleBody[P, R]); ok {
+		v.VisitOverrideRuleBody(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_OverrideRuleBody[P, R]); ok {
+		err = v.VisitOverrideRuleBody(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_OverrideRuleBody[P, R]); ok {
+		result = v.VisitOverrideRuleBody(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_OverrideRuleBody[P, R]); ok {
+		result, err = v.VisitOverrideRuleBody(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_OverrideRuleBody[P, R]); ok {
+		result = v.VisitOverrideRuleBody(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_OverrideRuleBody[P, R]); ok {
+		result, err = v.VisitOverrideRuleBody(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "OverrideRuleBody")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *OverrideRuleBody[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptNonemptyListOf(visitor, payload)
+func (node *OverrideRuleBody[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptNonemptyListOf(visitor, payload)
 	return
 }
 
-func (node *OverrideRuleBody[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *OverrideRuleBody[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.Term.Children()) > 0 {
 		n := node.Term.Children()[0]
@@ -551,12 +870,12 @@ func (node *OverrideRuleBody[P, R]) AcceptLexTerm(visitor any, payload P) (resul
 	return
 }
 
-func (node *OverrideRuleBody[P, R]) AcceptNonemptyListOf(visitor any, payload P) (result R) {
+func (node *OverrideRuleBody[P, R]) AcceptNonemptyListOf(visitor any, payload P) (result R, err error) {
 	// BuiltinHOR
 	// OverrideTopLevelTerm
 	fn_elem := func(n goohm.Node) (result R) {
 		kids := n.Children()
-		result = (&OverrideTopLevelTerm[P, R]{
+		result, err = (&OverrideTopLevelTerm[P, R]{
 			Node: kids[0],
 		}).Accept(n, visitor, payload)
 		return
@@ -576,16 +895,45 @@ func (node *OverrideRuleBody[P, R]) AcceptNonemptyListOf(visitor any, payload P)
 // OverrideTopLevelTerm
 // = "..."  -- superSplice
 // | TopLevelTerm
-func (node *OverrideTopLevelTerm[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *OverrideTopLevelTerm[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "OverrideTopLevelTerm")
-	if v, ok := visitor.(VisitorOverrideTopLevelTerm[P, R]); ok {
-		return v.VisitOverrideTopLevelTerm(node, payload)
+	if v, ok := visitor.(Visitor_OverrideTopLevelTerm[P, R]); ok {
+		v.VisitOverrideTopLevelTerm(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_OverrideTopLevelTerm[P, R]); ok {
+		err = v.VisitOverrideTopLevelTerm(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_OverrideTopLevelTerm[P, R]); ok {
+		v.VisitOverrideTopLevelTerm(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_OverrideTopLevelTerm[P, R]); ok {
+		err = v.VisitOverrideTopLevelTerm(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_OverrideTopLevelTerm[P, R]); ok {
+		result = v.VisitOverrideTopLevelTerm(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_OverrideTopLevelTerm[P, R]); ok {
+		result, err = v.VisitOverrideTopLevelTerm(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_OverrideTopLevelTerm[P, R]); ok {
+		result = v.VisitOverrideTopLevelTerm(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_OverrideTopLevelTerm[P, R]); ok {
+		result, err = v.VisitOverrideTopLevelTerm(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "OverrideTopLevelTerm")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *OverrideTopLevelTerm[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+func (node *OverrideTopLevelTerm[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 	switch node.Node.CtorName() {
 	case "OverrideTopLevelTerm":
 		return (&OverrideTopLevelTerm[P, R]{
@@ -609,21 +957,50 @@ func (node *OverrideTopLevelTerm[P, R]) DefaultAccept(visitor any, payload P) (r
 // Accept implementation for OverrideTopLevelTerm_superSplice
 //
 // "..."
-func (node *OverrideTopLevelTermSuperSplice[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *OverrideTopLevelTermSuperSplice[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "OverrideTopLevelTerm_superSplice")
-	if v, ok := visitor.(VisitorOverrideTopLevelTermSuperSplice[P, R]); ok {
-		return v.VisitOverrideTopLevelTermSuperSplice(node, payload)
+	if v, ok := visitor.(Visitor_OverrideTopLevelTermSuperSplice[P, R]); ok {
+		v.VisitOverrideTopLevelTermSuperSplice(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_OverrideTopLevelTermSuperSplice[P, R]); ok {
+		err = v.VisitOverrideTopLevelTermSuperSplice(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_OverrideTopLevelTermSuperSplice[P, R]); ok {
+		v.VisitOverrideTopLevelTermSuperSplice(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_OverrideTopLevelTermSuperSplice[P, R]); ok {
+		err = v.VisitOverrideTopLevelTermSuperSplice(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_OverrideTopLevelTermSuperSplice[P, R]); ok {
+		result = v.VisitOverrideTopLevelTermSuperSplice(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_OverrideTopLevelTermSuperSplice[P, R]); ok {
+		result, err = v.VisitOverrideTopLevelTermSuperSplice(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_OverrideTopLevelTermSuperSplice[P, R]); ok {
+		result = v.VisitOverrideTopLevelTermSuperSplice(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_OverrideTopLevelTermSuperSplice[P, R]); ok {
+		result, err = v.VisitOverrideTopLevelTermSuperSplice(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "OverrideTopLevelTermSuperSplice")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *OverrideTopLevelTermSuperSplice[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *OverrideTopLevelTermSuperSplice[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *OverrideTopLevelTermSuperSplice[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *OverrideTopLevelTermSuperSplice[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -635,23 +1012,52 @@ func (node *OverrideTopLevelTermSuperSplice[P, R]) AcceptLexTerm(visitor any, pa
 //
 // Formals
 // = "<" ListOf<ident, ","> ">"
-func (node *Formals[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Formals[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Formals")
-	if v, ok := visitor.(VisitorFormals[P, R]); ok {
-		return v.VisitFormals(node, payload)
+	if v, ok := visitor.(Visitor_Formals[P, R]); ok {
+		v.VisitFormals(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Formals[P, R]); ok {
+		err = v.VisitFormals(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Formals[P, R]); ok {
+		v.VisitFormals(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Formals[P, R]); ok {
+		err = v.VisitFormals(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Formals[P, R]); ok {
+		result = v.VisitFormals(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Formals[P, R]); ok {
+		result, err = v.VisitFormals(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Formals[P, R]); ok {
+		result = v.VisitFormals(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Formals[P, R]); ok {
+		result, err = v.VisitFormals(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Formals")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Formals[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm1(visitor, payload)
-	result = node.AcceptListOf(visitor, payload)
-	result = node.AcceptLexTerm2(visitor, payload)
+func (node *Formals[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm1(visitor, payload)
+	result, err = node.AcceptListOf(visitor, payload)
+	result, err = node.AcceptLexTerm2(visitor, payload)
 	return
 }
 
-func (node *Formals[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
+func (node *Formals[P, R]) AcceptLexTerm1(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term1)
@@ -659,12 +1065,12 @@ func (node *Formals[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *Formals[P, R]) AcceptListOf(visitor any, payload P) (result R) {
+func (node *Formals[P, R]) AcceptListOf(visitor any, payload P) (result R, err error) {
 	// BuiltinHOR
 	// ident
 	fn_elem := func(n goohm.Node) (result R) {
 		kids := n.Children()
-		result = (&LexIdent[P, R]{
+		result, err = (&LexIdent[P, R]{
 			Name: kids[0].(goohm.RuleNode),
 		}).Accept(n, visitor, payload)
 		return
@@ -679,7 +1085,7 @@ func (node *Formals[P, R]) AcceptListOf(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *Formals[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
+func (node *Formals[P, R]) AcceptLexTerm2(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term2)
@@ -691,23 +1097,52 @@ func (node *Formals[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
 //
 // Params
 // = "<" ListOf<Seq, ","> ">"
-func (node *Params[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Params[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Params")
-	if v, ok := visitor.(VisitorParams[P, R]); ok {
-		return v.VisitParams(node, payload)
+	if v, ok := visitor.(Visitor_Params[P, R]); ok {
+		v.VisitParams(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Params[P, R]); ok {
+		err = v.VisitParams(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Params[P, R]); ok {
+		v.VisitParams(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Params[P, R]); ok {
+		err = v.VisitParams(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Params[P, R]); ok {
+		result = v.VisitParams(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Params[P, R]); ok {
+		result, err = v.VisitParams(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Params[P, R]); ok {
+		result = v.VisitParams(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Params[P, R]); ok {
+		result, err = v.VisitParams(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Params")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Params[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm1(visitor, payload)
-	result = node.AcceptListOf(visitor, payload)
-	result = node.AcceptLexTerm2(visitor, payload)
+func (node *Params[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm1(visitor, payload)
+	result, err = node.AcceptListOf(visitor, payload)
+	result, err = node.AcceptLexTerm2(visitor, payload)
 	return
 }
 
-func (node *Params[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
+func (node *Params[P, R]) AcceptLexTerm1(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term1)
@@ -715,12 +1150,12 @@ func (node *Params[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *Params[P, R]) AcceptListOf(visitor any, payload P) (result R) {
+func (node *Params[P, R]) AcceptListOf(visitor any, payload P) (result R, err error) {
 	// BuiltinHOR
 	// Seq
 	fn_elem := func(n goohm.Node) (result R) {
 		kids := n.Children()
-		result = (&Seq[P, R]{
+		result, err = (&Seq[P, R]{
 			Iter: kids[0].(goohm.ListNode),
 		}).Accept(n, visitor, payload)
 		return
@@ -735,7 +1170,7 @@ func (node *Params[P, R]) AcceptListOf(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *Params[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
+func (node *Params[P, R]) AcceptLexTerm2(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term2)
@@ -747,26 +1182,55 @@ func (node *Params[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
 //
 // Alt
 // = NonemptyListOf<Seq, "|">
-func (node *Alt[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Alt[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Alt")
-	if v, ok := visitor.(VisitorAlt[P, R]); ok {
-		return v.VisitAlt(node, payload)
+	if v, ok := visitor.(Visitor_Alt[P, R]); ok {
+		v.VisitAlt(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Alt[P, R]); ok {
+		err = v.VisitAlt(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Alt[P, R]); ok {
+		v.VisitAlt(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Alt[P, R]); ok {
+		err = v.VisitAlt(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Alt[P, R]); ok {
+		result = v.VisitAlt(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Alt[P, R]); ok {
+		result, err = v.VisitAlt(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Alt[P, R]); ok {
+		result = v.VisitAlt(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Alt[P, R]); ok {
+		result, err = v.VisitAlt(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Alt")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Alt[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptNonemptyListOf(visitor, payload)
+func (node *Alt[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptNonemptyListOf(visitor, payload)
 	return
 }
 
-func (node *Alt[P, R]) AcceptNonemptyListOf(visitor any, payload P) (result R) {
+func (node *Alt[P, R]) AcceptNonemptyListOf(visitor any, payload P) (result R, err error) {
 	// BuiltinHOR
 	// Seq
 	fn_elem := func(n goohm.Node) (result R) {
 		kids := n.Children()
-		result = (&Seq[P, R]{
+		result, err = (&Seq[P, R]{
 			Iter: kids[0].(goohm.ListNode),
 		}).Accept(n, visitor, payload)
 		return
@@ -785,25 +1249,54 @@ func (node *Alt[P, R]) AcceptNonemptyListOf(visitor any, payload P) (result R) {
 //
 // Seq
 // = Iter*
-func (node *Seq[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Seq[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Seq")
-	if v, ok := visitor.(VisitorSeq[P, R]); ok {
-		return v.VisitSeq(node, payload)
+	if v, ok := visitor.(Visitor_Seq[P, R]); ok {
+		v.VisitSeq(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Seq[P, R]); ok {
+		err = v.VisitSeq(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Seq[P, R]); ok {
+		v.VisitSeq(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Seq[P, R]); ok {
+		err = v.VisitSeq(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Seq[P, R]); ok {
+		result = v.VisitSeq(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Seq[P, R]); ok {
+		result, err = v.VisitSeq(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Seq[P, R]); ok {
+		result = v.VisitSeq(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Seq[P, R]); ok {
+		result, err = v.VisitSeq(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Seq")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Seq[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptIter(visitor, payload)
+func (node *Seq[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptIter(visitor, payload)
 	return
 }
 
-func (node *Seq[P, R]) AcceptIter(visitor any, payload P) (result R) {
+func (node *Seq[P, R]) AcceptIter(visitor any, payload P) (result R, err error) {
 	for _, n := range node.Iter.Children() {
-		result = (&Iter[P, R]{
+		result, err = (&Iter[P, R]{
 			Node: n,
-				}).Accept(n, visitor, payload)
+		}).Accept(n, visitor, payload)
 	}
 	return
 }
@@ -815,16 +1308,45 @@ func (node *Seq[P, R]) AcceptIter(visitor any, payload P) (result R) {
 // | Pred "+"  -- plus
 // | Pred "?"  -- opt
 // | Pred
-func (node *Iter[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Iter[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Iter")
-	if v, ok := visitor.(VisitorIter[P, R]); ok {
-		return v.VisitIter(node, payload)
+	if v, ok := visitor.(Visitor_Iter[P, R]); ok {
+		v.VisitIter(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Iter[P, R]); ok {
+		err = v.VisitIter(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Iter[P, R]); ok {
+		v.VisitIter(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Iter[P, R]); ok {
+		err = v.VisitIter(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Iter[P, R]); ok {
+		result = v.VisitIter(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Iter[P, R]); ok {
+		result, err = v.VisitIter(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Iter[P, R]); ok {
+		result = v.VisitIter(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Iter[P, R]); ok {
+		result, err = v.VisitIter(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Iter")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Iter[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+func (node *Iter[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 	switch node.Node.CtorName() {
 	case "Iter":
 		return (&Iter[P, R]{
@@ -861,31 +1383,60 @@ func (node *Iter[P, R]) DefaultAccept(visitor any, payload P) (result R) {
 // Accept implementation for Iter_star
 //
 // Pred "*"
-func (node *IterStar[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *IterStar[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Iter_star")
-	if v, ok := visitor.(VisitorIterStar[P, R]); ok {
-		return v.VisitIterStar(node, payload)
+	if v, ok := visitor.(Visitor_IterStar[P, R]); ok {
+		v.VisitIterStar(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_IterStar[P, R]); ok {
+		err = v.VisitIterStar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_IterStar[P, R]); ok {
+		v.VisitIterStar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_IterStar[P, R]); ok {
+		err = v.VisitIterStar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_IterStar[P, R]); ok {
+		result = v.VisitIterStar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_IterStar[P, R]); ok {
+		result, err = v.VisitIterStar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_IterStar[P, R]); ok {
+		result = v.VisitIterStar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_IterStar[P, R]); ok {
+		result, err = v.VisitIterStar(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "IterStar")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *IterStar[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptPred(visitor, payload)
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *IterStar[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptPred(visitor, payload)
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *IterStar[P, R]) AcceptPred(visitor any, payload P) (result R) {
+func (node *IterStar[P, R]) AcceptPred(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Pred.Children()
-	result = (&Pred[P, R]{
+	result, err = (&Pred[P, R]{
 		Node: kids[0],
 	}).Accept(node.Pred, visitor, payload)
 	return
 }
 
-func (node *IterStar[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *IterStar[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -896,31 +1447,60 @@ func (node *IterStar[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
 // Accept implementation for Iter_plus
 //
 // Pred "+"
-func (node *IterPlus[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *IterPlus[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Iter_plus")
-	if v, ok := visitor.(VisitorIterPlus[P, R]); ok {
-		return v.VisitIterPlus(node, payload)
+	if v, ok := visitor.(Visitor_IterPlus[P, R]); ok {
+		v.VisitIterPlus(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_IterPlus[P, R]); ok {
+		err = v.VisitIterPlus(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_IterPlus[P, R]); ok {
+		v.VisitIterPlus(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_IterPlus[P, R]); ok {
+		err = v.VisitIterPlus(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_IterPlus[P, R]); ok {
+		result = v.VisitIterPlus(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_IterPlus[P, R]); ok {
+		result, err = v.VisitIterPlus(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_IterPlus[P, R]); ok {
+		result = v.VisitIterPlus(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_IterPlus[P, R]); ok {
+		result, err = v.VisitIterPlus(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "IterPlus")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *IterPlus[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptPred(visitor, payload)
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *IterPlus[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptPred(visitor, payload)
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *IterPlus[P, R]) AcceptPred(visitor any, payload P) (result R) {
+func (node *IterPlus[P, R]) AcceptPred(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Pred.Children()
-	result = (&Pred[P, R]{
+	result, err = (&Pred[P, R]{
 		Node: kids[0],
 	}).Accept(node.Pred, visitor, payload)
 	return
 }
 
-func (node *IterPlus[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *IterPlus[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -931,31 +1511,60 @@ func (node *IterPlus[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
 // Accept implementation for Iter_opt
 //
 // Pred "?"
-func (node *IterOpt[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *IterOpt[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Iter_opt")
-	if v, ok := visitor.(VisitorIterOpt[P, R]); ok {
-		return v.VisitIterOpt(node, payload)
+	if v, ok := visitor.(Visitor_IterOpt[P, R]); ok {
+		v.VisitIterOpt(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_IterOpt[P, R]); ok {
+		err = v.VisitIterOpt(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_IterOpt[P, R]); ok {
+		v.VisitIterOpt(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_IterOpt[P, R]); ok {
+		err = v.VisitIterOpt(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_IterOpt[P, R]); ok {
+		result = v.VisitIterOpt(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_IterOpt[P, R]); ok {
+		result, err = v.VisitIterOpt(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_IterOpt[P, R]); ok {
+		result = v.VisitIterOpt(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_IterOpt[P, R]); ok {
+		result, err = v.VisitIterOpt(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "IterOpt")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *IterOpt[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptPred(visitor, payload)
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *IterOpt[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptPred(visitor, payload)
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *IterOpt[P, R]) AcceptPred(visitor any, payload P) (result R) {
+func (node *IterOpt[P, R]) AcceptPred(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Pred.Children()
-	result = (&Pred[P, R]{
+	result, err = (&Pred[P, R]{
 		Node: kids[0],
 	}).Accept(node.Pred, visitor, payload)
 	return
 }
 
-func (node *IterOpt[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *IterOpt[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -969,16 +1578,45 @@ func (node *IterOpt[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
 // = "~" Lex  -- not
 // | "&" Lex  -- lookahead
 // | Lex
-func (node *Pred[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Pred[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Pred")
-	if v, ok := visitor.(VisitorPred[P, R]); ok {
-		return v.VisitPred(node, payload)
+	if v, ok := visitor.(Visitor_Pred[P, R]); ok {
+		v.VisitPred(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Pred[P, R]); ok {
+		err = v.VisitPred(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Pred[P, R]); ok {
+		v.VisitPred(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Pred[P, R]); ok {
+		err = v.VisitPred(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Pred[P, R]); ok {
+		result = v.VisitPred(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Pred[P, R]); ok {
+		result, err = v.VisitPred(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Pred[P, R]); ok {
+		result = v.VisitPred(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Pred[P, R]); ok {
+		result, err = v.VisitPred(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Pred")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Pred[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+func (node *Pred[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 	switch node.Node.CtorName() {
 	case "Pred":
 		return (&Pred[P, R]{
@@ -1009,22 +1647,51 @@ func (node *Pred[P, R]) DefaultAccept(visitor any, payload P) (result R) {
 // Accept implementation for Pred_not
 //
 // "~" Lex
-func (node *PredNot[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *PredNot[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Pred_not")
-	if v, ok := visitor.(VisitorPredNot[P, R]); ok {
-		return v.VisitPredNot(node, payload)
+	if v, ok := visitor.(Visitor_PredNot[P, R]); ok {
+		v.VisitPredNot(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_PredNot[P, R]); ok {
+		err = v.VisitPredNot(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_PredNot[P, R]); ok {
+		v.VisitPredNot(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_PredNot[P, R]); ok {
+		err = v.VisitPredNot(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_PredNot[P, R]); ok {
+		result = v.VisitPredNot(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_PredNot[P, R]); ok {
+		result, err = v.VisitPredNot(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_PredNot[P, R]); ok {
+		result = v.VisitPredNot(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_PredNot[P, R]); ok {
+		result, err = v.VisitPredNot(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "PredNot")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *PredNot[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptLex(visitor, payload)
+func (node *PredNot[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptLex(visitor, payload)
 	return
 }
 
-func (node *PredNot[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *PredNot[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -1032,10 +1699,10 @@ func (node *PredNot[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *PredNot[P, R]) AcceptLex(visitor any, payload P) (result R) {
+func (node *PredNot[P, R]) AcceptLex(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Lex.Children()
-	result = (&Lex[P, R]{
+	result, err = (&Lex[P, R]{
 		Node: kids[0],
 	}).Accept(node.Lex, visitor, payload)
 	return
@@ -1044,22 +1711,51 @@ func (node *PredNot[P, R]) AcceptLex(visitor any, payload P) (result R) {
 // Accept implementation for Pred_lookahead
 //
 // "&" Lex
-func (node *PredLookahead[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *PredLookahead[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Pred_lookahead")
-	if v, ok := visitor.(VisitorPredLookahead[P, R]); ok {
-		return v.VisitPredLookahead(node, payload)
+	if v, ok := visitor.(Visitor_PredLookahead[P, R]); ok {
+		v.VisitPredLookahead(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_PredLookahead[P, R]); ok {
+		err = v.VisitPredLookahead(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_PredLookahead[P, R]); ok {
+		v.VisitPredLookahead(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_PredLookahead[P, R]); ok {
+		err = v.VisitPredLookahead(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_PredLookahead[P, R]); ok {
+		result = v.VisitPredLookahead(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_PredLookahead[P, R]); ok {
+		result, err = v.VisitPredLookahead(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_PredLookahead[P, R]); ok {
+		result = v.VisitPredLookahead(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_PredLookahead[P, R]); ok {
+		result, err = v.VisitPredLookahead(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "PredLookahead")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *PredLookahead[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptLex(visitor, payload)
+func (node *PredLookahead[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptLex(visitor, payload)
 	return
 }
 
-func (node *PredLookahead[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *PredLookahead[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -1067,10 +1763,10 @@ func (node *PredLookahead[P, R]) AcceptLexTerm(visitor any, payload P) (result R
 	return
 }
 
-func (node *PredLookahead[P, R]) AcceptLex(visitor any, payload P) (result R) {
+func (node *PredLookahead[P, R]) AcceptLex(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Lex.Children()
-	result = (&Lex[P, R]{
+	result, err = (&Lex[P, R]{
 		Node: kids[0],
 	}).Accept(node.Lex, visitor, payload)
 	return
@@ -1081,16 +1777,45 @@ func (node *PredLookahead[P, R]) AcceptLex(visitor any, payload P) (result R) {
 // Lex
 // = "#" Base  -- lex
 // | Base
-func (node *Lex[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Lex[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Lex")
-	if v, ok := visitor.(VisitorLex[P, R]); ok {
-		return v.VisitLex(node, payload)
+	if v, ok := visitor.(Visitor_Lex[P, R]); ok {
+		v.VisitLex(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Lex[P, R]); ok {
+		err = v.VisitLex(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Lex[P, R]); ok {
+		v.VisitLex(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Lex[P, R]); ok {
+		err = v.VisitLex(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Lex[P, R]); ok {
+		result = v.VisitLex(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Lex[P, R]); ok {
+		result, err = v.VisitLex(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Lex[P, R]); ok {
+		result = v.VisitLex(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Lex[P, R]); ok {
+		result, err = v.VisitLex(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Lex")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Lex[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+func (node *Lex[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 	switch node.Node.CtorName() {
 	case "Lex":
 		return (&Lex[P, R]{
@@ -1115,22 +1840,51 @@ func (node *Lex[P, R]) DefaultAccept(visitor any, payload P) (result R) {
 // Accept implementation for Lex_lex
 //
 // "#" Base
-func (node *LexLex[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexLex[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Lex_lex")
-	if v, ok := visitor.(VisitorLexLex[P, R]); ok {
-		return v.VisitLexLex(node, payload)
+	if v, ok := visitor.(Visitor_LexLex[P, R]); ok {
+		v.VisitLexLex(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexLex[P, R]); ok {
+		err = v.VisitLexLex(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexLex[P, R]); ok {
+		v.VisitLexLex(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexLex[P, R]); ok {
+		err = v.VisitLexLex(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexLex[P, R]); ok {
+		result = v.VisitLexLex(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexLex[P, R]); ok {
+		result, err = v.VisitLexLex(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexLex[P, R]); ok {
+		result = v.VisitLexLex(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexLex[P, R]); ok {
+		result, err = v.VisitLexLex(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexLex")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexLex[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptBase(visitor, payload)
+func (node *LexLex[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptBase(visitor, payload)
 	return
 }
 
-func (node *LexLex[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexLex[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -1138,10 +1892,10 @@ func (node *LexLex[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *LexLex[P, R]) AcceptBase(visitor any, payload P) (result R) {
+func (node *LexLex[P, R]) AcceptBase(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Base.Children()
-	result = (&Base[P, R]{
+	result, err = (&Base[P, R]{
 		Node: kids[0],
 	}).Accept(node.Base, visitor, payload)
 	return
@@ -1154,16 +1908,45 @@ func (node *LexLex[P, R]) AcceptBase(visitor any, payload P) (result R) {
 // | oneCharTerminal ".." oneCharTerminal           -- range
 // | terminal                                       -- terminal
 // | "(" Alt ")"                                    -- paren
-func (node *Base[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *Base[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Base")
-	if v, ok := visitor.(VisitorBase[P, R]); ok {
-		return v.VisitBase(node, payload)
+	if v, ok := visitor.(Visitor_Base[P, R]); ok {
+		v.VisitBase(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_Base[P, R]); ok {
+		err = v.VisitBase(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_Base[P, R]); ok {
+		v.VisitBase(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_Base[P, R]); ok {
+		err = v.VisitBase(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_Base[P, R]); ok {
+		result = v.VisitBase(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_Base[P, R]); ok {
+		result, err = v.VisitBase(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_Base[P, R]); ok {
+		result = v.VisitBase(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_Base[P, R]); ok {
+		result, err = v.VisitBase(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "Base")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *Base[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+func (node *Base[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 	switch node.Node.CtorName() {
 	case "Base":
 		return (&Base[P, R]{
@@ -1202,36 +1985,65 @@ func (node *Base[P, R]) DefaultAccept(visitor any, payload P) (result R) {
 // Accept implementation for Base_application
 //
 // ident Params? ~(ruleDescr? "=" | ":=" | "+=")
-func (node *BaseApplication[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *BaseApplication[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Base_application")
-	if v, ok := visitor.(VisitorBaseApplication[P, R]); ok {
-		return v.VisitBaseApplication(node, payload)
+	if v, ok := visitor.(Visitor_BaseApplication[P, R]); ok {
+		v.VisitBaseApplication(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_BaseApplication[P, R]); ok {
+		err = v.VisitBaseApplication(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_BaseApplication[P, R]); ok {
+		v.VisitBaseApplication(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_BaseApplication[P, R]); ok {
+		err = v.VisitBaseApplication(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_BaseApplication[P, R]); ok {
+		result = v.VisitBaseApplication(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_BaseApplication[P, R]); ok {
+		result, err = v.VisitBaseApplication(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_BaseApplication[P, R]); ok {
+		result = v.VisitBaseApplication(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_BaseApplication[P, R]); ok {
+		result, err = v.VisitBaseApplication(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "BaseApplication")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *BaseApplication[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexIdent(visitor, payload)
-	result = node.AcceptParams(visitor, payload)
+func (node *BaseApplication[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexIdent(visitor, payload)
+	result, err = node.AcceptParams(visitor, payload)
 	return
 }
 
-func (node *BaseApplication[P, R]) AcceptLexIdent(visitor any, payload P) (result R) {
+func (node *BaseApplication[P, R]) AcceptLexIdent(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Ident.Children()
-	result = (&LexIdent[P, R]{
+	result, err = (&LexIdent[P, R]{
 		Name: kids[0].(goohm.RuleNode),
 	}).Accept(node.Ident, visitor, payload)
 	return
 }
 
-func (node *BaseApplication[P, R]) AcceptParams(visitor any, payload P) (result R) {
+func (node *BaseApplication[P, R]) AcceptParams(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.Params.Children()) > 0 {
 		n := node.Params.Children()[0]
 		kids := n.Children()
-		result = (&Params[P, R]{
+		result, err = (&Params[P, R]{
 			Term1:  kids[0].(goohm.TerminalNode),
 			ListOf: kids[1].(goohm.BHorNode),
 			Term2:  kids[2].(goohm.TerminalNode),
@@ -1243,26 +2055,55 @@ func (node *BaseApplication[P, R]) AcceptParams(visitor any, payload P) (result 
 // Accept implementation for Base_range
 //
 // oneCharTerminal ".." oneCharTerminal
-func (node *BaseRange[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *BaseRange[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Base_range")
-	if v, ok := visitor.(VisitorBaseRange[P, R]); ok {
-		return v.VisitBaseRange(node, payload)
+	if v, ok := visitor.(Visitor_BaseRange[P, R]); ok {
+		v.VisitBaseRange(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_BaseRange[P, R]); ok {
+		err = v.VisitBaseRange(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_BaseRange[P, R]); ok {
+		v.VisitBaseRange(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_BaseRange[P, R]); ok {
+		err = v.VisitBaseRange(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_BaseRange[P, R]); ok {
+		result = v.VisitBaseRange(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_BaseRange[P, R]); ok {
+		result, err = v.VisitBaseRange(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_BaseRange[P, R]); ok {
+		result = v.VisitBaseRange(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_BaseRange[P, R]); ok {
+		result, err = v.VisitBaseRange(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "BaseRange")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *BaseRange[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexOneCharTerminal1(visitor, payload)
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptLexOneCharTerminal2(visitor, payload)
+func (node *BaseRange[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexOneCharTerminal1(visitor, payload)
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptLexOneCharTerminal2(visitor, payload)
 	return
 }
 
-func (node *BaseRange[P, R]) AcceptLexOneCharTerminal1(visitor any, payload P) (result R) {
+func (node *BaseRange[P, R]) AcceptLexOneCharTerminal1(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.OneCharTerminal1.Children()
-	result = (&LexOneCharTerminal[P, R]{
+	result, err = (&LexOneCharTerminal[P, R]{
 		Term1:        kids[0].(goohm.TerminalNode),
 		TerminalChar: kids[1].(goohm.RuleNode),
 		Term2:        kids[2].(goohm.TerminalNode),
@@ -1270,7 +2111,7 @@ func (node *BaseRange[P, R]) AcceptLexOneCharTerminal1(visitor any, payload P) (
 	return
 }
 
-func (node *BaseRange[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *BaseRange[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -1278,10 +2119,10 @@ func (node *BaseRange[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *BaseRange[P, R]) AcceptLexOneCharTerminal2(visitor any, payload P) (result R) {
+func (node *BaseRange[P, R]) AcceptLexOneCharTerminal2(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.OneCharTerminal2.Children()
-	result = (&LexOneCharTerminal[P, R]{
+	result, err = (&LexOneCharTerminal[P, R]{
 		Term1:        kids[0].(goohm.TerminalNode),
 		TerminalChar: kids[1].(goohm.RuleNode),
 		Term2:        kids[2].(goohm.TerminalNode),
@@ -1292,24 +2133,53 @@ func (node *BaseRange[P, R]) AcceptLexOneCharTerminal2(visitor any, payload P) (
 // Accept implementation for Base_terminal
 //
 // terminal
-func (node *BaseTerminal[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *BaseTerminal[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Base_terminal")
-	if v, ok := visitor.(VisitorBaseTerminal[P, R]); ok {
-		return v.VisitBaseTerminal(node, payload)
+	if v, ok := visitor.(Visitor_BaseTerminal[P, R]); ok {
+		v.VisitBaseTerminal(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_BaseTerminal[P, R]); ok {
+		err = v.VisitBaseTerminal(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_BaseTerminal[P, R]); ok {
+		v.VisitBaseTerminal(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_BaseTerminal[P, R]); ok {
+		err = v.VisitBaseTerminal(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_BaseTerminal[P, R]); ok {
+		result = v.VisitBaseTerminal(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_BaseTerminal[P, R]); ok {
+		result, err = v.VisitBaseTerminal(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_BaseTerminal[P, R]); ok {
+		result = v.VisitBaseTerminal(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_BaseTerminal[P, R]); ok {
+		result, err = v.VisitBaseTerminal(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "BaseTerminal")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *BaseTerminal[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerminal(visitor, payload)
+func (node *BaseTerminal[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerminal(visitor, payload)
 	return
 }
 
-func (node *BaseTerminal[P, R]) AcceptLexTerminal(visitor any, payload P) (result R) {
+func (node *BaseTerminal[P, R]) AcceptLexTerminal(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Terminal.Children()
-	result = (&LexTerminal[P, R]{
+	result, err = (&LexTerminal[P, R]{
 		Term1:        kids[0].(goohm.TerminalNode),
 		TerminalChar: kids[1].(goohm.ListNode),
 		Term2:        kids[2].(goohm.TerminalNode),
@@ -1320,23 +2190,52 @@ func (node *BaseTerminal[P, R]) AcceptLexTerminal(visitor any, payload P) (resul
 // Accept implementation for Base_paren
 //
 // "(" Alt ")"
-func (node *BaseParen[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *BaseParen[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "Base_paren")
-	if v, ok := visitor.(VisitorBaseParen[P, R]); ok {
-		return v.VisitBaseParen(node, payload)
+	if v, ok := visitor.(Visitor_BaseParen[P, R]); ok {
+		v.VisitBaseParen(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_BaseParen[P, R]); ok {
+		err = v.VisitBaseParen(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_BaseParen[P, R]); ok {
+		v.VisitBaseParen(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_BaseParen[P, R]); ok {
+		err = v.VisitBaseParen(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_BaseParen[P, R]); ok {
+		result = v.VisitBaseParen(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_BaseParen[P, R]); ok {
+		result, err = v.VisitBaseParen(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_BaseParen[P, R]); ok {
+		result = v.VisitBaseParen(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_BaseParen[P, R]); ok {
+		result, err = v.VisitBaseParen(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "BaseParen")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *BaseParen[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm1(visitor, payload)
-	result = node.AcceptAlt(visitor, payload)
-	result = node.AcceptLexTerm2(visitor, payload)
+func (node *BaseParen[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm1(visitor, payload)
+	result, err = node.AcceptAlt(visitor, payload)
+	result, err = node.AcceptLexTerm2(visitor, payload)
 	return
 }
 
-func (node *BaseParen[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
+func (node *BaseParen[P, R]) AcceptLexTerm1(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term1)
@@ -1344,16 +2243,16 @@ func (node *BaseParen[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
 	return
 }
 
-func (node *BaseParen[P, R]) AcceptAlt(visitor any, payload P) (result R) {
+func (node *BaseParen[P, R]) AcceptAlt(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Alt.Children()
-	result = (&Alt[P, R]{
+	result, err = (&Alt[P, R]{
 		NonemptyListOf: kids[0].(goohm.BHorNode),
 	}).Accept(node.Alt, visitor, payload)
 	return
 }
 
-func (node *BaseParen[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
+func (node *BaseParen[P, R]) AcceptLexTerm2(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term2)
@@ -1365,23 +2264,52 @@ func (node *BaseParen[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
 //
 // ruleDescr  (a rule description)
 // = "(" ruleDescrText ")"
-func (node *LexRuleDescr[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexRuleDescr[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "ruleDescr")
-	if v, ok := visitor.(VisitorLexRuleDescr[P, R]); ok {
-		return v.VisitLexRuleDescr(node, payload)
+	if v, ok := visitor.(Visitor_LexRuleDescr[P, R]); ok {
+		v.VisitLexRuleDescr(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexRuleDescr[P, R]); ok {
+		err = v.VisitLexRuleDescr(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexRuleDescr[P, R]); ok {
+		v.VisitLexRuleDescr(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexRuleDescr[P, R]); ok {
+		err = v.VisitLexRuleDescr(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexRuleDescr[P, R]); ok {
+		result = v.VisitLexRuleDescr(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexRuleDescr[P, R]); ok {
+		result, err = v.VisitLexRuleDescr(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexRuleDescr[P, R]); ok {
+		result = v.VisitLexRuleDescr(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexRuleDescr[P, R]); ok {
+		result, err = v.VisitLexRuleDescr(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexRuleDescr")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexRuleDescr[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm1(visitor, payload)
-	result = node.AcceptLexRuleDescrText(visitor, payload)
-	result = node.AcceptLexTerm2(visitor, payload)
+func (node *LexRuleDescr[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm1(visitor, payload)
+	result, err = node.AcceptLexRuleDescrText(visitor, payload)
+	result, err = node.AcceptLexTerm2(visitor, payload)
 	return
 }
 
-func (node *LexRuleDescr[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
+func (node *LexRuleDescr[P, R]) AcceptLexTerm1(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term1)
@@ -1389,16 +2317,16 @@ func (node *LexRuleDescr[P, R]) AcceptLexTerm1(visitor any, payload P) (result R
 	return
 }
 
-func (node *LexRuleDescr[P, R]) AcceptLexRuleDescrText(visitor any, payload P) (result R) {
+func (node *LexRuleDescr[P, R]) AcceptLexRuleDescrText(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.RuleDescrText.Children()
-	result = (&LexRuleDescrText[P, R]{
+	result, err = (&LexRuleDescrText[P, R]{
 		Alt: kids[0].(goohm.ListNode),
 	}).Accept(node.RuleDescrText, visitor, payload)
 	return
 }
 
-func (node *LexRuleDescr[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
+func (node *LexRuleDescr[P, R]) AcceptLexTerm2(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term2)
@@ -1410,27 +2338,56 @@ func (node *LexRuleDescr[P, R]) AcceptLexTerm2(visitor any, payload P) (result R
 //
 // ruleDescrText
 // = (~")" any)*
-func (node *LexRuleDescrText[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexRuleDescrText[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "ruleDescrText")
-	if v, ok := visitor.(VisitorLexRuleDescrText[P, R]); ok {
-		return v.VisitLexRuleDescrText(node, payload)
+	if v, ok := visitor.(Visitor_LexRuleDescrText[P, R]); ok {
+		v.VisitLexRuleDescrText(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexRuleDescrText[P, R]); ok {
+		err = v.VisitLexRuleDescrText(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexRuleDescrText[P, R]); ok {
+		v.VisitLexRuleDescrText(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexRuleDescrText[P, R]); ok {
+		err = v.VisitLexRuleDescrText(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexRuleDescrText[P, R]); ok {
+		result = v.VisitLexRuleDescrText(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexRuleDescrText[P, R]); ok {
+		result, err = v.VisitLexRuleDescrText(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexRuleDescrText[P, R]); ok {
+		result = v.VisitLexRuleDescrText(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexRuleDescrText[P, R]); ok {
+		result, err = v.VisitLexRuleDescrText(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexRuleDescrText")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexRuleDescrText[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexAlt(visitor, payload)
+func (node *LexRuleDescrText[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexAlt(visitor, payload)
 	return
 }
 
-func (node *LexRuleDescrText[P, R]) AcceptLexAlt(visitor any, payload P) (result R) {
+func (node *LexRuleDescrText[P, R]) AcceptLexAlt(visitor any, payload P) (result R, err error) {
 	for _, n := range node.Alt.Children() {
-	{
-		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
-			v.BuiltInRule(n)
+		{
+			if v, ok := visitor.(goohm.BuiltinVisitor); ok {
+				v.BuiltInRule(n)
+			}
 		}
-	}
 	}
 	return
 }
@@ -1439,25 +2396,54 @@ func (node *LexRuleDescrText[P, R]) AcceptLexAlt(visitor any, payload P) (result
 //
 // caseName
 // = "--" (~"\n" space)* name (~"\n" space)* ("\n" | &"}")
-func (node *LexCaseName[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexCaseName[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "caseName")
-	if v, ok := visitor.(VisitorLexCaseName[P, R]); ok {
-		return v.VisitLexCaseName(node, payload)
+	if v, ok := visitor.(Visitor_LexCaseName[P, R]); ok {
+		v.VisitLexCaseName(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexCaseName[P, R]); ok {
+		err = v.VisitLexCaseName(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexCaseName[P, R]); ok {
+		v.VisitLexCaseName(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexCaseName[P, R]); ok {
+		err = v.VisitLexCaseName(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexCaseName[P, R]); ok {
+		result = v.VisitLexCaseName(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexCaseName[P, R]); ok {
+		result, err = v.VisitLexCaseName(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexCaseName[P, R]); ok {
+		result = v.VisitLexCaseName(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexCaseName[P, R]); ok {
+		result, err = v.VisitLexCaseName(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexCaseName")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexCaseName[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptLexAlt1(visitor, payload)
-	result = node.AcceptLexName(visitor, payload)
-	result = node.AcceptLexAlt2(visitor, payload)
-	result = node.AcceptLexAlt3(visitor, payload)
+func (node *LexCaseName[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptLexAlt1(visitor, payload)
+	result, err = node.AcceptLexName(visitor, payload)
+	result, err = node.AcceptLexAlt2(visitor, payload)
+	result, err = node.AcceptLexAlt3(visitor, payload)
 	return
 }
 
-func (node *LexCaseName[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexCaseName[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -1465,39 +2451,39 @@ func (node *LexCaseName[P, R]) AcceptLexTerm(visitor any, payload P) (result R) 
 	return
 }
 
-func (node *LexCaseName[P, R]) AcceptLexAlt1(visitor any, payload P) (result R) {
+func (node *LexCaseName[P, R]) AcceptLexAlt1(visitor any, payload P) (result R, err error) {
 	for _, n := range node.Alt1.Children() {
-	{
-		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
-			v.BuiltInRule(n)
+		{
+			if v, ok := visitor.(goohm.BuiltinVisitor); ok {
+				v.BuiltInRule(n)
+			}
 		}
-	}
 	}
 	return
 }
 
-func (node *LexCaseName[P, R]) AcceptLexName(visitor any, payload P) (result R) {
+func (node *LexCaseName[P, R]) AcceptLexName(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Name.Children()
-	result = (&LexName[P, R]{
+	result, err = (&LexName[P, R]{
 		NameFirst: kids[0].(goohm.RuleNode),
 		NameRest:  kids[1].(goohm.ListNode),
 	}).Accept(node.Name, visitor, payload)
 	return
 }
 
-func (node *LexCaseName[P, R]) AcceptLexAlt2(visitor any, payload P) (result R) {
+func (node *LexCaseName[P, R]) AcceptLexAlt2(visitor any, payload P) (result R, err error) {
 	for _, n := range node.Alt2.Children() {
-	{
-		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
-			v.BuiltInRule(n)
+		{
+			if v, ok := visitor.(goohm.BuiltinVisitor); ok {
+				v.BuiltInRule(n)
+			}
 		}
-	}
 	}
 	return
 }
 
-func (node *LexCaseName[P, R]) AcceptLexAlt3(visitor any, payload P) (result R) {
+func (node *LexCaseName[P, R]) AcceptLexAlt3(visitor any, payload P) (result R, err error) {
 	// Node
 	{
 		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -1511,34 +2497,63 @@ func (node *LexCaseName[P, R]) AcceptLexAlt3(visitor any, payload P) (result R) 
 //
 // name  (a name)
 // = nameFirst nameRest*
-func (node *LexName[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexName[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "name")
-	if v, ok := visitor.(VisitorLexName[P, R]); ok {
-		return v.VisitLexName(node, payload)
+	if v, ok := visitor.(Visitor_LexName[P, R]); ok {
+		v.VisitLexName(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexName[P, R]); ok {
+		err = v.VisitLexName(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexName[P, R]); ok {
+		v.VisitLexName(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexName[P, R]); ok {
+		err = v.VisitLexName(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexName[P, R]); ok {
+		result = v.VisitLexName(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexName[P, R]); ok {
+		result, err = v.VisitLexName(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexName[P, R]); ok {
+		result = v.VisitLexName(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexName[P, R]); ok {
+		result, err = v.VisitLexName(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexName")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexName[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexNameFirst(visitor, payload)
-	result = node.AcceptLexNameRest(visitor, payload)
+func (node *LexName[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexNameFirst(visitor, payload)
+	result, err = node.AcceptLexNameRest(visitor, payload)
 	return
 }
 
-func (node *LexName[P, R]) AcceptLexNameFirst(visitor any, payload P) (result R) {
+func (node *LexName[P, R]) AcceptLexNameFirst(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.NameFirst.Children()
-	result = (&LexNameFirst[P, R]{
+	result, err = (&LexNameFirst[P, R]{
 		Arg: kids[0],
 	}).Accept(node.NameFirst, visitor, payload)
 	return
 }
 
-func (node *LexName[P, R]) AcceptLexNameRest(visitor any, payload P) (result R) {
+func (node *LexName[P, R]) AcceptLexNameRest(visitor any, payload P) (result R, err error) {
 	for _, n := range node.NameRest.Children() {
 		kids := n.Children()
-		result = (&LexNameRest[P, R]{
+		result, err = (&LexNameRest[P, R]{
 			Arg: kids[0],
 		}).Accept(n, visitor, payload)
 	}
@@ -1550,21 +2565,50 @@ func (node *LexName[P, R]) AcceptLexNameRest(visitor any, payload P) (result R) 
 // nameFirst
 // = "_"
 // | letter
-func (node *LexNameFirst[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexNameFirst[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "nameFirst")
-	if v, ok := visitor.(VisitorLexNameFirst[P, R]); ok {
-		return v.VisitLexNameFirst(node, payload)
+	if v, ok := visitor.(Visitor_LexNameFirst[P, R]); ok {
+		v.VisitLexNameFirst(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexNameFirst[P, R]); ok {
+		err = v.VisitLexNameFirst(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexNameFirst[P, R]); ok {
+		v.VisitLexNameFirst(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexNameFirst[P, R]); ok {
+		err = v.VisitLexNameFirst(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexNameFirst[P, R]); ok {
+		result = v.VisitLexNameFirst(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexNameFirst[P, R]); ok {
+		result, err = v.VisitLexNameFirst(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexNameFirst[P, R]); ok {
+		result = v.VisitLexNameFirst(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexNameFirst[P, R]); ok {
+		result, err = v.VisitLexNameFirst(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexNameFirst")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexNameFirst[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexArg(visitor, payload)
+func (node *LexNameFirst[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexArg(visitor, payload)
 	return
 }
 
-func (node *LexNameFirst[P, R]) AcceptLexArg(visitor any, payload P) (result R) {
+func (node *LexNameFirst[P, R]) AcceptLexArg(visitor any, payload P) (result R, err error) {
 	// Node
 	{
 		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -1579,21 +2623,50 @@ func (node *LexNameFirst[P, R]) AcceptLexArg(visitor any, payload P) (result R) 
 // nameRest
 // = "_"
 // | alnum
-func (node *LexNameRest[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexNameRest[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "nameRest")
-	if v, ok := visitor.(VisitorLexNameRest[P, R]); ok {
-		return v.VisitLexNameRest(node, payload)
+	if v, ok := visitor.(Visitor_LexNameRest[P, R]); ok {
+		v.VisitLexNameRest(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexNameRest[P, R]); ok {
+		err = v.VisitLexNameRest(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexNameRest[P, R]); ok {
+		v.VisitLexNameRest(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexNameRest[P, R]); ok {
+		err = v.VisitLexNameRest(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexNameRest[P, R]); ok {
+		result = v.VisitLexNameRest(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexNameRest[P, R]); ok {
+		result, err = v.VisitLexNameRest(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexNameRest[P, R]); ok {
+		result = v.VisitLexNameRest(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexNameRest[P, R]); ok {
+		result, err = v.VisitLexNameRest(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexNameRest")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexNameRest[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexArg(visitor, payload)
+func (node *LexNameRest[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexArg(visitor, payload)
 	return
 }
 
-func (node *LexNameRest[P, R]) AcceptLexArg(visitor any, payload P) (result R) {
+func (node *LexNameRest[P, R]) AcceptLexArg(visitor any, payload P) (result R, err error) {
 	// Node
 	{
 		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -1607,24 +2680,53 @@ func (node *LexNameRest[P, R]) AcceptLexArg(visitor any, payload P) (result R) {
 //
 // ident  (an identifier)
 // = name
-func (node *LexIdent[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexIdent[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "ident")
-	if v, ok := visitor.(VisitorLexIdent[P, R]); ok {
-		return v.VisitLexIdent(node, payload)
+	if v, ok := visitor.(Visitor_LexIdent[P, R]); ok {
+		v.VisitLexIdent(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexIdent[P, R]); ok {
+		err = v.VisitLexIdent(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexIdent[P, R]); ok {
+		v.VisitLexIdent(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexIdent[P, R]); ok {
+		err = v.VisitLexIdent(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexIdent[P, R]); ok {
+		result = v.VisitLexIdent(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexIdent[P, R]); ok {
+		result, err = v.VisitLexIdent(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexIdent[P, R]); ok {
+		result = v.VisitLexIdent(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexIdent[P, R]); ok {
+		result, err = v.VisitLexIdent(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexIdent")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexIdent[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexName(visitor, payload)
+func (node *LexIdent[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexName(visitor, payload)
 	return
 }
 
-func (node *LexIdent[P, R]) AcceptLexName(visitor any, payload P) (result R) {
+func (node *LexIdent[P, R]) AcceptLexName(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Name.Children()
-	result = (&LexName[P, R]{
+	result, err = (&LexName[P, R]{
 		NameFirst: kids[0].(goohm.RuleNode),
 		NameRest:  kids[1].(goohm.ListNode),
 	}).Accept(node.Name, visitor, payload)
@@ -1635,23 +2737,52 @@ func (node *LexIdent[P, R]) AcceptLexName(visitor any, payload P) (result R) {
 //
 // terminal
 // = "\"" terminalChar* "\""
-func (node *LexTerminal[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexTerminal[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "terminal")
-	if v, ok := visitor.(VisitorLexTerminal[P, R]); ok {
-		return v.VisitLexTerminal(node, payload)
+	if v, ok := visitor.(Visitor_LexTerminal[P, R]); ok {
+		v.VisitLexTerminal(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexTerminal[P, R]); ok {
+		err = v.VisitLexTerminal(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexTerminal[P, R]); ok {
+		v.VisitLexTerminal(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexTerminal[P, R]); ok {
+		err = v.VisitLexTerminal(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexTerminal[P, R]); ok {
+		result = v.VisitLexTerminal(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexTerminal[P, R]); ok {
+		result, err = v.VisitLexTerminal(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexTerminal[P, R]); ok {
+		result = v.VisitLexTerminal(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexTerminal[P, R]); ok {
+		result, err = v.VisitLexTerminal(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexTerminal")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexTerminal[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm1(visitor, payload)
-	result = node.AcceptLexTerminalChar(visitor, payload)
-	result = node.AcceptLexTerm2(visitor, payload)
+func (node *LexTerminal[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm1(visitor, payload)
+	result, err = node.AcceptLexTerminalChar(visitor, payload)
+	result, err = node.AcceptLexTerm2(visitor, payload)
 	return
 }
 
-func (node *LexTerminal[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
+func (node *LexTerminal[P, R]) AcceptLexTerm1(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term1)
@@ -1659,17 +2790,17 @@ func (node *LexTerminal[P, R]) AcceptLexTerm1(visitor any, payload P) (result R)
 	return
 }
 
-func (node *LexTerminal[P, R]) AcceptLexTerminalChar(visitor any, payload P) (result R) {
+func (node *LexTerminal[P, R]) AcceptLexTerminalChar(visitor any, payload P) (result R, err error) {
 	for _, n := range node.TerminalChar.Children() {
 		kids := n.Children()
-		result = (&LexTerminalChar[P, R]{
+		result, err = (&LexTerminalChar[P, R]{
 			Arg: kids[0],
 		}).Accept(n, visitor, payload)
 	}
 	return
 }
 
-func (node *LexTerminal[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
+func (node *LexTerminal[P, R]) AcceptLexTerm2(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term2)
@@ -1681,23 +2812,52 @@ func (node *LexTerminal[P, R]) AcceptLexTerm2(visitor any, payload P) (result R)
 //
 // oneCharTerminal
 // = "\"" terminalChar "\""
-func (node *LexOneCharTerminal[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexOneCharTerminal[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "oneCharTerminal")
-	if v, ok := visitor.(VisitorLexOneCharTerminal[P, R]); ok {
-		return v.VisitLexOneCharTerminal(node, payload)
+	if v, ok := visitor.(Visitor_LexOneCharTerminal[P, R]); ok {
+		v.VisitLexOneCharTerminal(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexOneCharTerminal[P, R]); ok {
+		err = v.VisitLexOneCharTerminal(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexOneCharTerminal[P, R]); ok {
+		v.VisitLexOneCharTerminal(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexOneCharTerminal[P, R]); ok {
+		err = v.VisitLexOneCharTerminal(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexOneCharTerminal[P, R]); ok {
+		result = v.VisitLexOneCharTerminal(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexOneCharTerminal[P, R]); ok {
+		result, err = v.VisitLexOneCharTerminal(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexOneCharTerminal[P, R]); ok {
+		result = v.VisitLexOneCharTerminal(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexOneCharTerminal[P, R]); ok {
+		result, err = v.VisitLexOneCharTerminal(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexOneCharTerminal")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexOneCharTerminal[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm1(visitor, payload)
-	result = node.AcceptLexTerminalChar(visitor, payload)
-	result = node.AcceptLexTerm2(visitor, payload)
+func (node *LexOneCharTerminal[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm1(visitor, payload)
+	result, err = node.AcceptLexTerminalChar(visitor, payload)
+	result, err = node.AcceptLexTerm2(visitor, payload)
 	return
 }
 
-func (node *LexOneCharTerminal[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
+func (node *LexOneCharTerminal[P, R]) AcceptLexTerm1(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term1)
@@ -1705,16 +2865,16 @@ func (node *LexOneCharTerminal[P, R]) AcceptLexTerm1(visitor any, payload P) (re
 	return
 }
 
-func (node *LexOneCharTerminal[P, R]) AcceptLexTerminalChar(visitor any, payload P) (result R) {
+func (node *LexOneCharTerminal[P, R]) AcceptLexTerminalChar(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.TerminalChar.Children()
-	result = (&LexTerminalChar[P, R]{
+	result, err = (&LexTerminalChar[P, R]{
 		Arg: kids[0],
 	}).Accept(node.TerminalChar, visitor, payload)
 	return
 }
 
-func (node *LexOneCharTerminal[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
+func (node *LexOneCharTerminal[P, R]) AcceptLexTerm2(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term2)
@@ -1727,21 +2887,50 @@ func (node *LexOneCharTerminal[P, R]) AcceptLexTerm2(visitor any, payload P) (re
 // terminalChar
 // = escapeChar
 // | ~"\\" ~"\"" ~"\n" "\u{0}".."\u{10FFFF}"
-func (node *LexTerminalChar[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexTerminalChar[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "terminalChar")
-	if v, ok := visitor.(VisitorLexTerminalChar[P, R]); ok {
-		return v.VisitLexTerminalChar(node, payload)
+	if v, ok := visitor.(Visitor_LexTerminalChar[P, R]); ok {
+		v.VisitLexTerminalChar(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexTerminalChar[P, R]); ok {
+		err = v.VisitLexTerminalChar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexTerminalChar[P, R]); ok {
+		v.VisitLexTerminalChar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexTerminalChar[P, R]); ok {
+		err = v.VisitLexTerminalChar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexTerminalChar[P, R]); ok {
+		result = v.VisitLexTerminalChar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexTerminalChar[P, R]); ok {
+		result, err = v.VisitLexTerminalChar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexTerminalChar[P, R]); ok {
+		result = v.VisitLexTerminalChar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexTerminalChar[P, R]); ok {
+		result, err = v.VisitLexTerminalChar(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexTerminalChar")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexTerminalChar[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexArg(visitor, payload)
+func (node *LexTerminalChar[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexArg(visitor, payload)
 	return
 }
 
-func (node *LexTerminalChar[P, R]) AcceptLexArg(visitor any, payload P) (result R) {
+func (node *LexTerminalChar[P, R]) AcceptLexArg(visitor any, payload P) (result R, err error) {
 	// Node
 	{
 		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -1765,16 +2954,45 @@ func (node *LexTerminalChar[P, R]) AcceptLexArg(visitor any, payload P) (result 
 // hexDigit? hexDigit? hexDigit? "}"   -- unicodeCodePoint
 // | "\\u" hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
 // | "\\x" hexDigit hexDigit                    -- hexEscape
-func (node *LexEscapeChar[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeChar[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar")
-	if v, ok := visitor.(VisitorLexEscapeChar[P, R]); ok {
-		return v.VisitLexEscapeChar(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeChar[P, R]); ok {
+		v.VisitLexEscapeChar(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeChar[P, R]); ok {
+		err = v.VisitLexEscapeChar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeChar[P, R]); ok {
+		v.VisitLexEscapeChar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeChar[P, R]); ok {
+		err = v.VisitLexEscapeChar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeChar[P, R]); ok {
+		result = v.VisitLexEscapeChar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeChar[P, R]); ok {
+		result, err = v.VisitLexEscapeChar(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeChar[P, R]); ok {
+		result = v.VisitLexEscapeChar(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeChar[P, R]); ok {
+		result, err = v.VisitLexEscapeChar(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeChar")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeChar[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+func (node *LexEscapeChar[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 	switch node.Node.CtorName() {
 	case "LexEscapeChar":
 		return (&LexEscapeChar[P, R]{
@@ -1851,21 +3069,50 @@ func (node *LexEscapeChar[P, R]) DefaultAccept(visitor any, payload P) (result R
 // Accept implementation for escapeChar_backslash
 //
 // "\\\\"
-func (node *LexEscapeCharBackslash[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeCharBackslash[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar_backslash")
-	if v, ok := visitor.(VisitorLexEscapeCharBackslash[P, R]); ok {
-		return v.VisitLexEscapeCharBackslash(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeCharBackslash[P, R]); ok {
+		v.VisitLexEscapeCharBackslash(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeCharBackslash[P, R]); ok {
+		err = v.VisitLexEscapeCharBackslash(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeCharBackslash[P, R]); ok {
+		v.VisitLexEscapeCharBackslash(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeCharBackslash[P, R]); ok {
+		err = v.VisitLexEscapeCharBackslash(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeCharBackslash[P, R]); ok {
+		result = v.VisitLexEscapeCharBackslash(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeCharBackslash[P, R]); ok {
+		result, err = v.VisitLexEscapeCharBackslash(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeCharBackslash[P, R]); ok {
+		result = v.VisitLexEscapeCharBackslash(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeCharBackslash[P, R]); ok {
+		result, err = v.VisitLexEscapeCharBackslash(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeCharBackslash")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeCharBackslash[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *LexEscapeCharBackslash[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *LexEscapeCharBackslash[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexEscapeCharBackslash[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -1876,21 +3123,50 @@ func (node *LexEscapeCharBackslash[P, R]) AcceptLexTerm(visitor any, payload P) 
 // Accept implementation for escapeChar_doubleQuote
 //
 // "\\\""
-func (node *LexEscapeCharDoubleQuote[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeCharDoubleQuote[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar_doubleQuote")
-	if v, ok := visitor.(VisitorLexEscapeCharDoubleQuote[P, R]); ok {
-		return v.VisitLexEscapeCharDoubleQuote(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeCharDoubleQuote[P, R]); ok {
+		v.VisitLexEscapeCharDoubleQuote(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeCharDoubleQuote[P, R]); ok {
+		err = v.VisitLexEscapeCharDoubleQuote(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeCharDoubleQuote[P, R]); ok {
+		v.VisitLexEscapeCharDoubleQuote(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeCharDoubleQuote[P, R]); ok {
+		err = v.VisitLexEscapeCharDoubleQuote(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeCharDoubleQuote[P, R]); ok {
+		result = v.VisitLexEscapeCharDoubleQuote(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeCharDoubleQuote[P, R]); ok {
+		result, err = v.VisitLexEscapeCharDoubleQuote(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeCharDoubleQuote[P, R]); ok {
+		result = v.VisitLexEscapeCharDoubleQuote(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeCharDoubleQuote[P, R]); ok {
+		result, err = v.VisitLexEscapeCharDoubleQuote(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeCharDoubleQuote")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeCharDoubleQuote[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *LexEscapeCharDoubleQuote[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *LexEscapeCharDoubleQuote[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexEscapeCharDoubleQuote[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -1901,21 +3177,50 @@ func (node *LexEscapeCharDoubleQuote[P, R]) AcceptLexTerm(visitor any, payload P
 // Accept implementation for escapeChar_singleQuote
 //
 // "\\\'"
-func (node *LexEscapeCharSingleQuote[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeCharSingleQuote[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar_singleQuote")
-	if v, ok := visitor.(VisitorLexEscapeCharSingleQuote[P, R]); ok {
-		return v.VisitLexEscapeCharSingleQuote(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeCharSingleQuote[P, R]); ok {
+		v.VisitLexEscapeCharSingleQuote(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeCharSingleQuote[P, R]); ok {
+		err = v.VisitLexEscapeCharSingleQuote(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeCharSingleQuote[P, R]); ok {
+		v.VisitLexEscapeCharSingleQuote(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeCharSingleQuote[P, R]); ok {
+		err = v.VisitLexEscapeCharSingleQuote(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeCharSingleQuote[P, R]); ok {
+		result = v.VisitLexEscapeCharSingleQuote(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeCharSingleQuote[P, R]); ok {
+		result, err = v.VisitLexEscapeCharSingleQuote(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeCharSingleQuote[P, R]); ok {
+		result = v.VisitLexEscapeCharSingleQuote(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeCharSingleQuote[P, R]); ok {
+		result, err = v.VisitLexEscapeCharSingleQuote(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeCharSingleQuote")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeCharSingleQuote[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *LexEscapeCharSingleQuote[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *LexEscapeCharSingleQuote[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexEscapeCharSingleQuote[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -1926,21 +3231,50 @@ func (node *LexEscapeCharSingleQuote[P, R]) AcceptLexTerm(visitor any, payload P
 // Accept implementation for escapeChar_backspace
 //
 // "\\b"
-func (node *LexEscapeCharBackspace[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeCharBackspace[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar_backspace")
-	if v, ok := visitor.(VisitorLexEscapeCharBackspace[P, R]); ok {
-		return v.VisitLexEscapeCharBackspace(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeCharBackspace[P, R]); ok {
+		v.VisitLexEscapeCharBackspace(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeCharBackspace[P, R]); ok {
+		err = v.VisitLexEscapeCharBackspace(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeCharBackspace[P, R]); ok {
+		v.VisitLexEscapeCharBackspace(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeCharBackspace[P, R]); ok {
+		err = v.VisitLexEscapeCharBackspace(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeCharBackspace[P, R]); ok {
+		result = v.VisitLexEscapeCharBackspace(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeCharBackspace[P, R]); ok {
+		result, err = v.VisitLexEscapeCharBackspace(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeCharBackspace[P, R]); ok {
+		result = v.VisitLexEscapeCharBackspace(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeCharBackspace[P, R]); ok {
+		result, err = v.VisitLexEscapeCharBackspace(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeCharBackspace")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeCharBackspace[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *LexEscapeCharBackspace[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *LexEscapeCharBackspace[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexEscapeCharBackspace[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -1951,21 +3285,50 @@ func (node *LexEscapeCharBackspace[P, R]) AcceptLexTerm(visitor any, payload P) 
 // Accept implementation for escapeChar_lineFeed
 //
 // "\\n"
-func (node *LexEscapeCharLineFeed[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeCharLineFeed[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar_lineFeed")
-	if v, ok := visitor.(VisitorLexEscapeCharLineFeed[P, R]); ok {
-		return v.VisitLexEscapeCharLineFeed(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeCharLineFeed[P, R]); ok {
+		v.VisitLexEscapeCharLineFeed(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeCharLineFeed[P, R]); ok {
+		err = v.VisitLexEscapeCharLineFeed(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeCharLineFeed[P, R]); ok {
+		v.VisitLexEscapeCharLineFeed(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeCharLineFeed[P, R]); ok {
+		err = v.VisitLexEscapeCharLineFeed(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeCharLineFeed[P, R]); ok {
+		result = v.VisitLexEscapeCharLineFeed(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeCharLineFeed[P, R]); ok {
+		result, err = v.VisitLexEscapeCharLineFeed(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeCharLineFeed[P, R]); ok {
+		result = v.VisitLexEscapeCharLineFeed(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeCharLineFeed[P, R]); ok {
+		result, err = v.VisitLexEscapeCharLineFeed(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeCharLineFeed")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeCharLineFeed[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *LexEscapeCharLineFeed[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *LexEscapeCharLineFeed[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexEscapeCharLineFeed[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -1976,21 +3339,50 @@ func (node *LexEscapeCharLineFeed[P, R]) AcceptLexTerm(visitor any, payload P) (
 // Accept implementation for escapeChar_carriageReturn
 //
 // "\\r"
-func (node *LexEscapeCharCarriageReturn[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeCharCarriageReturn[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar_carriageReturn")
-	if v, ok := visitor.(VisitorLexEscapeCharCarriageReturn[P, R]); ok {
-		return v.VisitLexEscapeCharCarriageReturn(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeCharCarriageReturn[P, R]); ok {
+		v.VisitLexEscapeCharCarriageReturn(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeCharCarriageReturn[P, R]); ok {
+		err = v.VisitLexEscapeCharCarriageReturn(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeCharCarriageReturn[P, R]); ok {
+		v.VisitLexEscapeCharCarriageReturn(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeCharCarriageReturn[P, R]); ok {
+		err = v.VisitLexEscapeCharCarriageReturn(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeCharCarriageReturn[P, R]); ok {
+		result = v.VisitLexEscapeCharCarriageReturn(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeCharCarriageReturn[P, R]); ok {
+		result, err = v.VisitLexEscapeCharCarriageReturn(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeCharCarriageReturn[P, R]); ok {
+		result = v.VisitLexEscapeCharCarriageReturn(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeCharCarriageReturn[P, R]); ok {
+		result, err = v.VisitLexEscapeCharCarriageReturn(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeCharCarriageReturn")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeCharCarriageReturn[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *LexEscapeCharCarriageReturn[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *LexEscapeCharCarriageReturn[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexEscapeCharCarriageReturn[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -2001,21 +3393,50 @@ func (node *LexEscapeCharCarriageReturn[P, R]) AcceptLexTerm(visitor any, payloa
 // Accept implementation for escapeChar_tab
 //
 // "\\t"
-func (node *LexEscapeCharTab[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeCharTab[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar_tab")
-	if v, ok := visitor.(VisitorLexEscapeCharTab[P, R]); ok {
-		return v.VisitLexEscapeCharTab(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeCharTab[P, R]); ok {
+		v.VisitLexEscapeCharTab(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeCharTab[P, R]); ok {
+		err = v.VisitLexEscapeCharTab(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeCharTab[P, R]); ok {
+		v.VisitLexEscapeCharTab(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeCharTab[P, R]); ok {
+		err = v.VisitLexEscapeCharTab(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeCharTab[P, R]); ok {
+		result = v.VisitLexEscapeCharTab(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeCharTab[P, R]); ok {
+		result, err = v.VisitLexEscapeCharTab(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeCharTab[P, R]); ok {
+		result = v.VisitLexEscapeCharTab(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeCharTab[P, R]); ok {
+		result, err = v.VisitLexEscapeCharTab(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeCharTab")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeCharTab[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *LexEscapeCharTab[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *LexEscapeCharTab[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexEscapeCharTab[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -2027,28 +3448,57 @@ func (node *LexEscapeCharTab[P, R]) AcceptLexTerm(visitor any, payload P) (resul
 //
 // "\\u{" hexDigit hexDigit? hexDigit?
 // hexDigit? hexDigit? hexDigit? "}"
-func (node *LexEscapeCharUnicodeCodePoint[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeCodePoint[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar_unicodeCodePoint")
-	if v, ok := visitor.(VisitorLexEscapeCharUnicodeCodePoint[P, R]); ok {
-		return v.VisitLexEscapeCharUnicodeCodePoint(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeCharUnicodeCodePoint[P, R]); ok {
+		v.VisitLexEscapeCharUnicodeCodePoint(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeCharUnicodeCodePoint[P, R]); ok {
+		err = v.VisitLexEscapeCharUnicodeCodePoint(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeCharUnicodeCodePoint[P, R]); ok {
+		v.VisitLexEscapeCharUnicodeCodePoint(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeCharUnicodeCodePoint[P, R]); ok {
+		err = v.VisitLexEscapeCharUnicodeCodePoint(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeCharUnicodeCodePoint[P, R]); ok {
+		result = v.VisitLexEscapeCharUnicodeCodePoint(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeCharUnicodeCodePoint[P, R]); ok {
+		result, err = v.VisitLexEscapeCharUnicodeCodePoint(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeCharUnicodeCodePoint[P, R]); ok {
+		result = v.VisitLexEscapeCharUnicodeCodePoint(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeCharUnicodeCodePoint[P, R]); ok {
+		result, err = v.VisitLexEscapeCharUnicodeCodePoint(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeCharUnicodeCodePoint")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeCharUnicodeCodePoint[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm1(visitor, payload)
-	result = node.AcceptLexHexDigit1(visitor, payload)
-	result = node.AcceptLexHexDigit2(visitor, payload)
-	result = node.AcceptLexHexDigit3(visitor, payload)
-	result = node.AcceptLexHexDigit4(visitor, payload)
-	result = node.AcceptLexHexDigit5(visitor, payload)
-	result = node.AcceptLexHexDigit6(visitor, payload)
-	result = node.AcceptLexTerm2(visitor, payload)
+func (node *LexEscapeCharUnicodeCodePoint[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm1(visitor, payload)
+	result, err = node.AcceptLexHexDigit1(visitor, payload)
+	result, err = node.AcceptLexHexDigit2(visitor, payload)
+	result, err = node.AcceptLexHexDigit3(visitor, payload)
+	result, err = node.AcceptLexHexDigit4(visitor, payload)
+	result, err = node.AcceptLexHexDigit5(visitor, payload)
+	result, err = node.AcceptLexHexDigit6(visitor, payload)
+	result, err = node.AcceptLexTerm2(visitor, payload)
 	return
 }
 
-func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexTerm1(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term1)
@@ -2056,7 +3506,7 @@ func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexTerm1(visitor any, pay
 	return
 }
 
-func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit1(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit1(visitor any, payload P) (result R, err error) {
 	// Rule
 	// "unknown rule hexDigit"
 	if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -2065,7 +3515,7 @@ func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit1(visitor any,
 	return
 }
 
-func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit2(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit2(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.HexDigit2.Children()) > 0 {
 		n := node.HexDigit2.Children()[0]
@@ -2077,7 +3527,7 @@ func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit2(visitor any,
 	return
 }
 
-func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit3(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit3(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.HexDigit3.Children()) > 0 {
 		n := node.HexDigit3.Children()[0]
@@ -2089,7 +3539,7 @@ func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit3(visitor any,
 	return
 }
 
-func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit4(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit4(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.HexDigit4.Children()) > 0 {
 		n := node.HexDigit4.Children()[0]
@@ -2101,7 +3551,7 @@ func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit4(visitor any,
 	return
 }
 
-func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit5(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit5(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.HexDigit5.Children()) > 0 {
 		n := node.HexDigit5.Children()[0]
@@ -2113,7 +3563,7 @@ func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit5(visitor any,
 	return
 }
 
-func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit6(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit6(visitor any, payload P) (result R, err error) {
 	// Opt
 	if len(node.HexDigit6.Children()) > 0 {
 		n := node.HexDigit6.Children()[0]
@@ -2125,7 +3575,7 @@ func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexHexDigit6(visitor any,
 	return
 }
 
-func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexTerm2(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term2)
@@ -2136,25 +3586,54 @@ func (node *LexEscapeCharUnicodeCodePoint[P, R]) AcceptLexTerm2(visitor any, pay
 // Accept implementation for escapeChar_unicodeEscape
 //
 // "\\u" hexDigit hexDigit hexDigit hexDigit
-func (node *LexEscapeCharUnicodeEscape[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeEscape[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar_unicodeEscape")
-	if v, ok := visitor.(VisitorLexEscapeCharUnicodeEscape[P, R]); ok {
-		return v.VisitLexEscapeCharUnicodeEscape(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeCharUnicodeEscape[P, R]); ok {
+		v.VisitLexEscapeCharUnicodeEscape(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeCharUnicodeEscape[P, R]); ok {
+		err = v.VisitLexEscapeCharUnicodeEscape(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeCharUnicodeEscape[P, R]); ok {
+		v.VisitLexEscapeCharUnicodeEscape(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeCharUnicodeEscape[P, R]); ok {
+		err = v.VisitLexEscapeCharUnicodeEscape(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeCharUnicodeEscape[P, R]); ok {
+		result = v.VisitLexEscapeCharUnicodeEscape(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeCharUnicodeEscape[P, R]); ok {
+		result, err = v.VisitLexEscapeCharUnicodeEscape(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeCharUnicodeEscape[P, R]); ok {
+		result = v.VisitLexEscapeCharUnicodeEscape(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeCharUnicodeEscape[P, R]); ok {
+		result, err = v.VisitLexEscapeCharUnicodeEscape(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeCharUnicodeEscape")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeCharUnicodeEscape[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptLexHexDigit1(visitor, payload)
-	result = node.AcceptLexHexDigit2(visitor, payload)
-	result = node.AcceptLexHexDigit3(visitor, payload)
-	result = node.AcceptLexHexDigit4(visitor, payload)
+func (node *LexEscapeCharUnicodeEscape[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptLexHexDigit1(visitor, payload)
+	result, err = node.AcceptLexHexDigit2(visitor, payload)
+	result, err = node.AcceptLexHexDigit3(visitor, payload)
+	result, err = node.AcceptLexHexDigit4(visitor, payload)
 	return
 }
 
-func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -2162,7 +3641,7 @@ func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexTerm(visitor any, payload
 	return
 }
 
-func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit1(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit1(visitor any, payload P) (result R, err error) {
 	// Rule
 	// "unknown rule hexDigit"
 	if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -2171,7 +3650,7 @@ func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit1(visitor any, pa
 	return
 }
 
-func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit2(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit2(visitor any, payload P) (result R, err error) {
 	// Rule
 	// "unknown rule hexDigit"
 	if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -2180,7 +3659,7 @@ func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit2(visitor any, pa
 	return
 }
 
-func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit3(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit3(visitor any, payload P) (result R, err error) {
 	// Rule
 	// "unknown rule hexDigit"
 	if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -2189,7 +3668,7 @@ func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit3(visitor any, pa
 	return
 }
 
-func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit4(visitor any, payload P) (result R) {
+func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit4(visitor any, payload P) (result R, err error) {
 	// Rule
 	// "unknown rule hexDigit"
 	if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -2201,23 +3680,52 @@ func (node *LexEscapeCharUnicodeEscape[P, R]) AcceptLexHexDigit4(visitor any, pa
 // Accept implementation for escapeChar_hexEscape
 //
 // "\\x" hexDigit hexDigit
-func (node *LexEscapeCharHexEscape[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexEscapeCharHexEscape[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "escapeChar_hexEscape")
-	if v, ok := visitor.(VisitorLexEscapeCharHexEscape[P, R]); ok {
-		return v.VisitLexEscapeCharHexEscape(node, payload)
+	if v, ok := visitor.(Visitor_LexEscapeCharHexEscape[P, R]); ok {
+		v.VisitLexEscapeCharHexEscape(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexEscapeCharHexEscape[P, R]); ok {
+		err = v.VisitLexEscapeCharHexEscape(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexEscapeCharHexEscape[P, R]); ok {
+		v.VisitLexEscapeCharHexEscape(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexEscapeCharHexEscape[P, R]); ok {
+		err = v.VisitLexEscapeCharHexEscape(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexEscapeCharHexEscape[P, R]); ok {
+		result = v.VisitLexEscapeCharHexEscape(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexEscapeCharHexEscape[P, R]); ok {
+		result, err = v.VisitLexEscapeCharHexEscape(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexEscapeCharHexEscape[P, R]); ok {
+		result = v.VisitLexEscapeCharHexEscape(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexEscapeCharHexEscape[P, R]); ok {
+		result, err = v.VisitLexEscapeCharHexEscape(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexEscapeCharHexEscape")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexEscapeCharHexEscape[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptLexHexDigit1(visitor, payload)
-	result = node.AcceptLexHexDigit2(visitor, payload)
+func (node *LexEscapeCharHexEscape[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptLexHexDigit1(visitor, payload)
+	result, err = node.AcceptLexHexDigit2(visitor, payload)
 	return
 }
 
-func (node *LexEscapeCharHexEscape[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexEscapeCharHexEscape[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -2225,7 +3733,7 @@ func (node *LexEscapeCharHexEscape[P, R]) AcceptLexTerm(visitor any, payload P) 
 	return
 }
 
-func (node *LexEscapeCharHexEscape[P, R]) AcceptLexHexDigit1(visitor any, payload P) (result R) {
+func (node *LexEscapeCharHexEscape[P, R]) AcceptLexHexDigit1(visitor any, payload P) (result R, err error) {
 	// Rule
 	// "unknown rule hexDigit"
 	if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -2234,7 +3742,7 @@ func (node *LexEscapeCharHexEscape[P, R]) AcceptLexHexDigit1(visitor any, payloa
 	return
 }
 
-func (node *LexEscapeCharHexEscape[P, R]) AcceptLexHexDigit2(visitor any, payload P) (result R) {
+func (node *LexEscapeCharHexEscape[P, R]) AcceptLexHexDigit2(visitor any, payload P) (result R, err error) {
 	// Rule
 	// "unknown rule hexDigit"
 	if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -2247,24 +3755,53 @@ func (node *LexEscapeCharHexEscape[P, R]) AcceptLexHexDigit2(visitor any, payloa
 //
 // space
 // += comment
-func (node *LexSpace[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexSpace[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "space")
-	if v, ok := visitor.(VisitorLexSpace[P, R]); ok {
-		return v.VisitLexSpace(node, payload)
+	if v, ok := visitor.(Visitor_LexSpace[P, R]); ok {
+		v.VisitLexSpace(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexSpace[P, R]); ok {
+		err = v.VisitLexSpace(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexSpace[P, R]); ok {
+		v.VisitLexSpace(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexSpace[P, R]); ok {
+		err = v.VisitLexSpace(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexSpace[P, R]); ok {
+		result = v.VisitLexSpace(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexSpace[P, R]); ok {
+		result, err = v.VisitLexSpace(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexSpace[P, R]); ok {
+		result = v.VisitLexSpace(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexSpace[P, R]); ok {
+		result, err = v.VisitLexSpace(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexSpace")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexSpace[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexComment(visitor, payload)
+func (node *LexSpace[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexComment(visitor, payload)
 	return
 }
 
-func (node *LexSpace[P, R]) AcceptLexComment(visitor any, payload P) (result R) {
+func (node *LexSpace[P, R]) AcceptLexComment(visitor any, payload P) (result R, err error) {
 	// Rule
 	kids := node.Comment.Children()
-	result = (&LexComment[P, R]{
+	result, err = (&LexComment[P, R]{
 		Node: kids[0],
 	}).Accept(node.Comment, visitor, payload)
 	return
@@ -2275,16 +3812,45 @@ func (node *LexSpace[P, R]) AcceptLexComment(visitor any, payload P) (result R) 
 // comment
 // = "//" (~"\n" any)* &("\n" | end)  -- singleLine
 // | "/*" (~"*/" any)* "*/"  -- multiLine
-func (node *LexComment[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexComment[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "comment")
-	if v, ok := visitor.(VisitorLexComment[P, R]); ok {
-		return v.VisitLexComment(node, payload)
+	if v, ok := visitor.(Visitor_LexComment[P, R]); ok {
+		v.VisitLexComment(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexComment[P, R]); ok {
+		err = v.VisitLexComment(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexComment[P, R]); ok {
+		v.VisitLexComment(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexComment[P, R]); ok {
+		err = v.VisitLexComment(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexComment[P, R]); ok {
+		result = v.VisitLexComment(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexComment[P, R]); ok {
+		result, err = v.VisitLexComment(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexComment[P, R]); ok {
+		result = v.VisitLexComment(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexComment[P, R]); ok {
+		result, err = v.VisitLexComment(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexComment")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexComment[P, R]) DefaultAccept(visitor any, payload P) (result R) {
+func (node *LexComment[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
 	switch node.Node.CtorName() {
 	case "LexComment":
 		return (&LexComment[P, R]{
@@ -2311,22 +3877,51 @@ func (node *LexComment[P, R]) DefaultAccept(visitor any, payload P) (result R) {
 // Accept implementation for comment_singleLine
 //
 // "//" (~"\n" any)* &("\n" | end)
-func (node *LexCommentSingleLine[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexCommentSingleLine[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "comment_singleLine")
-	if v, ok := visitor.(VisitorLexCommentSingleLine[P, R]); ok {
-		return v.VisitLexCommentSingleLine(node, payload)
+	if v, ok := visitor.(Visitor_LexCommentSingleLine[P, R]); ok {
+		v.VisitLexCommentSingleLine(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexCommentSingleLine[P, R]); ok {
+		err = v.VisitLexCommentSingleLine(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexCommentSingleLine[P, R]); ok {
+		v.VisitLexCommentSingleLine(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexCommentSingleLine[P, R]); ok {
+		err = v.VisitLexCommentSingleLine(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexCommentSingleLine[P, R]); ok {
+		result = v.VisitLexCommentSingleLine(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexCommentSingleLine[P, R]); ok {
+		result, err = v.VisitLexCommentSingleLine(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexCommentSingleLine[P, R]); ok {
+		result = v.VisitLexCommentSingleLine(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexCommentSingleLine[P, R]); ok {
+		result, err = v.VisitLexCommentSingleLine(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexCommentSingleLine")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexCommentSingleLine[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
-	result = node.AcceptLexAlt(visitor, payload)
+func (node *LexCommentSingleLine[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
+	result, err = node.AcceptLexAlt(visitor, payload)
 	return
 }
 
-func (node *LexCommentSingleLine[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexCommentSingleLine[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -2334,13 +3929,13 @@ func (node *LexCommentSingleLine[P, R]) AcceptLexTerm(visitor any, payload P) (r
 	return
 }
 
-func (node *LexCommentSingleLine[P, R]) AcceptLexAlt(visitor any, payload P) (result R) {
+func (node *LexCommentSingleLine[P, R]) AcceptLexAlt(visitor any, payload P) (result R, err error) {
 	for _, n := range node.Alt.Children() {
-	{
-		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
-			v.BuiltInRule(n)
+		{
+			if v, ok := visitor.(goohm.BuiltinVisitor); ok {
+				v.BuiltInRule(n)
+			}
 		}
-	}
 	}
 	return
 }
@@ -2348,23 +3943,52 @@ func (node *LexCommentSingleLine[P, R]) AcceptLexAlt(visitor any, payload P) (re
 // Accept implementation for comment_multiLine
 //
 // "/*" (~"*/" any)* "*/"
-func (node *LexCommentMultiLine[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexCommentMultiLine[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "comment_multiLine")
-	if v, ok := visitor.(VisitorLexCommentMultiLine[P, R]); ok {
-		return v.VisitLexCommentMultiLine(node, payload)
+	if v, ok := visitor.(Visitor_LexCommentMultiLine[P, R]); ok {
+		v.VisitLexCommentMultiLine(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexCommentMultiLine[P, R]); ok {
+		err = v.VisitLexCommentMultiLine(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexCommentMultiLine[P, R]); ok {
+		v.VisitLexCommentMultiLine(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexCommentMultiLine[P, R]); ok {
+		err = v.VisitLexCommentMultiLine(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexCommentMultiLine[P, R]); ok {
+		result = v.VisitLexCommentMultiLine(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexCommentMultiLine[P, R]); ok {
+		result, err = v.VisitLexCommentMultiLine(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexCommentMultiLine[P, R]); ok {
+		result = v.VisitLexCommentMultiLine(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexCommentMultiLine[P, R]); ok {
+		result, err = v.VisitLexCommentMultiLine(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexCommentMultiLine")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexCommentMultiLine[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm1(visitor, payload)
-	result = node.AcceptLexAlt(visitor, payload)
-	result = node.AcceptLexTerm2(visitor, payload)
+func (node *LexCommentMultiLine[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm1(visitor, payload)
+	result, err = node.AcceptLexAlt(visitor, payload)
+	result, err = node.AcceptLexTerm2(visitor, payload)
 	return
 }
 
-func (node *LexCommentMultiLine[P, R]) AcceptLexTerm1(visitor any, payload P) (result R) {
+func (node *LexCommentMultiLine[P, R]) AcceptLexTerm1(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term1)
@@ -2372,18 +3996,18 @@ func (node *LexCommentMultiLine[P, R]) AcceptLexTerm1(visitor any, payload P) (r
 	return
 }
 
-func (node *LexCommentMultiLine[P, R]) AcceptLexAlt(visitor any, payload P) (result R) {
+func (node *LexCommentMultiLine[P, R]) AcceptLexAlt(visitor any, payload P) (result R, err error) {
 	for _, n := range node.Alt.Children() {
-	{
-		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
-			v.BuiltInRule(n)
+		{
+			if v, ok := visitor.(goohm.BuiltinVisitor); ok {
+				v.BuiltInRule(n)
+			}
 		}
-	}
 	}
 	return
 }
 
-func (node *LexCommentMultiLine[P, R]) AcceptLexTerm2(visitor any, payload P) (result R) {
+func (node *LexCommentMultiLine[P, R]) AcceptLexTerm2(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term2)
@@ -2394,24 +4018,53 @@ func (node *LexCommentMultiLine[P, R]) AcceptLexTerm2(visitor any, payload P) (r
 // Accept implementation for tokens
 //
 // tokens = token*
-func (node *LexTokens[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexTokens[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "tokens")
-	if v, ok := visitor.(VisitorLexTokens[P, R]); ok {
-		return v.VisitLexTokens(node, payload)
+	if v, ok := visitor.(Visitor_LexTokens[P, R]); ok {
+		v.VisitLexTokens(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexTokens[P, R]); ok {
+		err = v.VisitLexTokens(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexTokens[P, R]); ok {
+		v.VisitLexTokens(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexTokens[P, R]); ok {
+		err = v.VisitLexTokens(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexTokens[P, R]); ok {
+		result = v.VisitLexTokens(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexTokens[P, R]); ok {
+		result, err = v.VisitLexTokens(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexTokens[P, R]); ok {
+		result = v.VisitLexTokens(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexTokens[P, R]); ok {
+		result, err = v.VisitLexTokens(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexTokens")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexTokens[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexToken(visitor, payload)
+func (node *LexTokens[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexToken(visitor, payload)
 	return
 }
 
-func (node *LexTokens[P, R]) AcceptLexToken(visitor any, payload P) (result R) {
+func (node *LexTokens[P, R]) AcceptLexToken(visitor any, payload P) (result R, err error) {
 	for _, n := range node.Token.Children() {
 		kids := n.Children()
-		result = (&LexToken[P, R]{
+		result, err = (&LexToken[P, R]{
 			Arg1: kids[0],
 		}).Accept(n, visitor, payload)
 	}
@@ -2421,21 +4074,50 @@ func (node *LexTokens[P, R]) AcceptLexToken(visitor any, payload P) (result R) {
 // Accept implementation for token
 //
 // token = caseName | comment | ident | operator | punctuation | terminal | any
-func (node *LexToken[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexToken[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "token")
-	if v, ok := visitor.(VisitorLexToken[P, R]); ok {
-		return v.VisitLexToken(node, payload)
+	if v, ok := visitor.(Visitor_LexToken[P, R]); ok {
+		v.VisitLexToken(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexToken[P, R]); ok {
+		err = v.VisitLexToken(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexToken[P, R]); ok {
+		v.VisitLexToken(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexToken[P, R]); ok {
+		err = v.VisitLexToken(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexToken[P, R]); ok {
+		result = v.VisitLexToken(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexToken[P, R]); ok {
+		result, err = v.VisitLexToken(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexToken[P, R]); ok {
+		result = v.VisitLexToken(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexToken[P, R]); ok {
+		result, err = v.VisitLexToken(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexToken")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexToken[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexArg1(visitor, payload)
+func (node *LexToken[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexArg1(visitor, payload)
 	return
 }
 
-func (node *LexToken[P, R]) AcceptLexArg1(visitor any, payload P) (result R) {
+func (node *LexToken[P, R]) AcceptLexArg1(visitor any, payload P) (result R, err error) {
 	// Node
 	{
 		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
@@ -2448,21 +4130,50 @@ func (node *LexToken[P, R]) AcceptLexArg1(visitor any, payload P) (result R) {
 // Accept implementation for operator
 //
 // operator = "<:" | "=" | ":=" | "+=" | "*" | "+" | "?" | "~" | "&"
-func (node *LexOperator[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexOperator[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "operator")
-	if v, ok := visitor.(VisitorLexOperator[P, R]); ok {
-		return v.VisitLexOperator(node, payload)
+	if v, ok := visitor.(Visitor_LexOperator[P, R]); ok {
+		v.VisitLexOperator(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexOperator[P, R]); ok {
+		err = v.VisitLexOperator(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexOperator[P, R]); ok {
+		v.VisitLexOperator(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexOperator[P, R]); ok {
+		err = v.VisitLexOperator(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexOperator[P, R]); ok {
+		result = v.VisitLexOperator(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexOperator[P, R]); ok {
+		result, err = v.VisitLexOperator(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexOperator[P, R]); ok {
+		result = v.VisitLexOperator(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexOperator[P, R]); ok {
+		result, err = v.VisitLexOperator(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexOperator")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexOperator[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *LexOperator[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *LexOperator[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexOperator[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
@@ -2473,25 +4184,53 @@ func (node *LexOperator[P, R]) AcceptLexTerm(visitor any, payload P) (result R) 
 // Accept implementation for punctuation
 //
 // punctuation = "<" | ">" | "," | "--"
-func (node *LexPunctuation[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R) {
+func (node *LexPunctuation[P, R]) Accept(this goohm.Node, visitor any, payload P) (result R, err error) {
 	goohm.AssertName(this, "punctuation")
-	if v, ok := visitor.(VisitorLexPunctuation[P, R]); ok {
-		return v.VisitLexPunctuation(node, payload)
+	if v, ok := visitor.(Visitor_LexPunctuation[P, R]); ok {
+		v.VisitLexPunctuation(node)
+		return
 	}
-	goohm.CheckName[VisitorGrammars[P, R]](visitor)
+	if v, ok := visitor.(VisitorE_LexPunctuation[P, R]); ok {
+		err = v.VisitLexPunctuation(node)
+		return
+	}
+	if v, ok := visitor.(VisitorP_LexPunctuation[P, R]); ok {
+		v.VisitLexPunctuation(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPE_LexPunctuation[P, R]); ok {
+		err = v.VisitLexPunctuation(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorR_LexPunctuation[P, R]); ok {
+		result = v.VisitLexPunctuation(node)
+		return
+	}
+	if v, ok := visitor.(VisitorRE_LexPunctuation[P, R]); ok {
+		result, err = v.VisitLexPunctuation(node)
+		return
+	}
+	if v, ok := visitor.(VisitorPR_LexPunctuation[P, R]); ok {
+		result = v.VisitLexPunctuation(node, payload)
+		return
+	}
+	if v, ok := visitor.(VisitorPRE_LexPunctuation[P, R]); ok {
+		result, err = v.VisitLexPunctuation(node, payload)
+		return
+	}
+	goohm.TypeCheckMethod[P, R](visitor, "LexPunctuation")
 	return node.DefaultAccept(visitor, payload)
 }
 
-func (node *LexPunctuation[P, R]) DefaultAccept(visitor any, payload P) (result R) {
-	result = node.AcceptLexTerm(visitor, payload)
+func (node *LexPunctuation[P, R]) DefaultAccept(visitor any, payload P) (result R, err error) {
+	result, err = node.AcceptLexTerm(visitor, payload)
 	return
 }
 
-func (node *LexPunctuation[P, R]) AcceptLexTerm(visitor any, payload P) (result R) {
+func (node *LexPunctuation[P, R]) AcceptLexTerm(visitor any, payload P) (result R, err error) {
 	// Term
 	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(node.Term)
 	}
 	return
 }
-
