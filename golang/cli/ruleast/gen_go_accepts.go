@@ -97,6 +97,16 @@ func (vc *genAcceptsCmd) Process() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Error building rule ast. %[1]v", err)
 	}
+	if len(gmrsAst.Gmr_names) > 1 {
+		if vc.GenCmd.GrammarName == "" {
+			return "", fmt.Errorf("For files with multiple grammars, the --grammar-name flag is required")
+		}
+	}
+	if vc.GenCmd.GrammarName != "" {
+		if _, ok := gmrsAst.Grammars[vc.GenCmd.GrammarName]; !ok {
+			return "", fmt.Errorf("grammar-name not found. Asked for '%s', grammar names are '%v'", vc.GenCmd.GrammarName, gmrsAst.Gmr_names)
+		}
+	}
 	vc.gmrsAst = *gmrsAst
 	vc.gmrsAst.GenGoAccepts(vc)
 	return vc.GenCmd.sbldr.String(), nil
@@ -114,6 +124,14 @@ import (
 )
 
 `, vc.GenCmd.GoTypePackage, vc.GenCmd.GoRuntimeImport)
+	if vc.GenCmd.GrammarName != "" {
+		gmr := gmrs.Grammars[vc.GenCmd.GrammarName]
+		gmr.GenGoAccepts(vc)
+		vc.outf(`// accepts for grammar %[1]s
+
+`, gmr.Name)
+		return
+	}
 	for _, gname := range gmrs.Gmr_names {
 		vc.outf(`// accepts for grammar %[1]s
 
@@ -299,21 +317,31 @@ func (node CasesRuleNode) GenGoAccepts(vc *genAcceptsCmd, gmr_name string) {
 			arg0.Name,
 		)
 		name := arg0.Name
-		// todo - this is not always true
-		n := arg0.Node.GetBranch().(NontNode)
-		rule, ok := gmr.Rules[n.Rule]
-		if !ok {
-			panic(fmt.Errorf("unknown rule %[1]s", name))
-		}
-		vc.outf(`		kids := node.Node.Children()
-		return (&%[1]s[P, R]{
-`,
-			r2name(name),
-		)
-		rule.GetBranch().GenGoLeafInstAccepts(vc, 3)
-		vc.outf(`		}).Accept(node.Node, visitor, payload)
-`,
-		)
+		b := arg0.Node.GetBranch()
+		b.GenGoRuleNodeCaseAccepts(vc, gmr_name, name)
+		// 		// todo - this is not always true
+		// 		n, ok0 := arg0.Node.GetBranch().(NontNode)
+		// 		if !ok0 {
+		// 			panic(fmt.Errorf(
+		// 				"arg0.Node.Branch is not a RuleNode (NontNode). NodeName '%s' ArgName '%s' Type %T",
+		// 				node.Name,
+		// 				name,
+		// 				arg0.Node.GetBranch(),
+		// 			))
+		// 		}
+		// 		rule, ok := gmr.Rules[n.Rule]
+		// 		if !ok {
+		// 			panic(fmt.Errorf("unknown rule %[1]s", name))
+		// 		}
+		// 		vc.outf(`		kids := node.Node.Children()
+		// 		return (&%[1]s[P, R]{
+		// `,
+		// 			r2name(name),
+		// 		)
+		// 		rule.GetBranch().GenGoLeafInstAccepts(vc, 3)
+		// 		vc.outf(`		}).Accept(node.Node, visitor, payload)
+		// `,
+		// 		)
 	}
 	// default
 	vc.outf(`	default:
@@ -323,6 +351,47 @@ func (node CasesRuleNode) GenGoAccepts(vc *genAcceptsCmd, gmr_name string) {
 	vc.outf(`}
 
 `)
+}
+
+func (n NObjNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+	vc.outf(`		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
+			v.BuiltInRule(node.%[1]s)
+		}
+		return
+`,
+		// upper1st(name),
+		"Node",
+	)
+}
+func (n NontNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+	rule, ok := vc.gmrsAst.Grammars[gmr_name].Rules[name]
+	if !ok {
+		vc.outf(`		// unknown rule '%[1]s' 
+`, name)
+		return
+		// panic(fmt.Errorf("unknown rule '%[1]s'", name))
+	}
+	vc.outf(`		kids := node.Node.Children()
+		return (&%[1]s[P, R]{
+`,
+		r2name(name),
+	)
+	rule.GetBranch().GenGoLeafInstAccepts(vc, 3)
+	vc.outf(`		}).Accept(node.Node, visitor, payload)
+`,
+	)
+}
+func (n TermNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+	panic("not implemented")
+}
+func (n ListNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+	panic("not implemented")
+}
+func (n OptNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+	panic("not implemented")
+}
+func (n BuiltinHOR) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+	panic("not implemented")
 }
 
 func (n NObjNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
@@ -584,10 +653,11 @@ func (n BuiltinHOR) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name st
 
 func (NObjNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
 	vc.outf(`	%[1]s := func(n %[2]s.Node) (result R) {
-			if v, ok := visitor.(%[2]s.BuiltinVisitor); ok {
-		v.BuiltInRule(n)
-	})
-	return
+		if v, ok := visitor.(%[2]s.BuiltinVisitor); ok {
+			v.BuiltInRule(n)
+		}
+		return
+	}
 `,
 		fname,
 		vc.GenCmd.GoRuntimePackage,

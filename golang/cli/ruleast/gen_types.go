@@ -8,6 +8,7 @@ import (
 
 type genCmd struct {
 	Grammar           string `opts:"mode=arg" help:"Path to .ohm grammar file to generate a visitor for."`
+	GrammarName       string `help:"For multiple grammars per file, the name of the grammar to generate code for. Only used for multi-grammar files."`
 	GoTypePackage     string `opts:"short=P" help:"The package name for the generated code, default to lower case of the grammar"`
 	GoRuntimeImport   string
 	GoRuntimePackage  string

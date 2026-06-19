@@ -20,7 +20,9 @@ type GoTyped interface {
 	GoType(rtpkg string) string
 	GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string)
 	GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string)
+	// GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd)
 	// GenGoBareCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string)
+	GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string)
 }
 
 func (NObjNode) GoType(rtpkg string) string { return rtpkg + ".Node" }

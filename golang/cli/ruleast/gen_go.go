@@ -63,6 +63,16 @@ func (vc *genGoCmd) Run() error {
 	if err != nil {
 		return fmt.Errorf("Error building rule ast. %[1]v", err)
 	}
+	if len(gmrsAst.Gmr_names) > 1 {
+		if vc.GenCmd.GrammarName == "" {
+			return fmt.Errorf("For files with multiple grammars, the --grammar-name flag is required. Found grammars '%v", gmrsAst.Gmr_names)
+		}
+	}
+	if vc.GenCmd.GrammarName != "" {
+		if _, ok := gmrsAst.Grammars[vc.GenCmd.GrammarName]; !ok {
+			return fmt.Errorf("grammar-name not found. Asked for '%s', grammar names are '%v'", vc.GenCmd.GrammarName, gmrsAst.Gmr_names)
+		}
+	}
 	if vc.OutputDir == "" {
 		vc.OutputDir = strings.ToLower(gmrsAst.Gmr_names[0])
 	}
@@ -75,6 +85,7 @@ func (vc *genGoCmd) Run() error {
 	types := &genTypesCmd{
 		GenCmd:     vc.GenCmd,
 		OutputFile: filepath.Join(vc.OutputDir, "types.go"),
+		gmrsAst:    *gmrsAst,
 	}
 	gmrsAst.GenGoTypes(types)
 	//
@@ -83,6 +94,7 @@ func (vc *genGoCmd) Run() error {
 	inter := &genInterfaceCmd{
 		GenCmd:     vc.GenCmd,
 		OutputFile: filepath.Join(vc.OutputDir, "interfaces.go"),
+		gmrsAst:    *gmrsAst,
 	}
 	gmrsAst.GenGoInterfaces(inter)
 	//

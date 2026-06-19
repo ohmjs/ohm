@@ -87,7 +87,13 @@ func (node *Rule) BuildRuleAst(this goohm.Node) (result []RuleNode, err error) {
 			RuleBody:  kids[4].(goohm.RuleNode),
 		}).BuildRuleAst(node.Node)
 	case "Rule_override":
-		panic("not implemented")
+		kids := node.Node.Children()
+		return (&RuleOverride{
+			Ident:            kids[0].(goohm.RuleNode),
+			Formals:          kids[1].(goohm.OptNode),
+			Term:             kids[2].(goohm.TerminalNode),
+			OverrideRuleBody: kids[3].(goohm.RuleNode),
+		}).BuildRuleAst(node.Node)
 	case "Rule_extend":
 		kids := node.Node.Children()
 		return (&RuleExtend{
@@ -109,8 +115,16 @@ func (node *RuleDefine) BuildRuleAst(this goohm.Node) ([]RuleNode, error) {
 			RuleDescrText: node.RuleDescr.Children()[0].Children()[1].(goohm.RuleNode),
 		}).BuildRuleAst(node.RuleDescr.Children()[0])
 	}
+	rb := node.RuleBody.Children()
+	details, err := (&RuleBody{
+		Term:           rb[0].(goohm.OptNode),
+		NonemptyListOf: rb[1].(goohm.BHorNode),
+	}).BuildRuleAst(node.RuleBody)
+	if err != nil {
+		return nil, err
+	}
 	return BuildRuleAstRule(
-		node.RuleBody,
+		details,
 		Make_RuleType_define(),
 		node.Ident.SourceString(),
 		this.SourceString(),
@@ -125,8 +139,16 @@ func (node *LexRuleDescr) BuildRuleAst(this goohm.Node) string {
 
 func (node *RuleExtend) BuildRuleAst(this goohm.Node) ([]RuleNode, error) {
 	AssertName(this, "Rule_extend")
+	rb := node.RuleBody.Children()
+	details, err := (&RuleBody{
+		Term:           rb[0].(goohm.OptNode),
+		NonemptyListOf: rb[1].(goohm.BHorNode),
+	}).BuildRuleAst(node.RuleBody)
+	if err != nil {
+		return nil, err
+	}
 	return BuildRuleAstRule(
-		node.RuleBody,
+		details,
 		Make_RuleType_extend(),
 		node.Ident.SourceString(),
 		this.SourceString(),
@@ -134,21 +156,74 @@ func (node *RuleExtend) BuildRuleAst(this goohm.Node) ([]RuleNode, error) {
 	)
 }
 
+func (node *RuleOverride) BuildRuleAst(this goohm.Node) ([]RuleNode, error) {
+	AssertName(this, "Rule_override")
+	rb := node.OverrideRuleBody.Children()
+	details, err := (&OverrideRuleBody{
+		NonemptyListOf: rb[1].(goohm.BHorNode),
+	}).BuildRuleAst(node.OverrideRuleBody)
+	if err != nil {
+		return nil, err
+	}
+	return BuildRuleAstRule(
+		details,
+		Make_RuleType_override(),
+		node.Ident.SourceString(),
+		this.SourceString(),
+		"",
+	)
+}
+
+func (node *OverrideRuleBody) BuildRuleAst(this goohm.Node) (results []RuleDetailNode, err error) {
+	AssertName(this, "OverrideRuleBody")
+	for _, el := range node.NonemptyListOf.Elems() {
+		rdns, err := (&OverrideTopLevelTerm{
+			Node: el,
+		}).BuildRuleAst(el)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, rdns...)
+	}
+	return results, nil
+}
+
+func (node *OverrideTopLevelTerm) BuildRuleAst(this goohm.Node) ([]RuleDetailNode, error) {
+	AssertName(this, "OverrideTopLevelTerm")
+	switch node.Node.CtorName() {
+	case "OverrideTopLevelTerm":
+		return (&OverrideTopLevelTerm{
+			Node: node.Node.Children()[0].(goohm.RuleNode),
+		}).BuildRuleAst(this)
+	case "OverrideTopLevelTerm_superSplice":
+		kids := node.Node.Children()
+		return (&OverrideTopLevelTermSuperSplice{
+			Term: kids[0].(goohm.TerminalNode),
+		}).BuildRuleAst(node.Node)
+	case "TopLevelTerm":
+		resp, err := (&TopLevelTerm{
+			Node: node.Node.Children()[0].(goohm.RuleNode),
+		}).BuildRuleAst(node.Node)
+		if err != nil {
+			return nil, err
+		}
+		return []RuleDetailNode{*resp}, nil
+	default:
+		panic("unexpected " + node.Node.CtorName())
+	}
+}
+
+func (node *OverrideTopLevelTermSuperSplice) BuildRuleAst(this goohm.Node) ([]RuleDetailNode, error) {
+	panic("not implemented")
+}
+
 func BuildRuleAstRule(
-	ruleBody goohm.RuleNode,
+	details []RuleDetailNode,
 	rule_type RuleType,
 	name string,
 	sourceString string,
 	descr string,
 ) ([]RuleNode, error) {
-	rb := ruleBody.Children()
-	details, err := (&RuleBody{
-		Term:           rb[0].(goohm.OptNode),
-		NonemptyListOf: rb[1].(goohm.BHorNode),
-	}).BuildRuleAst(ruleBody)
-	if err != nil {
-		return nil, err
-	}
 	cases := lo.FlatMap[RuleDetailNode, InlineNode](details, func(item RuleDetailNode, index int) []InlineNode {
 		if b, ok := item.Cast_inline(); ok {
 			return []InlineNode{Make_InlineNode(
