@@ -138,22 +138,22 @@ func (vc *RuleAstCmd) Process() (string, error) {
 func argNodeStr(arg ArgNode) string {
 	return Handle_ArgNode[string](
 		arg,
-		func(nobj NObjNode) string {
+		func(nobj NodeArgNode) string {
 			return "@node"
 		},
-		func(rule NontNode) string {
+		func(rule RuleArgNode) string {
 			return "@rule " + rule.Rule
 		},
-		func(term TermNode) string {
+		func(term TermArgNode) string {
 			return "@term"
 		},
-		func(list ListNode) string {
+		func(list ListArgNode) string {
 			return "@list " + argNodeStr(list.Elem)
 		},
-		func(opt OptNode) string {
+		func(opt OptArgNode) string {
 			return "@opt " + argNodeStr(opt.Elem)
 		},
-		func(bhor BuiltinHOR) string {
+		func(bhor BuiltinHorArgNode) string {
 			return fmt.Sprintf("@hor %s<%s, %s>",
 				bhor.List_type,
 				argNodeStr(bhor.Elem.Node),

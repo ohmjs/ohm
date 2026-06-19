@@ -27,13 +27,13 @@ func AST_ArgNode() adlast.ScopedDecl {
 				[]adlast.Ident{},
 				[]adlast.Field{
 					adlast.MakeAll_Field(
-						"nobj",
-						"nobj",
+						"node",
+						"node",
 						adlast.MakeAll_TypeExpr(
 							adlast.Make_TypeRef_reference(
 								adlast.MakeAll_ScopedName(
 									"ruleast",
-									"NObjNode",
+									"NodeArgNode",
 								),
 							),
 							[]adlast.TypeExpr{},
@@ -48,7 +48,7 @@ func AST_ArgNode() adlast.ScopedDecl {
 							adlast.Make_TypeRef_reference(
 								adlast.MakeAll_ScopedName(
 									"ruleast",
-									"NontNode",
+									"RuleArgNode",
 								),
 							),
 							[]adlast.TypeExpr{},
@@ -63,7 +63,7 @@ func AST_ArgNode() adlast.ScopedDecl {
 							adlast.Make_TypeRef_reference(
 								adlast.MakeAll_ScopedName(
 									"ruleast",
-									"TermNode",
+									"TermArgNode",
 								),
 							),
 							[]adlast.TypeExpr{},
@@ -78,7 +78,7 @@ func AST_ArgNode() adlast.ScopedDecl {
 							adlast.Make_TypeRef_reference(
 								adlast.MakeAll_ScopedName(
 									"ruleast",
-									"ListNode",
+									"ListArgNode",
 								),
 							),
 							[]adlast.TypeExpr{},
@@ -93,7 +93,7 @@ func AST_ArgNode() adlast.ScopedDecl {
 							adlast.Make_TypeRef_reference(
 								adlast.MakeAll_ScopedName(
 									"ruleast",
-									"OptNode",
+									"OptArgNode",
 								),
 							),
 							[]adlast.TypeExpr{},
@@ -108,7 +108,7 @@ func AST_ArgNode() adlast.ScopedDecl {
 							adlast.Make_TypeRef_reference(
 								adlast.MakeAll_ScopedName(
 									"ruleast",
-									"BuiltinHOR",
+									"BuiltinHorArgNode",
 								),
 							),
 							[]adlast.TypeExpr{},
@@ -292,19 +292,19 @@ func init() {
 	)
 }
 
-func Texpr_BuiltinHOR() adlast.ATypeExpr[BuiltinHOR] {
+func Texpr_BuiltinHorArgNode() adlast.ATypeExpr[BuiltinHorArgNode] {
 	te := adlast.Make_TypeExpr(
 		adlast.Make_TypeRef_reference(
-			adlast.Make_ScopedName("ruleast", "BuiltinHOR"),
+			adlast.Make_ScopedName("ruleast", "BuiltinHorArgNode"),
 		),
 		[]adlast.TypeExpr{},
 	)
-	return adlast.Make_ATypeExpr[BuiltinHOR](te)
+	return adlast.Make_ATypeExpr[BuiltinHorArgNode](te)
 }
 
-func AST_BuiltinHOR() adlast.ScopedDecl {
+func AST_BuiltinHorArgNode() adlast.ScopedDecl {
 	decl := adlast.MakeAll_Decl(
-		"BuiltinHOR",
+		"BuiltinHorArgNode",
 		types.Make_Maybe_nothing[uint32](),
 		adlast.Make_DeclType_struct_(
 			adlast.MakeAll_Struct(
@@ -362,8 +362,8 @@ func AST_BuiltinHOR() adlast.ScopedDecl {
 
 func init() {
 	goadl.RESOLVER.Register(
-		adlast.Make_ScopedName("ruleast", "BuiltinHOR"),
-		AST_BuiltinHOR(),
+		adlast.Make_ScopedName("ruleast", "BuiltinHorArgNode"),
+		AST_BuiltinHorArgNode(),
 	)
 }
 
@@ -734,19 +734,19 @@ func init() {
 	)
 }
 
-func Texpr_ListNode() adlast.ATypeExpr[ListNode] {
+func Texpr_ListArgNode() adlast.ATypeExpr[ListArgNode] {
 	te := adlast.Make_TypeExpr(
 		adlast.Make_TypeRef_reference(
-			adlast.Make_ScopedName("ruleast", "ListNode"),
+			adlast.Make_ScopedName("ruleast", "ListArgNode"),
 		),
 		[]adlast.TypeExpr{},
 	)
-	return adlast.Make_ATypeExpr[ListNode](te)
+	return adlast.Make_ATypeExpr[ListArgNode](te)
 }
 
-func AST_ListNode() adlast.ScopedDecl {
+func AST_ListArgNode() adlast.ScopedDecl {
 	decl := adlast.MakeAll_Decl(
-		"ListNode",
+		"ListArgNode",
 		types.Make_Maybe_nothing[uint32](),
 		adlast.Make_DeclType_struct_(
 			adlast.MakeAll_Struct(
@@ -777,40 +777,8 @@ func AST_ListNode() adlast.ScopedDecl {
 
 func init() {
 	goadl.RESOLVER.Register(
-		adlast.Make_ScopedName("ruleast", "ListNode"),
-		AST_ListNode(),
-	)
-}
-
-func Texpr_NObjNode() adlast.ATypeExpr[NObjNode] {
-	te := adlast.Make_TypeExpr(
-		adlast.Make_TypeRef_reference(
-			adlast.Make_ScopedName("ruleast", "NObjNode"),
-		),
-		[]adlast.TypeExpr{},
-	)
-	return adlast.Make_ATypeExpr[NObjNode](te)
-}
-
-func AST_NObjNode() adlast.ScopedDecl {
-	decl := adlast.MakeAll_Decl(
-		"NObjNode",
-		types.Make_Maybe_nothing[uint32](),
-		adlast.Make_DeclType_struct_(
-			adlast.MakeAll_Struct(
-				[]adlast.Ident{},
-				[]adlast.Field{},
-			),
-		),
-		customtypes.MapMap[adlast.ScopedName, any]{},
-	)
-	return adlast.Make_ScopedDecl("ruleast", decl)
-}
-
-func init() {
-	goadl.RESOLVER.Register(
-		adlast.Make_ScopedName("ruleast", "NObjNode"),
-		AST_NObjNode(),
+		adlast.Make_ScopedName("ruleast", "ListArgNode"),
+		AST_ListArgNode(),
 	)
 }
 
@@ -924,37 +892,24 @@ func init() {
 	)
 }
 
-func Texpr_NontNode() adlast.ATypeExpr[NontNode] {
+func Texpr_NodeArgNode() adlast.ATypeExpr[NodeArgNode] {
 	te := adlast.Make_TypeExpr(
 		adlast.Make_TypeRef_reference(
-			adlast.Make_ScopedName("ruleast", "NontNode"),
+			adlast.Make_ScopedName("ruleast", "NodeArgNode"),
 		),
 		[]adlast.TypeExpr{},
 	)
-	return adlast.Make_ATypeExpr[NontNode](te)
+	return adlast.Make_ATypeExpr[NodeArgNode](te)
 }
 
-func AST_NontNode() adlast.ScopedDecl {
+func AST_NodeArgNode() adlast.ScopedDecl {
 	decl := adlast.MakeAll_Decl(
-		"NontNode",
+		"NodeArgNode",
 		types.Make_Maybe_nothing[uint32](),
 		adlast.Make_DeclType_struct_(
 			adlast.MakeAll_Struct(
 				[]adlast.Ident{},
-				[]adlast.Field{
-					adlast.MakeAll_Field(
-						"rule",
-						"rule",
-						adlast.MakeAll_TypeExpr(
-							adlast.Make_TypeRef_primitive(
-								"String",
-							),
-							[]adlast.TypeExpr{},
-						),
-						types.Make_Maybe_nothing[any](),
-						customtypes.MapMap[adlast.ScopedName, any]{},
-					),
-				},
+				[]adlast.Field{},
 			),
 		),
 		customtypes.MapMap[adlast.ScopedName, any]{},
@@ -964,24 +919,24 @@ func AST_NontNode() adlast.ScopedDecl {
 
 func init() {
 	goadl.RESOLVER.Register(
-		adlast.Make_ScopedName("ruleast", "NontNode"),
-		AST_NontNode(),
+		adlast.Make_ScopedName("ruleast", "NodeArgNode"),
+		AST_NodeArgNode(),
 	)
 }
 
-func Texpr_OptNode() adlast.ATypeExpr[OptNode] {
+func Texpr_OptArgNode() adlast.ATypeExpr[OptArgNode] {
 	te := adlast.Make_TypeExpr(
 		adlast.Make_TypeRef_reference(
-			adlast.Make_ScopedName("ruleast", "OptNode"),
+			adlast.Make_ScopedName("ruleast", "OptArgNode"),
 		),
 		[]adlast.TypeExpr{},
 	)
-	return adlast.Make_ATypeExpr[OptNode](te)
+	return adlast.Make_ATypeExpr[OptArgNode](te)
 }
 
-func AST_OptNode() adlast.ScopedDecl {
+func AST_OptArgNode() adlast.ScopedDecl {
 	decl := adlast.MakeAll_Decl(
-		"OptNode",
+		"OptArgNode",
 		types.Make_Maybe_nothing[uint32](),
 		adlast.Make_DeclType_struct_(
 			adlast.MakeAll_Struct(
@@ -1012,8 +967,53 @@ func AST_OptNode() adlast.ScopedDecl {
 
 func init() {
 	goadl.RESOLVER.Register(
-		adlast.Make_ScopedName("ruleast", "OptNode"),
-		AST_OptNode(),
+		adlast.Make_ScopedName("ruleast", "OptArgNode"),
+		AST_OptArgNode(),
+	)
+}
+
+func Texpr_RuleArgNode() adlast.ATypeExpr[RuleArgNode] {
+	te := adlast.Make_TypeExpr(
+		adlast.Make_TypeRef_reference(
+			adlast.Make_ScopedName("ruleast", "RuleArgNode"),
+		),
+		[]adlast.TypeExpr{},
+	)
+	return adlast.Make_ATypeExpr[RuleArgNode](te)
+}
+
+func AST_RuleArgNode() adlast.ScopedDecl {
+	decl := adlast.MakeAll_Decl(
+		"RuleArgNode",
+		types.Make_Maybe_nothing[uint32](),
+		adlast.Make_DeclType_struct_(
+			adlast.MakeAll_Struct(
+				[]adlast.Ident{},
+				[]adlast.Field{
+					adlast.MakeAll_Field(
+						"rule",
+						"rule",
+						adlast.MakeAll_TypeExpr(
+							adlast.Make_TypeRef_primitive(
+								"String",
+							),
+							[]adlast.TypeExpr{},
+						),
+						types.Make_Maybe_nothing[any](),
+						customtypes.MapMap[adlast.ScopedName, any]{},
+					),
+				},
+			),
+		),
+		customtypes.MapMap[adlast.ScopedName, any]{},
+	)
+	return adlast.Make_ScopedDecl("ruleast", decl)
+}
+
+func init() {
+	goadl.RESOLVER.Register(
+		adlast.Make_ScopedName("ruleast", "RuleArgNode"),
+		AST_RuleArgNode(),
 	)
 }
 
@@ -1227,19 +1227,19 @@ func init() {
 	)
 }
 
-func Texpr_TermNode() adlast.ATypeExpr[TermNode] {
+func Texpr_TermArgNode() adlast.ATypeExpr[TermArgNode] {
 	te := adlast.Make_TypeExpr(
 		adlast.Make_TypeRef_reference(
-			adlast.Make_ScopedName("ruleast", "TermNode"),
+			adlast.Make_ScopedName("ruleast", "TermArgNode"),
 		),
 		[]adlast.TypeExpr{},
 	)
-	return adlast.Make_ATypeExpr[TermNode](te)
+	return adlast.Make_ATypeExpr[TermArgNode](te)
 }
 
-func AST_TermNode() adlast.ScopedDecl {
+func AST_TermArgNode() adlast.ScopedDecl {
 	decl := adlast.MakeAll_Decl(
-		"TermNode",
+		"TermArgNode",
 		types.Make_Maybe_nothing[uint32](),
 		adlast.Make_DeclType_struct_(
 			adlast.MakeAll_Struct(
@@ -1254,8 +1254,8 @@ func AST_TermNode() adlast.ScopedDecl {
 
 func init() {
 	goadl.RESOLVER.Register(
-		adlast.Make_ScopedName("ruleast", "TermNode"),
-		AST_TermNode(),
+		adlast.Make_ScopedName("ruleast", "TermArgNode"),
+		AST_TermArgNode(),
 	)
 }
 

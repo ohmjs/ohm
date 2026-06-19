@@ -15,8 +15,8 @@ type ArgNodeBranch interface {
 
 func (*ArgNode) MakeNewBranch(key string) (any, error) {
 	switch key {
-	case "nobj":
-		return &_ArgNode_Nobj{}, nil
+	case "node":
+		return &_ArgNode_Node{}, nil
 	case "rule":
 		return &_ArgNode_Rule{}, nil
 	case "term":
@@ -31,112 +31,112 @@ func (*ArgNode) MakeNewBranch(key string) (any, error) {
 	return nil, fmt.Errorf("unknown branch is : %s", key)
 }
 
-type _ArgNode_Nobj struct {
-	V NObjNode `branch:"nobj"`
+type _ArgNode_Node struct {
+	V NodeArgNode `branch:"node"`
 }
 type _ArgNode_Rule struct {
-	V NontNode `branch:"rule"`
+	V RuleArgNode `branch:"rule"`
 }
 type _ArgNode_Term struct {
-	V TermNode `branch:"term"`
+	V TermArgNode `branch:"term"`
 }
 type _ArgNode_List struct {
-	V ListNode `branch:"list"`
+	V ListArgNode `branch:"list"`
 }
 type _ArgNode_Opt struct {
-	V OptNode `branch:"opt"`
+	V OptArgNode `branch:"opt"`
 }
 type _ArgNode_Bhor struct {
-	V BuiltinHOR `branch:"bhor"`
+	V BuiltinHorArgNode `branch:"bhor"`
 }
 
-func (_ArgNode_Nobj) isArgNodeBranch() {}
+func (_ArgNode_Node) isArgNodeBranch() {}
 func (_ArgNode_Rule) isArgNodeBranch() {}
 func (_ArgNode_Term) isArgNodeBranch() {}
 func (_ArgNode_List) isArgNodeBranch() {}
 func (_ArgNode_Opt) isArgNodeBranch()  {}
 func (_ArgNode_Bhor) isArgNodeBranch() {}
 
-func Make_ArgNode_nobj(v NObjNode) ArgNode {
+func Make_ArgNode_node(v NodeArgNode) ArgNode {
 	return ArgNode{
-		_ArgNode_Nobj{v},
+		_ArgNode_Node{v},
 	}
 }
 
-func Make_ArgNode_rule(v NontNode) ArgNode {
+func Make_ArgNode_rule(v RuleArgNode) ArgNode {
 	return ArgNode{
 		_ArgNode_Rule{v},
 	}
 }
 
-func Make_ArgNode_term(v TermNode) ArgNode {
+func Make_ArgNode_term(v TermArgNode) ArgNode {
 	return ArgNode{
 		_ArgNode_Term{v},
 	}
 }
 
-func Make_ArgNode_list(v ListNode) ArgNode {
+func Make_ArgNode_list(v ListArgNode) ArgNode {
 	return ArgNode{
 		_ArgNode_List{v},
 	}
 }
 
-func Make_ArgNode_opt(v OptNode) ArgNode {
+func Make_ArgNode_opt(v OptArgNode) ArgNode {
 	return ArgNode{
 		_ArgNode_Opt{v},
 	}
 }
 
-func Make_ArgNode_bhor(v BuiltinHOR) ArgNode {
+func Make_ArgNode_bhor(v BuiltinHorArgNode) ArgNode {
 	return ArgNode{
 		_ArgNode_Bhor{v},
 	}
 }
 
-func (un ArgNode) Cast_nobj() (NObjNode, bool) {
-	br, ok := un.Branch.(_ArgNode_Nobj)
+func (un ArgNode) Cast_node() (NodeArgNode, bool) {
+	br, ok := un.Branch.(_ArgNode_Node)
 	return br.V, ok
 }
 
-func (un ArgNode) Cast_rule() (NontNode, bool) {
+func (un ArgNode) Cast_rule() (RuleArgNode, bool) {
 	br, ok := un.Branch.(_ArgNode_Rule)
 	return br.V, ok
 }
 
-func (un ArgNode) Cast_term() (TermNode, bool) {
+func (un ArgNode) Cast_term() (TermArgNode, bool) {
 	br, ok := un.Branch.(_ArgNode_Term)
 	return br.V, ok
 }
 
-func (un ArgNode) Cast_list() (ListNode, bool) {
+func (un ArgNode) Cast_list() (ListArgNode, bool) {
 	br, ok := un.Branch.(_ArgNode_List)
 	return br.V, ok
 }
 
-func (un ArgNode) Cast_opt() (OptNode, bool) {
+func (un ArgNode) Cast_opt() (OptArgNode, bool) {
 	br, ok := un.Branch.(_ArgNode_Opt)
 	return br.V, ok
 }
 
-func (un ArgNode) Cast_bhor() (BuiltinHOR, bool) {
+func (un ArgNode) Cast_bhor() (BuiltinHorArgNode, bool) {
 	br, ok := un.Branch.(_ArgNode_Bhor)
 	return br.V, ok
 }
 
 func Handle_ArgNode[T any](
 	_in ArgNode,
-	nobj func(nobj NObjNode) T,
-	rule func(rule NontNode) T,
-	term func(term TermNode) T,
-	list func(list ListNode) T,
-	opt func(opt OptNode) T,
-	bhor func(bhor BuiltinHOR) T,
+	node func(node NodeArgNode) T,
+	rule func(rule RuleArgNode) T,
+	term func(term TermArgNode) T,
+	list func(list ListArgNode) T,
+	opt func(opt OptArgNode) T,
+	bhor func(bhor BuiltinHorArgNode) T,
 	_default func() T,
 ) T {
 	switch _b := _in.Branch.(type) {
-	case _ArgNode_Nobj:
-		if nobj != nil {
-			return nobj(_b.V)
+	case _ArgNode_Node:
+		if node != nil {
+			return node(_b.V)
 		}
 	case _ArgNode_Rule:
 		if rule != nil {
@@ -167,18 +167,18 @@ func Handle_ArgNode[T any](
 
 func HandleWithErr_ArgNode[T any](
 	_in ArgNode,
-	nobj func(nobj NObjNode) (T, error),
-	rule func(rule NontNode) (T, error),
-	term func(term TermNode) (T, error),
-	list func(list ListNode) (T, error),
-	opt func(opt OptNode) (T, error),
-	bhor func(bhor BuiltinHOR) (T, error),
+	node func(node NodeArgNode) (T, error),
+	rule func(rule RuleArgNode) (T, error),
+	term func(term TermArgNode) (T, error),
+	list func(list ListArgNode) (T, error),
+	opt func(opt OptArgNode) (T, error),
+	bhor func(bhor BuiltinHorArgNode) (T, error),
 	_default func() (T, error),
 ) (T, error) {
 	switch _b := _in.Branch.(type) {
-	case _ArgNode_Nobj:
-		if nobj != nil {
-			return nobj(_b.V)
+	case _ArgNode_Node:
+		if node != nil {
+			return node(_b.V)
 		}
 	case _ArgNode_Rule:
 		if rule != nil {
@@ -285,23 +285,23 @@ func Make_BareRuleNode(
 	return ret
 }
 
-type BuiltinHOR struct {
-	_BuiltinHOR
+type BuiltinHorArgNode struct {
+	_BuiltinHorArgNode
 }
 
-type _BuiltinHOR struct {
+type _BuiltinHorArgNode struct {
 	List_type string       `json:"list_type"`
 	Elem      NamedArgNode `json:"elem"`
 	Sep       NamedArgNode `json:"sep"`
 }
 
-func MakeAll_BuiltinHOR(
+func MakeAll_BuiltinHorArgNode(
 	list_type string,
 	elem NamedArgNode,
 	sep NamedArgNode,
-) BuiltinHOR {
-	return BuiltinHOR{
-		_BuiltinHOR{
+) BuiltinHorArgNode {
+	return BuiltinHorArgNode{
+		_BuiltinHorArgNode{
 			List_type: list_type,
 			Elem:      elem,
 			Sep:       sep,
@@ -309,13 +309,13 @@ func MakeAll_BuiltinHOR(
 	}
 }
 
-func Make_BuiltinHOR(
+func Make_BuiltinHorArgNode(
 	list_type string,
 	elem NamedArgNode,
 	sep NamedArgNode,
-) BuiltinHOR {
-	ret := BuiltinHOR{
-		_BuiltinHOR{
+) BuiltinHorArgNode {
+	ret := BuiltinHorArgNode{
+		_BuiltinHorArgNode{
 			List_type: list_type,
 			Elem:      elem,
 			Sep:       sep,
@@ -490,51 +490,31 @@ func Make_InlineNode(
 	return ret
 }
 
-type ListNode struct {
-	_ListNode
+type ListArgNode struct {
+	_ListArgNode
 }
 
-type _ListNode struct {
+type _ListArgNode struct {
 	Elem ArgNode `json:"elem"`
 }
 
-func MakeAll_ListNode(
+func MakeAll_ListArgNode(
 	elem ArgNode,
-) ListNode {
-	return ListNode{
-		_ListNode{
+) ListArgNode {
+	return ListArgNode{
+		_ListArgNode{
 			Elem: elem,
 		},
 	}
 }
 
-func Make_ListNode(
+func Make_ListArgNode(
 	elem ArgNode,
-) ListNode {
-	ret := ListNode{
-		_ListNode{
+) ListArgNode {
+	ret := ListArgNode{
+		_ListArgNode{
 			Elem: elem,
 		},
-	}
-	return ret
-}
-
-type NObjNode struct {
-	_NObjNode
-}
-
-type _NObjNode struct {
-}
-
-func MakeAll_NObjNode() NObjNode {
-	return NObjNode{
-		_NObjNode{},
-	}
-}
-
-func Make_NObjNode() NObjNode {
-	ret := NObjNode{
-		_NObjNode{},
 	}
 	return ret
 }
@@ -575,59 +555,79 @@ func Make_Named[N any](
 
 type NamedArgNode Named[ArgNode]
 
-type NontNode struct {
-	_NontNode
+type NodeArgNode struct {
+	_NodeArgNode
 }
 
-type _NontNode struct {
-	Rule string `json:"rule"`
+type _NodeArgNode struct {
 }
 
-func MakeAll_NontNode(
-	rule string,
-) NontNode {
-	return NontNode{
-		_NontNode{
-			Rule: rule,
+func MakeAll_NodeArgNode() NodeArgNode {
+	return NodeArgNode{
+		_NodeArgNode{},
+	}
+}
+
+func Make_NodeArgNode() NodeArgNode {
+	ret := NodeArgNode{
+		_NodeArgNode{},
+	}
+	return ret
+}
+
+type OptArgNode struct {
+	_OptArgNode
+}
+
+type _OptArgNode struct {
+	Elem ArgNode `json:"elem"`
+}
+
+func MakeAll_OptArgNode(
+	elem ArgNode,
+) OptArgNode {
+	return OptArgNode{
+		_OptArgNode{
+			Elem: elem,
 		},
 	}
 }
 
-func Make_NontNode(
-	rule string,
-) NontNode {
-	ret := NontNode{
-		_NontNode{
-			Rule: rule,
+func Make_OptArgNode(
+	elem ArgNode,
+) OptArgNode {
+	ret := OptArgNode{
+		_OptArgNode{
+			Elem: elem,
 		},
 	}
 	return ret
 }
 
-type OptNode struct {
-	_OptNode
+type RuleArgNode struct {
+	_RuleArgNode
 }
 
-type _OptNode struct {
-	Elem ArgNode `json:"elem"`
+type _RuleArgNode struct {
+	Rule string `json:"rule"`
 }
 
-func MakeAll_OptNode(
-	elem ArgNode,
-) OptNode {
-	return OptNode{
-		_OptNode{
-			Elem: elem,
+func MakeAll_RuleArgNode(
+	rule string,
+) RuleArgNode {
+	return RuleArgNode{
+		_RuleArgNode{
+			Rule: rule,
 		},
 	}
 }
 
-func Make_OptNode(
-	elem ArgNode,
-) OptNode {
-	ret := OptNode{
-		_OptNode{
-			Elem: elem,
+func Make_RuleArgNode(
+	rule string,
+) RuleArgNode {
+	ret := RuleArgNode{
+		_RuleArgNode{
+			Rule: rule,
 		},
 	}
 	return ret
@@ -969,22 +969,22 @@ func HandleWithErr_RuleType[T any](
 	panic("unhandled branch in : RuleType")
 }
 
-type TermNode struct {
-	_TermNode
+type TermArgNode struct {
+	_TermArgNode
 }
 
-type _TermNode struct {
+type _TermArgNode struct {
 }
 
-func MakeAll_TermNode() TermNode {
-	return TermNode{
-		_TermNode{},
+func MakeAll_TermArgNode() TermArgNode {
+	return TermArgNode{
+		_TermArgNode{},
 	}
 }
 
-func Make_TermNode() TermNode {
-	ret := TermNode{
-		_TermNode{},
+func Make_TermArgNode() TermArgNode {
+	ret := TermArgNode{
+		_TermArgNode{},
 	}
 	return ret
 }

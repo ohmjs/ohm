@@ -81,47 +81,38 @@ struct BareNode {
 newtype NamedArgNode = Named<ArgNode>;
 
 union ArgNode {
-    NObjNode nobj;
-    NontNode rule;
-    TermNode term;
-    ListNode list;
-    OptNode  opt;
-    BuiltinHOR bhor;
+    NodeArgNode node;
+    RuleArgNode rule;
+    TermArgNode term;
+    ListArgNode list;
+    OptArgNode  opt;
+    BuiltinHorArgNode bhor;
 };
 
 // Super type of all CST Node types
-struct NObjNode {
-    // // todo not sure name make sense here
-    // String name;
-    // // todo not sure rule make sense here
-    // String rule;
+struct NodeArgNode {
 };
 
-struct NontNode {
-    // String name;
+struct RuleArgNode {
     String rule;
 };
 
-struct ListNode {
-    // String name;
+struct ListArgNode {
     ArgNode elem;
 };
 
-struct OptNode {
-    // String name;
+struct OptArgNode {
     ArgNode elem;
 };
 
-struct BuiltinHOR {
-    // String name;
+struct TermArgNode {
+};
+
+struct BuiltinHorArgNode {
     String list_type;
     // even though 'Params = "<" ListOf<Seq, ","> ">"' (and   'Seq = Iter*') formal params 'expressions must have arity 1'
     NamedArgNode elem;
     NamedArgNode sep;
-};
-
-struct TermNode {
-    // String name;
 };
 
 };

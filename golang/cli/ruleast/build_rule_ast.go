@@ -413,7 +413,7 @@ func (node *IterStar) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 			Make_Named(
 				arg.Name,
 				Make_ArgNode_list(
-					Make_ListNode(
+					Make_ListArgNode(
 						arg.Node,
 					),
 				),
@@ -433,7 +433,7 @@ func (node *IterPlus) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 	return new(NamedArgNode(Make_Named(
 		arg.Name,
 		Make_ArgNode_list(
-			Make_ListNode(
+			Make_ListArgNode(
 				arg.Node,
 			),
 		),
@@ -451,7 +451,7 @@ func (node *IterOpt) BuildRuleAst(this goohm.Node) (*NamedArgNode, error) {
 	return new(NamedArgNode(Make_Named(
 		arg.Name,
 		Make_ArgNode_opt(
-			Make_OptNode(
+			Make_OptArgNode(
 				arg.Node,
 			),
 		),
@@ -578,7 +578,7 @@ func (node *BaseApplication) BuildRuleAst(this goohm.Node) (*NamedArgNode, error
 			return new(NamedArgNode(Make_Named(
 				hor_name,
 				Make_ArgNode_bhor(
-					Make_BuiltinHOR(
+					Make_BuiltinHorArgNode(
 						hor_name,
 						elem.Args[0],
 						sep.Args[0],
@@ -588,15 +588,15 @@ func (node *BaseApplication) BuildRuleAst(this goohm.Node) (*NamedArgNode, error
 		}
 		return new(NamedArgNode(Make_Named(
 			node.Ident.SourceString(),
-			Make_ArgNode_nobj(
-				Make_NObjNode(),
+			Make_ArgNode_node(
+				Make_NodeArgNode(),
 			),
 		))), nil
 	}
 	return new(NamedArgNode(Make_Named(
 		node.Ident.SourceString(),
 		Make_ArgNode_rule(
-			Make_NontNode(
+			Make_RuleArgNode(
 				node.Ident.SourceString(),
 			),
 		),
@@ -608,7 +608,7 @@ func (node *BaseRange) BuildRuleAst(this goohm.Node) NamedArgNode {
 	return NamedArgNode(Make_Named(
 		"rng",
 		Make_ArgNode_term(
-			Make_TermNode(),
+			Make_TermArgNode(),
 		),
 	))
 }
@@ -618,7 +618,7 @@ func (node *BaseTerminal) BuildRuleAst(this goohm.Node) NamedArgNode {
 	return NamedArgNode(Make_Named(
 		"term",
 		Make_ArgNode_term(
-			Make_TermNode(),
+			Make_TermArgNode(),
 		),
 	))
 }
@@ -627,8 +627,8 @@ func (node *BaseParen) BuildRuleAst(this goohm.Node) NamedArgNode {
 	AssertName(this, "Base_paren")
 	return NamedArgNode(Make_Named(
 		"alt",
-		Make_ArgNode_nobj(
-			Make_NObjNode(),
+		Make_ArgNode_node(
+			Make_NodeArgNode(),
 		),
 	))
 }

@@ -353,7 +353,7 @@ func (node CasesRuleNode) GenGoAccepts(vc *genAcceptsCmd, gmr_name string) {
 `)
 }
 
-func (n NObjNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n NodeArgNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	vc.outf(`		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
 			v.BuiltInRule(node.%[1]s)
 		}
@@ -363,7 +363,7 @@ func (n NObjNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, n
 		"Node",
 	)
 }
-func (n NontNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n RuleArgNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	rule, ok := vc.gmrsAst.Grammars[gmr_name].Rules[name]
 	if !ok {
 		vc.outf(`		// unknown rule '%[1]s' 
@@ -381,20 +381,20 @@ func (n NontNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, n
 `,
 	)
 }
-func (n TermNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n TermArgNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	panic("not implemented")
 }
-func (n ListNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n ListArgNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	panic("not implemented")
 }
-func (n OptNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n OptArgNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	panic("not implemented")
 }
-func (n BuiltinHOR) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n BuiltinHorArgNode) GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	panic("not implemented")
 }
 
-func (n NObjNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n NodeArgNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	vc.outf(`	// Node
 `)
 	vc.outf(`	{
@@ -407,7 +407,7 @@ func (n NObjNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name stri
 	)
 }
 
-func (n NontNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n RuleArgNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	vc.outf(`	// Rule
 `)
 	gmr, ok := vc.gmrsAst.Grammars[gmr_name]
@@ -440,7 +440,7 @@ func (n NontNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name stri
 	)
 }
 
-func (n TermNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n TermArgNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	vc.outf(`	// Term
 `)
 	vc.outf(`	if v, ok := visitor.(goohm.TerminalVisitor); ok {
@@ -450,14 +450,14 @@ func (n TermNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name stri
 		upper1st(name))
 }
 
-func (n ListNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n ListArgNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	vc.outf(`	for _, n := range node.%[1]s.Children() {
 `,
 		upper1st(name),
 	)
 	Handle_ArgNode[any](
 		n.Elem,
-		func(nobj NObjNode) any {
+		func(nobj NodeArgNode) any {
 			vc.outf(`	{
 		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
 			v.BuiltInRule(n)
@@ -467,7 +467,7 @@ func (n ListNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name stri
 			)
 			return nil
 		},
-		func(rulenode NontNode) any {
+		func(rulenode RuleArgNode) any {
 			gmr, ok := vc.gmrsAst.Grammars[gmr_name]
 			if !ok {
 				panic(fmt.Errorf("unknown grammar %[1]s", gmr_name))
@@ -511,7 +511,7 @@ func (n ListNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name stri
 			)
 			return nil
 		},
-		func(term TermNode) any {
+		func(term TermArgNode) any {
 			vc.outf(`	if v, ok := visitor.(goohm.TerminalVisitor); ok {
 		v.Terminal(n)
 	}
@@ -520,13 +520,13 @@ func (n ListNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name stri
 			return nil
 
 		},
-		func(list ListNode) any {
+		func(list ListArgNode) any {
 			panic("should not be possible")
 		},
-		func(opt OptNode) any {
+		func(opt OptArgNode) any {
 			panic("should not be possible")
 		},
-		func(bhor BuiltinHOR) any {
+		func(bhor BuiltinHorArgNode) any {
 			vc.outf(`	panic("not implemented - why would you do this?")
 `,
 			)
@@ -539,7 +539,7 @@ func (n ListNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name stri
 	)
 }
 
-func (n OptNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n OptArgNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	vc.outf(`	// Opt
 `)
 	vc.outf(`	if len(node.%[1]s.Children()) > 0 {
@@ -549,7 +549,7 @@ func (n OptNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name strin
 	)
 	Handle_ArgNode[any](
 		n.Elem,
-		func(nobj NObjNode) any {
+		func(nobj NodeArgNode) any {
 			vc.outf(`	{
 		if v, ok := visitor.(goohm.BuiltinVisitor); ok {
 			v.BuiltInRule(n)
@@ -559,7 +559,7 @@ func (n OptNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name strin
 			)
 			return nil
 		},
-		func(rulenode NontNode) any {
+		func(rulenode RuleArgNode) any {
 			gmr, ok := vc.gmrsAst.Grammars[gmr_name]
 			if !ok {
 				panic(fmt.Errorf("unknown grammar %[1]s", gmr_name))
@@ -607,7 +607,7 @@ func (n OptNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name strin
 			)
 			return nil
 		},
-		func(term TermNode) any {
+		func(term TermArgNode) any {
 			vc.outf(`		if v, ok := visitor.(goohm.TerminalVisitor); ok {
 			v.Terminal(n.(%[1]s.TerminalNode))
 		}
@@ -617,13 +617,13 @@ func (n OptNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name strin
 			return nil
 
 		},
-		func(list ListNode) any {
+		func(list ListArgNode) any {
 			panic("should not be possible")
 		},
-		func(opt OptNode) any {
+		func(opt OptArgNode) any {
 			panic("should not be possible")
 		},
-		func(bhor BuiltinHOR) any {
+		func(bhor BuiltinHorArgNode) any {
 			vc.outf(`	panic("not implemented - why would you do this?")
 `,
 			)
@@ -636,7 +636,7 @@ func (n OptNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name strin
 	)
 }
 
-func (n BuiltinHOR) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
+func (n BuiltinHorArgNode) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name string) {
 	vc.outf(`	// BuiltinHOR
 `)
 	vc.outf(`	// %[1]s
@@ -651,7 +651,7 @@ func (n BuiltinHOR) GenGoLeafAccepts(vc *genAcceptsCmd, gmr_name string, name st
 	)
 }
 
-func (NObjNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
+func (NodeArgNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
 	vc.outf(`	%[1]s := func(n %[2]s.Node) (result R) {
 		if v, ok := visitor.(%[2]s.BuiltinVisitor); ok {
 			v.BuiltInRule(n)
@@ -663,7 +663,7 @@ func (NObjNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname stri
 		vc.GenCmd.GoRuntimePackage,
 	)
 }
-func (rulenode NontNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
+func (rulenode RuleArgNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
 	gmr, ok := vc.gmrsAst.Grammars[gmr_name]
 	if !ok {
 		panic(fmt.Errorf("unknown grammar %[1]s", gmr_name))
@@ -697,7 +697,7 @@ func (rulenode NontNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, f
 `,
 	)
 }
-func (TermNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
+func (TermArgNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
 	vc.outf(`	%[1]s := func(n %[2]s.Node) (result R) {
 		if v, ok := visitor.(%[2]s.TerminalVisitor); ok {
 			v.Terminal(n.(%[2]s.TerminalNode))
@@ -709,7 +709,7 @@ func (TermNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname stri
 		vc.GenCmd.GoRuntimePackage,
 	)
 }
-func (n ListNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
+func (n ListArgNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
 	vc.outf(`	%[1]s := func(n %[2]s.Node) (result R) {
 		panic("not implemented")
 	}
@@ -718,7 +718,7 @@ func (n ListNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname st
 		vc.GenCmd.GoRuntimePackage,
 	)
 }
-func (OptNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
+func (OptArgNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
 	vc.outf(`	%[1]s := func(n %[2]s.Node) (result R) {
 		panic("not implemented")
 	}
@@ -727,7 +727,7 @@ func (OptNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname strin
 		vc.GenCmd.GoRuntimePackage,
 	)
 }
-func (BuiltinHOR) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
+func (BuiltinHorArgNode) GenGoBHORCallback(vc *genAcceptsCmd, gmr_name string, fname string) {
 	vc.outf(`	%[1]s := func(n %[2]s.Node) (result R) {
 		panic("not implemented")
 	}

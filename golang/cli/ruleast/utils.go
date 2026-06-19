@@ -25,25 +25,25 @@ type GoTyped interface {
 	GenGoRuleNodeCaseAccepts(vc *genAcceptsCmd, gmr_name string, name string)
 }
 
-func (NObjNode) GoType(rtpkg string) string { return rtpkg + ".Node" }
-func (NontNode) GoType(rtpkg string) string { return rtpkg + ".RuleNode" }
-func (TermNode) GoType(rtpkg string) string { return rtpkg + ".TerminalNode" }
-func (n ListNode) GoType(rtpkg string) string {
+func (NodeArgNode) GoType(rtpkg string) string { return rtpkg + ".Node" }
+func (RuleArgNode) GoType(rtpkg string) string { return rtpkg + ".RuleNode" }
+func (TermArgNode) GoType(rtpkg string) string { return rtpkg + ".TerminalNode" }
+func (n ListArgNode) GoType(rtpkg string) string {
 	return rtpkg + ".ListNode"
 	// return n.Elem.GetBranch().GoType(rtpkg)
 }
-func (OptNode) GoType(rtpkg string) string    { return rtpkg + ".OptNode" }
-func (BuiltinHOR) GoType(rtpkg string) string { return rtpkg + ".BHorNode" }
+func (OptArgNode) GoType(rtpkg string) string        { return rtpkg + ".OptNode" }
+func (BuiltinHorArgNode) GoType(rtpkg string) string { return rtpkg + ".BHorNode" }
 
 func (v ArgNode) GetBranch() GoTyped {
 	return Handle_ArgNode[GoTyped](
 		v,
-		func(n NObjNode) GoTyped { return NObjNode{n._NObjNode} },
-		func(n NontNode) GoTyped { return NontNode{n._NontNode} },
-		func(n TermNode) GoTyped { return TermNode{n._TermNode} },
-		func(n ListNode) GoTyped { return ListNode{n._ListNode} },
-		func(n OptNode) GoTyped { return OptNode{n._OptNode} },
-		func(n BuiltinHOR) GoTyped { return BuiltinHOR{n._BuiltinHOR} },
+		func(n NodeArgNode) GoTyped { return NodeArgNode{n._NodeArgNode} },
+		func(n RuleArgNode) GoTyped { return RuleArgNode{n._RuleArgNode} },
+		func(n TermArgNode) GoTyped { return TermArgNode{n._TermArgNode} },
+		func(n ListArgNode) GoTyped { return ListArgNode{n._ListArgNode} },
+		func(n OptArgNode) GoTyped { return OptArgNode{n._OptArgNode} },
+		func(n BuiltinHorArgNode) GoTyped { return BuiltinHorArgNode{n._BuiltinHorArgNode} },
 		nil,
 	)
 }
@@ -155,8 +155,8 @@ func UnifyBranches2Args(bare []BareNode, size int) (args []NamedArgNode) {
 	for i := range nodetypes {
 		var argNode ArgNode = bare[0].Args[i].Node
 		if nodetypes[i] == "node" {
-			argNode = Make_ArgNode_nobj(
-				Make_NObjNode(),
+			argNode = Make_ArgNode_node(
+				Make_NodeArgNode(),
 			)
 		}
 		args = append(args,
@@ -174,22 +174,22 @@ func UnifyBranches2Args(bare []BareNode, size int) (args []NamedArgNode) {
 func Key4ArgNode(arg ArgNode) string {
 	return Handle_ArgNode[string](
 		arg,
-		func(nobj NObjNode) string {
+		func(nobj NodeArgNode) string {
 			return "node"
 		},
-		func(rule NontNode) string {
+		func(rule RuleArgNode) string {
 			return "rule"
 		},
-		func(term TermNode) string {
+		func(term TermArgNode) string {
 			return "term"
 		},
-		func(list ListNode) string {
+		func(list ListArgNode) string {
 			return "list"
 		},
-		func(opt OptNode) string {
+		func(opt OptArgNode) string {
 			return "opt"
 		},
-		func(bhor BuiltinHOR) string {
+		func(bhor BuiltinHorArgNode) string {
 			return "hor"
 		},
 		nil,
